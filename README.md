@@ -2,5 +2,7 @@
 
 to run backend:
 `npm install fastify uuid`
+
 `npm install -D nodemon`
-`npm run dev`
+
+`npm run dev\n`
