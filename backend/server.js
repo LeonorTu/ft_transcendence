@@ -1,4 +1,5 @@
 const fastify = require('fastify')({ logger: true })
+const sqlite3 = require('sqlite3').verbose();
 
 fastify.register(require('./routes/users'))
 
