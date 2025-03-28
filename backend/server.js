@@ -2,7 +2,7 @@ const fastify = require('fastify')({ logger: true })
 
 fastify.register(require('./routes/users'))
 
-const PORT = 5000
+const PORT = 8888
 
 const start = async () => {
 	try {
