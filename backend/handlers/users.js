@@ -4,9 +4,13 @@ const getUsers = (req, res) => {
 	db.all('SELECT id, username FROM users', [], (err, rows) => {
 		if (err) {
 			req.log.error(`Error fetching users: ${err.message}`);
-			return res.status(500).send({ error: 'Database error' });
-		  }
-		  return res.send(rows);
+			return res.status(500).send({error: 'Database error: ' +  + err.message });
+		}
+		if (rows.length === 0) {
+			req.log.warn('No users in database')
+			return res.status(404).send({error: 'No users found'})
+		}
+		return res.send(rows);
 	})
 }
 
@@ -14,11 +18,34 @@ const getUser = (req, res) => {
 	const { id } = req.params
 	db.get('SELECT * from users WHERE id = ?', [id], (err, row) => {
 		if (err) {
-			req.log.error(`Database error: ${err.message}`);
+			req.log.error(`Error fetching user: ${err.message}`);
 			return res.status(500).send({ error: 'Database error: ' + err.message });
+		}
+		if (!row) {
+			req.log.warn(`User with id ${id} not found`)
+			return res.status(404).send({error: `User with id ${id} not found`})
 		}
 		return res.send(row)
 	})
+}
+
+const updateUser = (req, res) => {
+	const { id } = req.params
+	const { username } = req.body
+	db.run('UPDATE users SET username = ? WHERE id = ?', [username, id],
+		function(err) {
+			if (err) {
+				req.log.error(`Error updating user: ${err.message}`);
+				return res.status(500).send({ error: 'Database error: ' + err.message });
+			}
+			if (this.changes === 0) {
+				req.log.warn(`User with id ${id} not found`)
+				return res.status(404).send({ error: `User with id ${id} not found` });
+			}
+			req.log.info(`User with ID ${id} updated successfully`);
+			return res.status(200).send({ id: Number(id), username });
+		}
+	)
 }
 
 const registerUser = (req, res) => {
@@ -66,4 +93,5 @@ module.exports = {
 	getUsers,
 	registerUser,
 	getUser,
+	updateUser,
 }

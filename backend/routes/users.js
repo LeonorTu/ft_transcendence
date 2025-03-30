@@ -1,11 +1,10 @@
 let users = require('../Users')
-// const { v4: uuidv4 } = require('uuid')
-// const sqlite3 = require('sqlite3').verbose();
 
 const {
 	getUsers,
 	registerUser,
 	getUser,
+	updateUser
 } = require('../handlers/users')
 
 const User = {
@@ -16,56 +15,78 @@ const User = {
 	}
 }
 
+const errorResponse = {
+	type: 'object',
+	properties: {
+		error: { type: 'string' },
+	}
+}
+
 const getUsersSchema = {
-	response: {
-		200: {
-			type: 'array',
-			items: User,
+	schema: {
+		response: {
+			200: {
+				type: 'array',
+				items: User,
+			},
+			404: errorResponse,
+			500: errorResponse,
 		},
 	},
+	handler: getUsers
 }
 
 const getUserSchema = {
-	response: {
-		200: User
-	}
+	schema: {
+		response: {
+			200: User,
+			404: errorResponse,
+			500: errorResponse,
+		},
+	},
+	handler: getUser
+}
+
+const updateUserSchema = {
+	schema: {
+		response: {
+			200: User,
+			404: errorResponse,
+			500: errorResponse,
+		},
+	},
+	handler: updateUser
 }
 
 const registerUserSchema = {
-	body: {
-		type: 'object',
-		properties: {
-			username: { type: 'string'},
-			email: { type: 'string'},
-			password: { type: 'string'},
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				username: { type: 'string'},
+				email: { type: 'string'},
+				password: { type: 'string'},
+			},
+			required: ['username', 'email', 'password'],
 		},
-		required: ['username', 'email', 'password'],
+		response: {
+			200: User,
+			400: errorResponse,
+			500: errorResponse,
+		},
 	},
-	response: {
-		200: User
-	}
+	handler: registerUser
 }
 
 function usersRoutes(fastify, options, done) {
 
-	fastify.get('/users', { schema: getUsersSchema}, getUsers)
+	fastify.get('/users', getUsersSchema)
 
-	fastify.get('/user/:id', {schema: getUserSchema}, getUser)
+	fastify.get('/user/:id', getUserSchema)
 
-	fastify.put('/user/:id', (req, res) => {
-		const { id } = req.params
-		const { username } = req.body
-		users = users.map((user) =>
-			(user.id === id ? { id, username } : user))
-		const updatedUser = users.find((user) =>
-			user.id === id)
-		return res.send({
-			id: updatedUser.id,
-			username: updatedUser.username
-		})
-	})
+	fastify.put('/user/:id', updateUserSchema)
 
-	fastify.post('/user/register', { schema: registerUserSchema }, registerUser)
+	fastify.post('/user/register', registerUserSchema)
 	
 	done()
 }
