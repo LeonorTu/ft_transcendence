@@ -1,0 +1,53 @@
+.p1_score {
+	position: fixed;
+	height: 50px;
+	width: 50px;
+	left: 	30vw;
+}
+
+.p2_score {
+	position: fixed;
+	height: 50px;
+	width: 50px;
+	right: 	30vw;
+}
+
+.center_line {
+	position: fixed;
+	left: 48vw;
+	height: 98vh;
+	border-left: 5px dashed white;
+
+}
+
+.p1_paddle {
+	top: calc(98vh / 2 - 100px / 2);
+	left: 10vh;
+}
+
+.p2_paddle {
+	top: calc(98vh / 2 - 100px / 2);
+	right: 10vh;
+}
+.paddle {
+	position: absolute;
+	height: 100px;
+	width: 20px;
+	background-color: white;
+}
+
+.board {
+	margin: auto;
+	width: 98vw;
+	height: 98vh;
+	border: 5px solid white;
+}
+
+.message {
+	display: none;
+}
+
+body {
+	background-color: black;
+	color: white;
+};
