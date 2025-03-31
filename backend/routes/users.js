@@ -1,10 +1,9 @@
-let users = require('../Users')
-
 const {
 	getUsers,
 	registerUser,
 	getUser,
-	updateUser
+	updateUser,
+	loginUser,
 } = require('../handlers/users')
 
 const User = {
@@ -78,6 +77,30 @@ const registerUserSchema = {
 	handler: registerUser
 }
 
+const loginUserSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				email: { type: 'string'},
+				password: { type: 'string'},
+			},
+			required: ['email', 'password']
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					token: { type: 'string' }
+				}
+			},
+			400: errorResponse,
+			500: errorResponse,
+		},
+	},
+	handler: loginUser
+}
+
 function usersRoutes(fastify, options, done) {
 
 	fastify.get('/users', getUsersSchema)
@@ -87,6 +110,8 @@ function usersRoutes(fastify, options, done) {
 	fastify.put('/user/:id', updateUserSchema)
 
 	fastify.post('/user/register', registerUserSchema)
+
+	fastify.post('/user/login', loginUserSchema)
 	
 	done()
 }
