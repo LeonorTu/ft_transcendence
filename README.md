@@ -1,5 +1,13 @@
 # 42_transcendence
 
+Run the docker compose
+
+```
+docker-compose up --build
+```
+
+OR run manually:
+
 create database
 
 `cd SQLite`
