@@ -2,10 +2,10 @@ const fs = require('fs')
 const path = require('path')
 const fastify = require('fastify')({
   logger: true,
-  https: {
-    key: fs.readFileSync(path.join(__dirname, 'ssl', 'ssl.key')), // to include in .env
-    cert: fs.readFileSync(path.join(__dirname, 'ssl', 'ssl.cert')) // to include in .env
-  }
+  // https: {
+    // key: fs.readFileSync(path.join(__dirname, 'ssl', 'ssl.key')), // to uncomment for https
+    // cert: fs.readFileSync(path.join(__dirname, 'ssl', 'ssl.cert')) // to uncomment for https
+  // }
 })
 
 
@@ -31,9 +31,9 @@ fastify.register(require('@fastify/jwt'), {
   secret: 'supersecret'
 })
 
-fastify.register(require('./routes/users'))
-
 fastify.register(require('./routes/auth'))
+
+fastify.register(require('./routes/users'))
 
 const PORT = 8888
 

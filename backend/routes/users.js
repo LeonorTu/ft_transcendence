@@ -4,6 +4,7 @@ const {
 	getUser,
 	updateUser,
 	loginUser,
+	linkGoogleAccount,
 } = require('../handlers/users')
 
 const User = {
@@ -63,10 +64,9 @@ const registerUserSchema = {
 			type: 'object',
 			properties: {
 				username: { type: 'string'},
-				email: { type: 'string'},
 				password: { type: 'string'},
 			},
-			required: ['username', 'email', 'password'],
+			required: ['username', 'password'],
 		},
 		response: {
 			200: User,
@@ -82,10 +82,10 @@ const loginUserSchema = {
 		body: {
 			type: 'object',
 			properties: {
-				email: { type: 'string'},
+				username: { type: 'string'},
 				password: { type: 'string'},
 			},
-			required: ['email', 'password']
+			required: ['username', 'password']
 		},
 		response: {
 			200: {
@@ -101,6 +101,30 @@ const loginUserSchema = {
 	handler: loginUser
 }
 
+const linkGoogleAccountSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				email: { type: 'string' },
+				google_id: { type: 'string' },
+			},
+			required: [ 'email', 'google_id' ],
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					message: { type: 'string' }
+				}
+			},
+			400: errorResponse,
+			500: errorResponse,
+		}
+	},
+	// handler: linkGoogleAccount
+}
+
 function usersRoutes(fastify, options, done) {
 
 	fastify.get('/users', getUsersSchema)
@@ -112,6 +136,14 @@ function usersRoutes(fastify, options, done) {
 	fastify.post('/user/register', registerUserSchema)
 
 	fastify.post('/user/login', loginUserSchema)
+
+	fastify.put('/user/link_google_account',
+		{
+			onRequest: [fastify.authenticate],
+			schema: linkGoogleAccountSchema
+		},
+		linkGoogleAccount
+	)
 	
 	done()
 }

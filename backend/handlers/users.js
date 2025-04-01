@@ -1,5 +1,5 @@
 const db = require('../db')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 const getUsers = (req, res) => {
 	db.all('SELECT id, username FROM users', [], (err, rows) => {
@@ -50,35 +50,34 @@ const updateUser = (req, res) => {
 }
 
 const registerUser = async (req, res) => {
-	const { username, email, password } = req.body;
-	req.log.info(`Received registration request: ${username}, ${email}`);
+	const { username, password } = req.body;
+	req.log.info(`Received registration request: ${username}`);
 
 	try {
 		const existingUser = await new Promise((resolve, reject) => {
-			db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+			db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
 				if (err) return reject(err);
 					resolve(row);
 			});
 		});
 
 		if (existingUser) {
-			req.log.warn('User with this email already exists');
-			return res.status(400).send({ error: "User with this email already exists" });
+			req.log.warn('User with this username already exists');
+			return res.status(400).send({ error: "User with this username already exists" });
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
-		console.log(hashedPassword);
+		// console.log(hashedPassword);
 
 		const newUser = {
 			username,
-			email,
 			password: hashedPassword,
 		};
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-				[newUser.username, newUser.email, newUser.password],
+				'INSERT INTO users (username, password) VALUES (?, ?)',
+				[newUser.username, newUser.password],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
@@ -99,12 +98,13 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, reply) => {
-	const { email, password } = req.body;
-	req.log.info(`Received login request from: ${email}`);
+	const { username, password } = req.body;
+	req.log.info(`Received login request from: ${username}`);
 	try {
 		const user = await new Promise((resolve, reject) => {
-			db.get('SELECT id, username, password FROM users WHERE email = ?', [email], (err, user) => {
-				if (err) return reject(err);
+			db.get('SELECT id, username, password FROM users WHERE username = ?', [username], (err, user) => {
+				if (err)
+					return reject(err);
 				resolve(user);
 			});
 		});
@@ -130,6 +130,34 @@ const loginUser = async (req, reply) => {
 	}
 };
 
+const linkGoogleAccount = async (request, reply) => {
+	const { email, google_id } = request.body
+	const userId = request.user.id
+	try {
+		const existingGoogleUser = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE google_id = ?', [google_id], (err, row) => {
+				if (err)
+					return reject(err);
+				resolve(row);
+			})
+		})
+		if (existingGoogleUser) {
+			request.log.warn('This Google account is already linked with another user')
+			return reply.status(400).send({ error: 'This Google account is already linked with another user'})
+		}
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET email = ?, google_id = ? WHERE id = ?', [email, google_id, userId], function (err) {
+				if (err) return reject(err);
+				resolve(this.changes);
+			})
+		})
+		request.log.info('Google account linked successfully')
+		return reply.status(200).send({ messge: 'Google account linked successfully'})
+	} catch (err) {
+		request.log.error(`Error linking google account: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
 
 module.exports = {
 	getUsers,
@@ -137,4 +165,5 @@ module.exports = {
 	getUser,
 	updateUser,
 	loginUser,
+	linkGoogleAccount,
 }
