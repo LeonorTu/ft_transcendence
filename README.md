@@ -40,5 +40,5 @@ if you go to localhost:8888/documentation you can see the API endpoints instead
 
 ## Unit tests
 
-To run the unit tests:
+To run the unit tests:  
 `docker-compose run --rm backend npm test`
