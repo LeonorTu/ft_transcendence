@@ -160,6 +160,31 @@ function usersRoutes(fastify, options, done) {
 	fastify.put('/user/update', updateUserSchema)
 
 	fastify.put('/user/link_google_account', linkGoogleAccountSchema)
+
+	fastify.get('/user/avatar',
+	// {
+		// onRequest: [fastify.authenticate],
+		// schema: {
+			// security: [{ bearerAuth: [] }],
+		// }
+	// },
+	async (request, reply) => {
+		// const avatarUrl = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${request.user.username}`;
+		const avatarUrl = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=user`;
+		// request.log.info(`Fetching avatar for user: ${request.user.username}`);
+	
+		const avatarResponse = await fetch(avatarUrl);
+		const svg = await avatarResponse.text();
+	
+		reply.type('image/svg+xml').send(svg);
+	});
+
+	fastify.get('user/avatar/:id', async (request, reply) => {
+		const id = request.user.id
+
+
+	})
+	
 	
 	done()
 }
