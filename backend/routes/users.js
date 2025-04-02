@@ -1,3 +1,5 @@
+const db = require('../db')
+
 const {
 	getUsers,
 	registerUser,
@@ -179,13 +181,32 @@ function usersRoutes(fastify, options, done) {
 		reply.type('image/svg+xml').send(svg);
 	});
 
-	fastify.get('user/avatar/:id', async (request, reply) => {
-		const id = request.user.id
+fastify.get('/user/avatar/:id', async (request, reply) => {
+	const userId = request.params.id;
 
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT username FROM users WHERE id = ?', [userId], (err, row) => {
+				if (err) return reject(err);
+					resolve(row);
+				});
+			});
 
-	})
-	
-	
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
+
+		const url = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${user.username}`;
+		const response = await fetch(url);
+		const svg = await response.text();
+
+		reply.header('Content-Type', 'image/svg+xml').send(svg);
+	} catch (err) {
+		request.log.error(`Error fetching avatar: ${err.message}`);
+		reply.status(500).send({ error: 'Internal server error' });
+	}
+});
+
 	done()
 }
 
