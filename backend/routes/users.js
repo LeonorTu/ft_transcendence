@@ -47,17 +47,6 @@ const getUserSchema = {
 	handler: getUser
 }
 
-const updateUserSchema = {
-	schema: {
-		response: {
-			200: User,
-			404: errorResponse,
-			500: errorResponse,
-		},
-	},
-	handler: updateUser
-}
-
 const registerUserSchema = {
 	schema: {
 		body: {
@@ -101,49 +90,76 @@ const loginUserSchema = {
 	handler: loginUser
 }
 
-const linkGoogleAccountSchema = {
-	schema: {
-		body: {
-			type: 'object',
-			properties: {
-				email: { type: 'string' },
-				google_id: { type: 'string' },
-			},
-			required: [ 'email', 'google_id' ],
-		},
-		response: {
-			200: {
+function usersRoutes(fastify, options, done) {
+
+	const updateUserSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
 				type: 'object',
 				properties: {
-					message: { type: 'string' }
-				}
+					currentPassword: { type: 'string' },
+					newPassword: { type: 'string' },
+					newUsername: { type: 'string' },
+				},
+				required: ['currentPassword'],
+				anyOf: [
+					{ required: ['newPassword'] },
+					{ required: ['newUsername'] },
+				],
 			},
-			400: errorResponse,
-			500: errorResponse,
-		}
-	},
-	// handler: linkGoogleAccount
-}
+			response: {
+				200: {
+				type: 'object',
+					properties: {
+						message: { type: 'string' }
+					}
+				},
+				404: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: updateUser
+	};
 
-function usersRoutes(fastify, options, done) {
+	const linkGoogleAccountSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					email: { type: 'string' },
+					google_id: { type: 'string' },
+				},
+				required: [ 'email', 'google_id' ],
+			},
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' }
+					}
+				},
+				400: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: linkGoogleAccount
+	}
 
 	fastify.get('/users', getUsersSchema)
 
 	fastify.get('/user/:id', getUserSchema)
 
-	fastify.put('/user/:id', updateUserSchema)
-
 	fastify.post('/user/register', registerUserSchema)
 
 	fastify.post('/user/login', loginUserSchema)
+	
+	fastify.put('/user/update', updateUserSchema)
 
-	fastify.put('/user/link_google_account',
-		{
-			onRequest: [fastify.authenticate],
-			schema: linkGoogleAccountSchema
-		},
-		linkGoogleAccount
-	)
+	fastify.put('/user/link_google_account', linkGoogleAccountSchema)
 	
 	done()
 }

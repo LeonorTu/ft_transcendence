@@ -1,57 +1,38 @@
 const db = require('../db')
 const bcrypt = require('bcryptjs')
 
-const getUsers = (req, res) => {
+const getUsers = (request, reply) => {
 	db.all('SELECT id, username FROM users', [], (err, rows) => {
 		if (err) {
-			req.log.error(`Error fetching users: ${err.message}`);
-			return res.status(500).send({error: 'Database error: ' +  + err.message });
+			request.log.error(`Error fetching users: ${err.message}`);
+			return reply.status(500).send({error: 'Database error: ' +  + err.message });
 		}
 		if (rows.length === 0) {
-			req.log.warn('No users in database')
-			return res.status(404).send({error: 'No users found'})
+			request.log.warn('No users in database')
+			return reply.status(404).send({error: 'No users found'})
 		}
-		return res.send(rows);
+		return reply.send(rows);
 	})
 }
 
-const getUser = (req, res) => {
-	const { id } = req.params
+const getUser = (request, reply) => {
+	const { id } = request.params
 	db.get('SELECT * from users WHERE id = ?', [id], (err, row) => {
 		if (err) {
-			req.log.error(`Error fetching user: ${err.message}`);
-			return res.status(500).send({ error: 'Database error: ' + err.message });
+			request.log.error(`Error fetching user: ${err.message}`);
+			return reply.status(500).send({ error: 'Database error: ' + err.message });
 		}
 		if (!row) {
-			req.log.warn(`User with id ${id} not found`)
-			return res.status(404).send({error: `User with id ${id} not found`})
+			request.log.warn(`User with id ${id} not found`)
+			return reply.status(404).send({error: `User with id ${id} not found`})
 		}
-		return res.send(row)
+		return reply.send(row)
 	})
 }
 
-const updateUser = (req, res) => {
-	const { id } = req.params
-	const { username } = req.body
-	db.run('UPDATE users SET username = ? WHERE id = ?', [username, id],
-		function(err) {
-			if (err) {
-				req.log.error(`Error updating user: ${err.message}`);
-				return res.status(500).send({ error: 'Database error: ' + err.message });
-			}
-			if (this.changes === 0) {
-				req.log.warn(`User with id ${id} not found`)
-				return res.status(404).send({ error: `User with id ${id} not found` });
-			}
-			req.log.info(`User with ID ${id} updated successfully`);
-			return res.status(200).send({ id: Number(id), username });
-		}
-	)
-}
-
-const registerUser = async (req, res) => {
-	const { username, password } = req.body;
-	req.log.info(`Received registration request: ${username}`);
+const registerUser = async (request, reply) => {
+	const { username, password } = request.body;
+	request.log.info(`Received registration request: ${username}`);
 
 	try {
 		const existingUser = await new Promise((resolve, reject) => {
@@ -62,8 +43,8 @@ const registerUser = async (req, res) => {
 		});
 
 		if (existingUser) {
-			req.log.warn('User with this username already exists');
-			return res.status(400).send({ error: "User with this username already exists" });
+			request.log.warn('User with this username already exists');
+			return reply.status(400).send({ error: "User with this username already exists" });
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
@@ -85,21 +66,21 @@ const registerUser = async (req, res) => {
 			);
 		});
 
-		req.log.info('User registered successfully');
-		return res.status(200).send({
+		request.log.info('User registered successfully');
+		return reply.status(200).send({
 			id: userId,
 			username: newUser.username,
 		});
 
 	} catch (err) {
-		req.log.error(`Error: ${err.message}`);
-		return res.status(500).send({ error: 'Internal server error' });
+		request.log.error(`Error: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
 	}
 };
 
-const loginUser = async (req, reply) => {
-	const { username, password } = req.body;
-	req.log.info(`Received login request from: ${username}`);
+const loginUser = async (request, reply) => {
+	const { username, password } = request.body;
+	request.log.info(`Received login request from: ${username}`);
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get('SELECT id, username, password FROM users WHERE username = ?', [username], (err, user) => {
@@ -110,25 +91,89 @@ const loginUser = async (req, reply) => {
 		});
 
 		if (!user) {
-			req.log.warn('Invalid username or password');
+			request.log.warn('Invalid username or password');
 			return reply.status(400).send({ error: 'Invalid username or password' });
 		}
 
 		const match = await bcrypt.compare(password, user.password);
 		if (!match) {
-			req.log.warn('Password mismatch');
+			request.log.warn('Password mismatch');
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		}
 
 		const token = await reply.jwtSign({ id: user.id, username: user.username });
-		req.log.info(`Generated JWT token for user ${user.username}`);
+		request.log.info(`Generated JWT token for user ${user.username}`);
 
 		return reply.send({ token });
 	} catch (err) {
-		req.log.error(`Error during login: ${err.message}`);
+		request.log.error(`Error during login: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });
 	}
 };
+
+const updateUser = async (request, reply) => {
+	const { currentPassword, newPassword, newUsername } = request.body
+	const userId = request.user.id
+	request.log.info(`Received update credentials request from: ${request.user.username}`);
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT id, username, password FROM users WHERE id = ?', [userId], (err, user) => {
+				if (err)
+					return reject(err);
+				resolve(user);
+			});
+		})
+		
+		if (!user) {
+			request.log.warn('User not found');
+			return reply.status(400).send({ error: 'User not found' });
+		}
+		
+		const match = await bcrypt.compare(currentPassword, user.password);
+		if (!match) {
+			request.log.warn('Password mismatch');
+			return reply.status(401).send({ error: 'Current password is not correct' });
+		}
+
+		if (newPassword) {
+			const hashedPassword = await bcrypt.hash(newPassword, 10);
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId], function (err) {
+					if (err)
+						return reject(err)
+					resolve(this.changes)
+				})
+			})
+		}
+
+		if (newUsername) {
+			const existingUser = await new Promise((resolve, reject) => {
+				db.get('SELECT * FROM users WHERE username = ?', [newUsername], (err, row) => {
+					if (err) return reject(err);
+						resolve(row);
+				});
+			});
+	
+			if (existingUser) {
+				request.log.warn('User with this username already exists');
+				return reply.status(400).send({ error: "User with this username already exists" });
+			}
+
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET username = ? WHERE id = ?', [newUsername, userId], function (err) {
+					if (err)
+						return reject(err)
+					resolve(this.changes)
+				})
+			})
+		}
+		request.log.info(`User with ID ${userId} updated successfully`);
+		return reply.status(200).send({ message: 'User credentials updated successfully'})
+	} catch (err) {
+		request.log.error(`Error updting user credentials: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
 
 const linkGoogleAccount = async (request, reply) => {
 	const { email, google_id } = request.body
@@ -147,12 +192,13 @@ const linkGoogleAccount = async (request, reply) => {
 		}
 		await new Promise((resolve, reject) => {
 			db.run('UPDATE users SET email = ?, google_id = ? WHERE id = ?', [email, google_id, userId], function (err) {
-				if (err) return reject(err);
+				if (err)
+					return reject(err);
 				resolve(this.changes);
 			})
 		})
 		request.log.info('Google account linked successfully')
-		return reply.status(200).send({ messge: 'Google account linked successfully'})
+		return reply.status(200).send({ message: 'Google account linked successfully'})
 	} catch (err) {
 		request.log.error(`Error linking google account: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });
