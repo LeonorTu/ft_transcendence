@@ -181,31 +181,53 @@ function usersRoutes(fastify, options, done) {
 		reply.type('image/svg+xml').send(svg);
 	});
 
-fastify.get('/user/avatar/:id', async (request, reply) => {
-	const userId = request.params.id;
+	fastify.get('/user/avatar/:id', async (request, reply) => {
+		const userId = request.params.id;
 
-	try {
-		const user = await new Promise((resolve, reject) => {
-			db.get('SELECT username FROM users WHERE id = ?', [userId], (err, row) => {
-				if (err) return reject(err);
-					resolve(row);
+		try {
+			const user = await new Promise((resolve, reject) => {
+				db.get('SELECT avatar FROM users WHERE id = ?', [userId], (err, row) => {
+					if (err) return reject(err);
+						resolve(row);
+					});
 				});
-			});
 
-		if (!user) {
-			return reply.status(404).send({ error: 'User not found' });
+			if (!user) {
+				return reply.status(404).send({ error: 'User not found' });
+			}
+
+			const avatar = user.avatar
+			if (avatar.startsWith('http'))
+				return reply.redirect(avatar)
+
+			// const url = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${user.username}`;
+			// const response = await fetch(url);
+			// const svg = await response.text();
+
+			// reply.header('Content-Type', 'image/svg+xml').send(svg);
+		} catch (err) {
+			request.log.error(`Error fetching avatar: ${err.message}`);
+			reply.status(500).send({ error: 'Internal server error' });
 		}
+	});
 
-		const url = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${user.username}`;
-		const response = await fetch(url);
-		const svg = await response.text();
+	fastify.put('/user/update_avatar', async (request, reply) => {
+		const customAvatar = request.body
 
-		reply.header('Content-Type', 'image/svg+xml').send(svg);
-	} catch (err) {
-		request.log.error(`Error fetching avatar: ${err.message}`);
-		reply.status(500).send({ error: 'Internal server error' });
-	}
-});
+		try {
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET avatar = ? WHERE username = ?', [customAvatar, request.user.username], function (err) {
+					if (err)
+						return reject(err)
+					resolve(this.changes)
+				})
+			})
+			return reply.status(200).send({ message: 'Avatar updated successfully'})
+		} catch (err) {
+			request.log.error(`Error updting avatar: ${err.message}`);
+			return reply.status(500).send({ error: 'Internal server error' });
+		}
+	})
 
 	done()
 }

@@ -49,16 +49,18 @@ const registerUser = async (request, reply) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		// console.log(hashedPassword);
+		const defaultAvatar = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`
 
 		const newUser = {
 			username,
 			password: hashedPassword,
+			avatar: defaultAvatar,
 		};
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, password) VALUES (?, ?)',
-				[newUser.username, newUser.password],
+				'INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)',
+				[newUser.username, newUser.password, newUser.avatar],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
