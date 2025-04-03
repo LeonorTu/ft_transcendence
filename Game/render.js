@@ -16,7 +16,7 @@ canvas.setAttribute("width", settings.board_width);
 // settings
 const paddle_height = settings.paddle_height;
 const paddle_width = settings.paddle_width;
-const paddle_margin = settings.paddle_wall_dist;
+const paddle_margin = settings.paddle_to_wall_dist;
 const paddle_start = (canvas.height / 2) - (paddle_height / 2);
 const ball_radius = settings.ball_radius;
 

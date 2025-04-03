@@ -1,10 +1,10 @@
-const board_width= 800;
-const board_height = 600;
-const paddle_height = 100;
-const paddle_width	= 10;
-const paddle_wall_dist = 20; // distance from wall to center of paddle
-const ball_radius = 10;
-const TOTAL_ROUNDS = 2;
+const BOARD_WIDTH= 800;
+const BOARD_HEIGHT = 600;
+const PADDLE_HEIGHT = 100;
+const PADDLE_WIDTH	= 10;
+const PADDLE_TO_WALL_DIST = 20; // distance from wall to center of paddle
+const BALL_RADIUS = 10;
+const TOTAL_ROUNDS = 5;
 const RESET_TIMEOUT_MILLIS = 3000;
 
 const GameState = {
@@ -35,10 +35,10 @@ class Paddle {
 	}
 
 	getSides() {
-		const yTop = this.initial_pos[1] + this.y_offset - paddle_height / 2;
-		const yBot = this.initial_pos[1] + this.y_offset + paddle_height / 2;
-		const xLeft = this.initial_pos[0] - paddle_width / 2;
-		const xRight = this.initial_pos[0] + paddle_width / 2;
+		const yTop = this.initial_pos[1] + this.y_offset - PADDLE_HEIGHT / 2;
+		const yBot = this.initial_pos[1] + this.y_offset + PADDLE_HEIGHT / 2;
+		const xLeft = this.initial_pos[0] - PADDLE_WIDTH / 2;
+		const xRight = this.initial_pos[0] + PADDLE_WIDTH / 2;
 
 		return {
 			"yTop": yTop,
@@ -63,9 +63,9 @@ class Game {
 		this.resetTimer = new Date();
 		this.remainingTimout = 0;
 		this.objects = {
-			ball: {x: board_width/2, y: board_height/2, vx: 2, vy: 1},
-			left_paddle: new Paddle(paddle_wall_dist, board_height / 2),
-			right_paddle: new Paddle(board_width - paddle_wall_dist, board_height / 2)
+			ball: {x: BOARD_WIDTH/2, y: BOARD_HEIGHT/2, vx: 2, vy: 1},
+			left_paddle: new Paddle(PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2),
+			right_paddle: new Paddle(BOARD_WIDTH - PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2)
 		};
 	}
 
@@ -82,12 +82,12 @@ class Game {
 
 	getSettings() {
 		return {
-			"board_width": board_width,
-			"board_height": board_height,
-			"paddle_height": paddle_height,
-			"paddle_width": paddle_width,
-			"paddle_wall_dist": paddle_wall_dist,
-			"ball_radius": ball_radius
+			"board_width": BOARD_WIDTH,
+			"board_height": BOARD_HEIGHT,
+			"paddle_height": PADDLE_HEIGHT,
+			"paddle_width": PADDLE_WIDTH,
+			"paddle_to_wall_dist": PADDLE_TO_WALL_DIST,
+			"ball_radius": BALL_RADIUS
 		}
 	}
 
@@ -95,8 +95,8 @@ class Game {
 		this.objects.left_paddle.y_offset = 0;
 		this.objects.right_paddle.y_offset = 0;
 		// Todo: maybe separate ball function with reset method
-		this.objects.ball.x = board_width / 2;
-		this.objects.ball.y = board_height / 2;
+		this.objects.ball.x = BOARD_WIDTH / 2;
+		this.objects.ball.y = BOARD_HEIGHT / 2;
 		this.objects.ball.vx = 2;
 		this.objects.ball.vy = 1;
 	}
@@ -170,7 +170,7 @@ class Game {
 			}
 		}
 		if (change > 0) {
-			if (sides.yBot + change <= board_height)
+			if (sides.yBot + change <= BOARD_HEIGHT)
 				paddle.y_offset += change;
 		}
 	}
@@ -184,7 +184,7 @@ class Game {
 		// Hit right paddle
 		if (ball.vx > 0) {
 			let dx = rp_sides.xLeft - ball.x;
-			if (dx > 0 && dx <= ball_radius && (ball.y > rp_sides.yTop && ball.y < rp_sides.yBot)) {
+			if (dx > 0 && dx <= BALL_RADIUS && (ball.y > rp_sides.yTop && ball.y < rp_sides.yBot)) {
 				ball.vx = -ball.vx;
 			}
 		}
@@ -192,23 +192,23 @@ class Game {
 		// Hit left paddle
 		if (ball.vx < 0) {
 			let dx = ball.x - lp_sides.xRight;
-			if (dx > 0 && dx <= ball_radius && (ball.y > lp_sides.yTop && ball.y < lp_sides.yBot)) {
+			if (dx > 0 && dx <= BALL_RADIUS && (ball.y > lp_sides.yTop && ball.y < lp_sides.yBot)) {
 				ball.vx = -ball.vx;
 			}
 		}
 
 		// Hit bottom of board
-		if (board_height - ball.y <= ball_radius) {
+		if (BOARD_HEIGHT - ball.y <= BALL_RADIUS) {
 			ball.vy = -ball.vy;
 		}
 		
 		// Hit top of board
-		if (ball.y <= ball_radius) {
+		if (ball.y <= BALL_RADIUS) {
 			ball.vy = -ball.vy;
 		}
 		
 		// Hit right wall
-		if (ball.x >= board_width) {
+		if (ball.x >= BOARD_WIDTH) {
 			this.players.player_1.score += 1;
 			return (true);
 		}
