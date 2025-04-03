@@ -4,6 +4,7 @@ const paddle_height = 100;
 const paddle_width	= 10;
 const paddle_wall_dist = 20; // distance from wall to center of paddle
 const ball_radius = 10;
+const RESET_TIMEOUT_MILLIS = 3000;
 
 const GameState = {
 	NOT_STARTED: "not_started",
@@ -56,6 +57,8 @@ class Game {
 			"player_2": new Player(2)
 		}
 		this.gameState = GameState.NOT_STARTED;
+		this.resetTimer = new Date();
+		this.remainingTimout = 0;
 		this.objects = {
 			ball: {x: board_width/2, y: board_height/2, vx: 2, vy: 1},
 			left_paddle: new Paddle(paddle_wall_dist, board_height / 2),
@@ -68,7 +71,8 @@ class Game {
 			"objects": this.objects,
 			"finished_rounds": this.finished_rounds,
 			"players": this.players,
-			"game_state": this.gameState
+			"game_state": this.gameState,
+			"remaining_timeout": Math.floor(this.remainingTimout / 1000) + 1
 		}
 	}
 
@@ -146,7 +150,10 @@ class Game {
 			});
 				this.players.player_2.inputs = []
 		}
-
+		else if (this.gameState === GameState.RESETTING) {
+				this.players.player_1.inputs = []
+				this.players.player_2.inputs = []
+		}
 	}
 
 	updatePaddle(change, paddle) {
@@ -162,11 +169,6 @@ class Game {
 			if (sides.yBot + change <= board_height)
 				paddle.y_offset += change;
 		}
-	}
-
-	endRound(winner_player) {
-		winner_player.score += 1;
-		this.resetGame()
 	}
 
 	moveBall() {
@@ -203,18 +205,19 @@ class Game {
 		
 		// Hit right wall
 		if (ball.x >= board_width) {
-			this.endRound(this.players.player_1);
-			return;
+			this.players.player_1.score += 1;
+			return (true);
 		}
 		//
 		// Hit left wall
 		if (ball.x <= 0) {
-			this.endRound(this.players.player_2);
-			return;
+			this.players.player_2.score += 1;
+			return (true);
 		}
 
 		ball.x += this.objects.ball.vx;
 		ball.y += this.objects.ball.vy;
+		return (false);
 	}
 
 	refreshGame() {
@@ -228,9 +231,22 @@ class Game {
 			}
 		}
 		else if (this.gameState === GameState.ACTIVE) {
-			this.moveBall();
+			if (this.moveBall()) {
+				this.gameState = GameState.RESETTING;
+				this.resetGame();
+				this.resetTimer = new Date();
+			}
+		}
+		else if (this.gameState === GameState.RESETTING)
+		{
+			const time = new Date()
+			this.remainingTimout = RESET_TIMEOUT_MILLIS - (time.getTime() - this.resetTimer.getTime());
+			if (this.remainingTimout < 0) {
+				this.gameState = GameState.ACTIVE;
+			}
+
 		}
 	}
 }
-		
+
 export {Game}

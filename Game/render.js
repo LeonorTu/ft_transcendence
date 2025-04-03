@@ -104,6 +104,13 @@ function draw_waiting_for_players(players) {
 	
 }
 
+function draw_remainging_timeout(timeout) {
+
+	ctx.font = "40px serif";
+	ctx.textAlign = "center"
+	ctx.fillText(`Resetting in ${timeout}...`, settings.board_width / 2, settings.board_height / 2);
+}
+
 function draw_center_line()
 {
 	ctx.setLineDash([10, 10]);
@@ -130,6 +137,9 @@ function render() {
 		draw_paddle_1(state.objects.left_paddle.y_offset);
 		draw_paddle_2(state.objects.right_paddle.y_offset);
 		draw_ball(state.objects.ball);
+	}
+	else if (state.game_state === "resetting") {
+		draw_remainging_timeout(state.remaining_timeout);
 	}
 }
 
