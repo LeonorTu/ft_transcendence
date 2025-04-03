@@ -4,6 +4,7 @@ const paddle_height = 100;
 const paddle_width	= 10;
 const paddle_wall_dist = 20; // distance from wall to center of paddle
 const ball_radius = 10;
+const TOTAL_ROUNDS = 2;
 const RESET_TIMEOUT_MILLIS = 3000;
 
 const GameState = {
@@ -52,6 +53,8 @@ class Paddle {
 class Game {
 	constructor() {
 		this.finished_rounds = 0;
+		this.total_rounds = TOTAL_ROUNDS;
+		this.winner = null;
 		this.players = {
 			"player_1": new Player(1),
 			"player_2": new Player(2)
@@ -72,6 +75,7 @@ class Game {
 			"finished_rounds": this.finished_rounds,
 			"players": this.players,
 			"game_state": this.gameState,
+			"winner": this.winner,
 			"remaining_timeout": Math.floor(this.remainingTimout / 1000) + 1
 		}
 	}
@@ -232,6 +236,20 @@ class Game {
 		}
 		else if (this.gameState === GameState.ACTIVE) {
 			if (this.moveBall()) {
+				this.finished_rounds += 1;
+				if (this.finished_rounds >= this.total_rounds) {
+					this.gameState = GameState.FINSIHED;
+					if (this.players.player_1.score > this.players.player_2.score) {
+						this.winner = this.players.player_1;
+					}
+					else if (this.players.player_2.score > this.players.player_1.score) {
+						this.winner = this.players.player_2;
+					}
+					else {
+						this.winner = null;
+					}
+					return;
+				}
 				this.gameState = GameState.RESETTING;
 				this.resetGame();
 				this.resetTimer = new Date();
@@ -244,6 +262,9 @@ class Game {
 			if (this.remainingTimout < 0) {
 				this.gameState = GameState.ACTIVE;
 			}
+
+		}
+		else if (this.gameState === GameState.FINSIHED) {
 
 		}
 	}

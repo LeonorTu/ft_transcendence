@@ -104,11 +104,25 @@ function draw_waiting_for_players(players) {
 	
 }
 
-function draw_remainging_timeout(timeout) {
+function draw_remaining_timeout(timeout) {
 
 	ctx.font = "40px serif";
 	ctx.textAlign = "center"
 	ctx.fillText(`Resetting in ${timeout}...`, settings.board_width / 2, settings.board_height / 2);
+}
+
+
+function draw_result(winner) {
+	ctx.font = "40px serif";
+	ctx.textAlign = "center"
+	let text;
+	if (winner == null) {
+		text = "The game is tie"
+	}
+	else {
+		text = `Player ${winner.id} won the game`;
+	}
+	ctx.fillText(text, settings.board_width / 2, settings.board_height / 2);
 }
 
 function draw_center_line()
@@ -139,7 +153,10 @@ function render() {
 		draw_ball(state.objects.ball);
 	}
 	else if (state.game_state === "resetting") {
-		draw_remainging_timeout(state.remaining_timeout);
+		draw_remaining_timeout(state.remaining_timeout);
+	}
+	else if (state.game_state === "finished") {
+		draw_result(state.winner);
 	}
 }
 
