@@ -3,8 +3,8 @@ const path = require('path')
 const fastify = require('fastify')({
 	logger: true,
 	// https: {
-		// key: fs.readFileSync(path.join(__dirname, '../etc/inception/certs', 'ssl.key')), // to uncomment for https
-		// cert: fs.readFileSync(path.join(__dirname, '../etc/inception/certs', 'ssl.crt')) // to uncomment for https
+		// key: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.key')), // to uncomment for https
+		// cert: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.crt')) // to uncomment for https
 	// }
 })
 
