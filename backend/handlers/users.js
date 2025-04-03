@@ -137,6 +137,11 @@ const updateUser = async (request, reply) => {
 			return reply.status(401).send({ error: 'Current password is not correct' });
 		}
 
+		if (request.params.username != request.user.username) {
+			request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
+		}
+
 		if (newPassword) {
 			const hashedPassword = await bcrypt.hash(newPassword, 10);
 			await new Promise((resolve, reject) => {
@@ -191,6 +196,10 @@ const linkGoogleAccount = async (request, reply) => {
 		if (existingGoogleUser) {
 			request.log.warn('This Google account is already linked with another user')
 			return reply.status(400).send({ error: 'This Google account is already linked with another user'})
+		}
+		if (request.params.username != request.user.username) {
+			request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
 		}
 		await new Promise((resolve, reject) => {
 			db.run('UPDATE users SET email = ?, google_id = ? WHERE id = ?', [email, google_id, userId], function (err) {

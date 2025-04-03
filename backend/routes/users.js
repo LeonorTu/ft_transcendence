@@ -1,4 +1,7 @@
 const db = require('../db')
+const fs = require('fs')
+const path = require('path')
+const { pipeline } = require('node:stream/promises')
 
 const {
 	getUsers,
@@ -159,11 +162,11 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.post('/user/login', loginUserSchema)
 	
-	fastify.put('/user/update', updateUserSchema)
+	fastify.put('/user/:username/update', updateUserSchema)
 
-	fastify.put('/user/link_google_account', linkGoogleAccountSchema)
+	fastify.put('/user/:username/link_google_account', linkGoogleAccountSchema)
 
-	fastify.get('/user/avatar',
+	fastify.get('/user/:username/avatar',
 	// {
 		// onRequest: [fastify.authenticate],
 		// schema: {
@@ -181,12 +184,12 @@ function usersRoutes(fastify, options, done) {
 		reply.type('image/svg+xml').send(svg);
 	});
 
-	fastify.get('/user/avatar/:id', async (request, reply) => {
-		const userId = request.params.id;
+	fastify.get('/user/:username/avatar/', async (request, reply) => {
+		const userName = request.params.username;
 
 		try {
 			const user = await new Promise((resolve, reject) => {
-				db.get('SELECT avatar FROM users WHERE id = ?', [userId], (err, row) => {
+				db.get('SELECT avatar FROM users WHERE username = ?', [userName], (err, row) => {
 					if (err) return reject(err);
 						resolve(row);
 					});
@@ -195,36 +198,58 @@ function usersRoutes(fastify, options, done) {
 			if (!user) {
 				return reply.status(404).send({ error: 'User not found' });
 			}
-
 			const avatar = user.avatar
 			if (avatar.startsWith('http'))
 				return reply.redirect(avatar)
-
-			// const url = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${user.username}`;
-			// const response = await fetch(url);
-			// const svg = await response.text();
-
-			// reply.header('Content-Type', 'image/svg+xml').send(svg);
+			else
+				return reply.sendFile(path.basename(avatar), path.dirname(avatar))
 		} catch (err) {
 			request.log.error(`Error fetching avatar: ${err.message}`);
 			reply.status(500).send({ error: 'Internal server error' });
 		}
 	});
 
-	fastify.put('/user/update_avatar', async (request, reply) => {
+/* 	fastify.put('/user/:username/update_avatar', async (request, reply) => {
 		const customAvatar = request.body
 
 		try {
 			await new Promise((resolve, reject) => {
-				db.run('UPDATE users SET avatar = ? WHERE username = ?', [customAvatar, request.user.username], function (err) {
-					if (err)
-						return reject(err)
-					resolve(this.changes)
-				})
+				db.run('UPDATE users SET avatar = ? WHERE username = ?', [customAvatar, request.user.username],
+					(err) => {
+						if (err)
+							return reject(err)
+						resolve()
+					}
+				)
 			})
 			return reply.status(200).send({ message: 'Avatar updated successfully'})
 		} catch (err) {
 			request.log.error(`Error updting avatar: ${err.message}`);
+			return reply.status(500).send({ error: 'Internal server error' });
+		}
+	}) */
+
+	fastify.post('/user/:username/upload_avatar', async (request, reply) => {
+		const data = await request.file()
+		request.log.info(request.params.username)
+		filePath = path.join(__dirname, '../uploads/avatars', `${request.params.username}.png`)
+		request.log.info(filePath)
+		try {
+			await pipeline(data.file, fs.createWriteStream(filePath))
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET avatar = ? WHERE username = ?',
+					[filePath, request.params.username], // when adding auth check to update to request.user.username
+					(err) => {
+						if (err)
+							return reject(err)
+						resolve()
+					}
+				)
+			})
+			request.log.info('avatar uploaded succesfully')
+			return reply.status(200).send({ message: 'avatar uploaded succesfully'})
+		} catch (err) {
+			request.log.error(`Error uploading avatar: ${err.message}`);
 			return reply.status(500).send({ error: 'Internal server error' });
 		}
 	})
@@ -233,3 +258,14 @@ function usersRoutes(fastify, options, done) {
 }
 
 module.exports = usersRoutes
+
+/* 
+curl -X POST http://localhost:8888/user/register \
+                                               -H "Content-Type: application/json" \
+                                               -d '{"username": "aaa", "password": "AAA"}'
+ */
+
+/* 
+curl -X POST http://localhost:8888/user/aaa/upload_avatar \
+                                                  -F "file=@/home/mpellegr/Downloads/spike-2372543_1280.png"
+ */
