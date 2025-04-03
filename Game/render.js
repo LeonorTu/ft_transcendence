@@ -73,10 +73,35 @@ function draw_ball(ball_state) {
 }
 
 function draw_scores(players) {
-	console.log(players);
+	ctx.fillStyle = WHITE;
 	ctx.font = "48px serif";
 	ctx.fillText(players['player_1'].score, settings.board_width / 4, 50);
 	ctx.fillText(players['player_2'].score, settings.board_width * (3/4), 50);
+}
+
+function draw_waiting_for_players(players) {
+	ctx.fillStyle = WHITE;
+	ctx.font = "40px serif";
+	ctx.textAlign = "center"
+	ctx.fillText("Waiting for players", settings.board_width / 2, settings.board_height / 2);
+
+	ctx.font = "20px serif";
+	ctx.fillText("Press UP and DOWN to confirm", settings.board_width / 2, settings.board_height / 2 + 30);
+
+	ctx.font = "30px serif";
+	if (players.player_1.ready) {
+		ctx.fillText("Player 1 READY", settings.board_width / 4, settings.board_height * 0.75);
+	}
+	else {
+		ctx.fillText("Waiting for Player 1", settings.board_width / 4, settings.board_height * 0.75);
+	}
+	if (players.player_2.ready) {
+		ctx.fillText("Player 2 READY", settings.board_width * 0.75, settings.board_height * 0.75);
+	}
+	else {
+		ctx.fillText("Waiting for Player 2", settings.board_width * 0.75, settings.board_height * 0.75);
+	}
+	
 }
 
 function draw_center_line()
@@ -90,28 +115,36 @@ function draw_center_line()
 	ctx.stroke();
 }
 
+
 function render() {
 	state = game.state;
+
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	draw_center_line();
 	draw_scores(state.players);
-	draw_paddle_1(state.objects.left_paddle.y_offset);
-	draw_paddle_2(state.objects.right_paddle.y_offset);
-	draw_ball(state.objects.ball);
+
+	if (state.game_state === "not_started") {
+		draw_waiting_for_players(state.players);
+	}
+	else if (state.game_state === "active") {
+		draw_center_line();
+		draw_paddle_1(state.objects.left_paddle.y_offset);
+		draw_paddle_2(state.objects.right_paddle.y_offset);
+		draw_ball(state.objects.ball);
+	}
 }
 
 function updatePaddles() {
 	if (controls_p1.up == 1 && controls_p1.down == 0) {
-		game.movePaddle1("up");
+		game.inputPlayer1("up");
 	}
 	else if (controls_p1.up == 0 && controls_p1.down == 1) {
-		game.movePaddle1("down");
+		game.inputPlayer1("down");
 	}
 	if (controls_p2.up == 1 && controls_p2.down == 0) {
-		game.movePaddle2("up");
+		game.inputPlayer2("up");
 	}
 	else if (controls_p2.up == 0 && controls_p2.down == 1) {
-		game.movePaddle2("down");
+		game.inputPlayer2("down");
 	}
 }
 

@@ -5,10 +5,23 @@ const paddle_width	= 10;
 const paddle_wall_dist = 20; // distance from wall to center of paddle
 const ball_radius = 10;
 
+const GameState = {
+	NOT_STARTED: "not_started",
+	ACTIVE: "active",
+	RESETTING: "resetting",
+	FINSIHED: "finished"
+}
+
+const Input = {
+	UP: "up",
+	DOWN: "down"
+}
 class Player {
 	constructor(player_id) {
 		this.score = 0;
 		this.id = player_id;
+		this.ready = false;
+		this.inputs = [];
 		//this.socket?
 	}
 }
@@ -34,6 +47,7 @@ class Paddle {
 	}
 };
 
+
 class Game {
 	constructor() {
 		this.finished_rounds = 0;
@@ -41,6 +55,7 @@ class Game {
 			"player_1": new Player(1),
 			"player_2": new Player(2)
 		}
+		this.gameState = GameState.NOT_STARTED;
 		this.objects = {
 			ball: {x: board_width/2, y: board_height/2, vx: 2, vy: 1},
 			left_paddle: new Paddle(paddle_wall_dist, board_height / 2),
@@ -52,7 +67,8 @@ class Game {
 		return {
 			"objects": this.objects,
 			"finished_rounds": this.finished_rounds,
-			"players": this.players
+			"players": this.players,
+			"game_state": this.gameState
 		}
 	}
 
@@ -77,26 +93,60 @@ class Game {
 		this.objects.ball.vy = 1;
 	}
 
-	movePaddle1(dir) {
-		let change = 0;
+	inputPlayer1(dir) {
 		if (dir === "up") {
-			change = -5
+			this.players.player_1.inputs.push(Input.UP);
 		}
 		else if (dir === "down") {
-			change = 5;
+			this.players.player_1.inputs.push(Input.DOWN);
 		}
-		this.updatePaddle(change, this.objects.left_paddle);
 	}
 
-	movePaddle2(dir) {
-		let change = 0;
+	inputPlayer2(dir) {
 		if (dir === "up") {
-			change = -5
+			this.players.player_2.inputs.push(Input.UP);
 		}
 		else if (dir === "down") {
-			change = 5;
+			this.players.player_2.inputs.push(Input.DOWN);
 		}
-		this.updatePaddle(change, this.objects.right_paddle);
+	}
+
+	processInputs() {
+		if (this.gameState === GameState.NOT_STARTED) {
+			if (this.players.player_1.ready == false) {
+				if (this.players.player_1.inputs.includes(Input.UP) &&
+				this.players.player_1.inputs.includes(Input.DOWN)) {
+					this.players.player_1.ready = true;
+				}
+			}
+			if (this.players.player_2.ready == false) {
+				if (this.players.player_2.inputs.includes(Input.UP) &&
+				this.players.player_2.inputs.includes(Input.DOWN)) {
+					this.players.player_2.ready = true;
+				}
+			}
+		}
+		else if(this.gameState === GameState.ACTIVE) {
+			this.players.player_1.inputs.forEach((cmd) => {
+				if (cmd === Input.UP) {
+					this.updatePaddle(-5, this.objects.left_paddle);
+				}
+				else if (cmd === Input.DOWN) {
+					this.updatePaddle(5, this.objects.left_paddle);
+				}
+				this.players.player_1.inputs = []
+			});
+			this.players.player_2.inputs.forEach((cmd) => {
+				if (cmd === Input.UP) {
+					this.updatePaddle(-5, this.objects.right_paddle);
+				}
+				else if (cmd === Input.DOWN) {
+					this.updatePaddle(5, this.objects.right_paddle);
+				}
+			});
+				this.players.player_2.inputs = []
+		}
+
 	}
 
 	updatePaddle(change, paddle) {
@@ -168,7 +218,18 @@ class Game {
 	}
 
 	refreshGame() {
-		this.moveBall();
+		this.processInputs();
+		if (this.gameState === GameState.NOT_STARTED)
+		{
+			if (this.players.player_1.ready && this.players.player_2.ready) {
+				this.gameState = GameState.ACTIVE;
+				this.players.player_1.inputs = [];
+				this.players.player_2.inputs = [];
+			}
+		}
+		else if (this.gameState === GameState.ACTIVE) {
+			this.moveBall();
+		}
 	}
 }
 		
