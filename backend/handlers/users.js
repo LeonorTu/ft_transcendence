@@ -101,7 +101,7 @@ const loginUser = async (request, reply) => {
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		}
 
-		const token = await reply.jwtSign({ id: user.id, username: user.username });
+		const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 		request.log.info(`Generated JWT token for user ${user.username}`);
 
 		return reply.send({ token });
