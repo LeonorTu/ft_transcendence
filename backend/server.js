@@ -47,16 +47,22 @@ fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
 
+module.exports = fastify
+
 const PORT = 8888
 
 const start = async () => {
-	try {
-		await fastify.listen({ port: PORT, host: '0.0.0.0' })
-		console.log(`Server listening on https://localhost:${PORT}`)
-	} catch (error) {
-		fastify.log.error(error)
-		process.exit(1)
-	}
+  try {
+    await fastify.listen({ port: PORT, host: '0.0.0.0' })
+    /* c8 ignore start */
+    console.log(`Server listening on http://localhost:${PORT}`)
+    /* c8 ignore stop */
+  } catch (error) {
+    fastify.log.error(error)
+    process.exit(1)
+  }
 }
 
-start()
+if (require.main == module) {
+	start()
+}
