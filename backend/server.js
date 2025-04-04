@@ -44,7 +44,7 @@ fastify.register(require('@fastify/jwt'), {
 })
 
 fastify.register(require('@fastify/static'), {
-	root: path.join(__dirname, '../uploads/avatars'),
+	root: path.join(__dirname, '/uploads/avatars'),
 	prefix: '/avatars/', // optional: default '/'
 	// constraints: { host: 'example.com' } // optional: default {}
 })

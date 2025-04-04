@@ -15,6 +15,12 @@ RUN npm install
 
 COPY . .
 
+RUN mkdir -p /app/uploads/avatars
+
+RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
+
+VOLUME /app/uploads/avatars
+
 ENV SQLITE_DB_PATH=/data/database.sqlite
 
 EXPOSE 8888

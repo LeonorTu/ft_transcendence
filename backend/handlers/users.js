@@ -1,5 +1,9 @@
 const db = require('../db')
 const bcrypt = require('bcryptjs')
+const fs = require('fs')
+const path = require('path')
+const { pipeline } = require('node:stream/promises')
+const sharp = require('sharp');
 
 const getUsers = (request, reply) => {
 	db.all('SELECT id, username FROM users', [], (err, rows) => {
@@ -49,12 +53,17 @@ const registerUser = async (request, reply) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		// console.log(hashedPassword);
-		const defaultAvatar = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`
+		const avatarResponse = await fetch(`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
+		const svg = await avatarResponse.text()
+		const fileName = `${username}_default.png`
+		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
+		await sharp(Buffer.from(svg))/*.resize(256, 256)*/.png().toFile(filePath)
+		request.log.info('Default avatar downloaded and converted to PNG');
 
 		const newUser = {
 			username,
 			password: hashedPassword,
-			avatar: defaultAvatar,
+			avatar: fileName,
 		};
 
 		const userId = await new Promise((resolve, reject) => {
@@ -216,6 +225,69 @@ const linkGoogleAccount = async (request, reply) => {
 	}
 }
 
+const uploadAvatar = async (request, reply) => {
+	const data = await request.file()
+	const allowedMimeTypes = [ 'image/png', 'image/jpeg' ]
+	try {
+		if (!allowedMimeTypes.includes(data.mimetype))
+			return reply.status(400).send({ error: 'Invalid file format. Only PNG and JPEG are allowed.' })
+
+		if (data.file.bytesRead > 2 * 1024 * 1024)
+			return reply.status(400).send({ error: 'File is too large. Maximum size is 2MB.' })
+
+		const fileName = `${request.user.username}_custom.${data.mimetype.split('/')[1]}`
+		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
+
+		if (request.params.username != request.user.username) {
+			request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
+		}
+
+		// await sharp(data.file).resize(256 ,256).toFile(filePath)
+		await pipeline(
+			data.file,
+			sharp().resize(256, 256),
+			fs.createWriteStream(filePath)
+		)
+		
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET avatar = ? WHERE username = ?',
+				[fileName, request.user.username],
+				(err) => {
+					if (err)
+						return reject(err)
+					resolve()
+				}
+			)
+		})
+		request.log.info('avatar uploaded succesfully')
+		return reply.status(200).send({ message: 'avatar uploaded succesfully'})
+	} catch (err) {
+		request.log.error(`Error uploading avatar: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const getUserAvatar = async (request, reply) => {
+	const userName = request.params.username;
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT avatar FROM users WHERE username = ?', [userName], (err, row) => {
+				if (err) return reject(err);
+					resolve(row);
+				}
+			);
+		});
+		if (!user) {
+			return reply.status(404).send({ error: 'User not found' });
+		}
+		return reply.sendFile(user.avatar)
+	} catch (err) {
+		request.log.error(`Error fetching avatar: ${err.message}`);
+		reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
 module.exports = {
 	getUsers,
 	registerUser,
@@ -223,4 +295,6 @@ module.exports = {
 	updateUser,
 	loginUser,
 	linkGoogleAccount,
+	uploadAvatar,
+	getUserAvatar,
 }

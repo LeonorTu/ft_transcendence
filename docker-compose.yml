@@ -16,6 +16,7 @@ services:
       - "8888:8888"
     volumes:
       - sqlite-data:/data
+      - avatar-uploads:/app/uploads/avatars
     environment:
       - SQLITE_DB_PATH=/data/database.sqlite
       - USER=${USER}
@@ -24,4 +25,6 @@ services:
 
 volumes:
   sqlite-data:
+    driver: local
+  avatar-uploads:
     driver: local
