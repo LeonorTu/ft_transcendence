@@ -1,3 +1,15 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   game.js                                            :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2025/04/04 09:54:11 by pleander          #+#    #+#             //
+//   Updated: 2025/04/04 10:59:40 by pleander         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
 const BOARD_WIDTH= 800;
 const BOARD_HEIGHT = 600;
 const PADDLE_HEIGHT = 100;
@@ -18,13 +30,19 @@ const Input = {
 	UP: "up",
 	DOWN: "down"
 }
+
+const Side = {
+	LEFT: "left",
+	RIGHT: "right"
+}
+
 class Player {
-	constructor(player_id) {
+	constructor(side) {
+		this.id = -1;
 		this.score = 0;
-		this.id = player_id;
 		this.ready = false;
+		this.side = side;
 		this.inputs = [];
-		//this.socket?
 	}
 }
 
@@ -55,10 +73,10 @@ class Game {
 		this.finished_rounds = 0;
 		this.total_rounds = TOTAL_ROUNDS;
 		this.winner = null;
-		this.players = {
-			"player_1": new Player(1),
-			"player_2": new Player(2)
-		}
+		this.connected_players = 0;
+		this.players = [];
+		this.players.push(new Player(Side.LEFT));
+		this.players.push(new Player(Side.RIGHT));
 		this.gameState = GameState.NOT_STARTED;
 		this.resetTimer = new Date();
 		this.remainingTimout = 0;
@@ -91,6 +109,33 @@ class Game {
 		}
 	}
 
+	/**
+	 * Adds the player to the game. Return true of successful and false otherwise.
+	 *
+	 * @param {int} id: Player id
+	 */
+	addPlayer(id, side) {
+		if (!Number.isInteger(id)) {
+			return false;
+		}
+		if (this.players.size < 2) {
+			if (this.getPlayer(id) == null) { // player does not exist yet
+				this.players.push(new Player(id, side));
+			}
+			return true;
+		}
+		return false;
+	}
+
+	getPlayer(id) {
+		for (const p of this.players) {
+			if (p.id == id) {
+				return p;
+			}
+		}
+		return null;
+	}
+
 	resetGame() {
 		this.objects.left_paddle.y_offset = 0;
 		this.objects.right_paddle.y_offset = 0;
@@ -101,62 +146,61 @@ class Game {
 		this.objects.ball.vy = 1;
 	}
 
-	inputPlayer1(dir) {
-		if (dir === "up") {
-			this.players.player_1.inputs.push(Input.UP);
+	acceptPlayerInput(id, input) {
+		const player = this.getPlayer(id);
+		if (!player) {
+			console.log(`Error: unrecognized id ${id}`);
+			return false;
 		}
-		else if (dir === "down") {
-			this.players.player_1.inputs.push(Input.DOWN);
+		if (input === "up") {
+			player.inputs.push(Input.UP);
 		}
-	}
-
-	inputPlayer2(dir) {
-		if (dir === "up") {
-			this.players.player_2.inputs.push(Input.UP);
+		else if (input === "down") {
+			player.inputs.push(Input.DOWN);
 		}
-		else if (dir === "down") {
-			this.players.player_2.inputs.push(Input.DOWN);
+		else {
+			console.log(`Error: unkown input ${input}`)
+			return false;
 		}
+		return true;
 	}
 
 	processInputs() {
 		if (this.gameState === GameState.NOT_STARTED) {
-			if (this.players.player_1.ready == false) {
-				if (this.players.player_1.inputs.includes(Input.UP) &&
-				this.players.player_1.inputs.includes(Input.DOWN)) {
-					this.players.player_1.ready = true;
+			this.players.forEach((player) => {
+				if (player.ready == false) {
+					if (player.inputs.includes(Input.UP) &&
+						player.inputs.includes(Input.DOWN)) {
+						player.ready = true;
+					}
 				}
-			}
-			if (this.players.player_2.ready == false) {
-				if (this.players.player_2.inputs.includes(Input.UP) &&
-				this.players.player_2.inputs.includes(Input.DOWN)) {
-					this.players.player_2.ready = true;
-				}
-			}
+			});
 		}
 		else if(this.gameState === GameState.ACTIVE) {
-			this.players.player_1.inputs.forEach((cmd) => {
-				if (cmd === Input.UP) {
-					this.updatePaddle(-5, this.objects.left_paddle);
-				}
-				else if (cmd === Input.DOWN) {
-					this.updatePaddle(5, this.objects.left_paddle);
-				}
-				this.players.player_1.inputs = []
-			});
-			this.players.player_2.inputs.forEach((cmd) => {
-				if (cmd === Input.UP) {
-					this.updatePaddle(-5, this.objects.right_paddle);
-				}
-				else if (cmd === Input.DOWN) {
-					this.updatePaddle(5, this.objects.right_paddle);
-				}
-			});
-				this.players.player_2.inputs = []
+			this.players.forEach((player) => {
+				player.inputs.forEach((cmd) => {
+					let change = 0;
+					if (cmd === Input.UP) {
+						change = -5;
+					}
+					else if (cmd == Input.DOWN) {
+						change = 5;
+					}
+
+					if (player.side == Side.LEFT) {
+						this.updatePaddle(change, this.objects.left_paddle);
+					}
+					else if (player.side == Side.RIGHT) {
+						this.updatePaddle(change, this.objects.right_paddle);
+					}
+				});
+				player.inputs = []
+				});
 		}
 		else if (this.gameState === GameState.RESETTING) {
-				this.players.player_1.inputs = []
-				this.players.player_2.inputs = []
+				this.players.forEach((player) => {
+					player.inputs = [];
+				});
 		}
 	}
 
@@ -209,13 +253,21 @@ class Game {
 		
 		// Hit right wall
 		if (ball.x >= BOARD_WIDTH) {
-			this.players.player_1.score += 1;
+			this.players.forEach( (player) => {
+				if (player.side === Side.LEFT) {
+					player.score += 1;
+				}
+			});
 			return (true);
 		}
 		//
 		// Hit left wall
 		if (ball.x <= 0) {
-			this.players.player_2.score += 1;
+			this.players.forEach( (player) => {
+				if (player.side === Side.RIGHT) {
+					player.score += 1;
+				}
+			});
 			return (true);
 		}
 
@@ -228,10 +280,11 @@ class Game {
 		this.processInputs();
 		if (this.gameState === GameState.NOT_STARTED)
 		{
-			if (this.players.player_1.ready && this.players.player_2.ready) {
+			if (this.players[0].ready && this.players[1].ready)
+			{
 				this.gameState = GameState.ACTIVE;
-				this.players.player_1.inputs = [];
-				this.players.player_2.inputs = [];
+				this.players[0].inputs = [];
+				this.players[1].inputs = [];
 			}
 		}
 		else if (this.gameState === GameState.ACTIVE) {
@@ -239,11 +292,11 @@ class Game {
 				this.finished_rounds += 1;
 				if (this.finished_rounds >= this.total_rounds) {
 					this.gameState = GameState.FINSIHED;
-					if (this.players.player_1.score > this.players.player_2.score) {
-						this.winner = this.players.player_1;
+					if (this.players[0].score > this.players[1].score) {
+						this.winner = this.players[0];
 					}
-					else if (this.players.player_2.score > this.players.player_1.score) {
-						this.winner = this.players.player_2;
+					else if (this.players[1].score > this.players[0].score) {
+						this.winner = this.players[1];
 					}
 					else {
 						this.winner = null;
@@ -270,4 +323,4 @@ class Game {
 	}
 }
 
-export {Game}
+export {Game, Side, Input}

@@ -1,59 +1,62 @@
-import { Game } from './game.js';
-
+//const USER_ID = 0;
+const queryString = window.location.search;
+console.log(queryString);
+const urlParams = new URLSearchParams(queryString);
+let USER_ID = urlParams.get('id');
+if (typeof(USER_ID) === undefined) USER_ID == 0;
 // colors
 const BLACK = "#000000";
 const WHITE = "#ffffff";
 
-const game = new Game();
-const settings = game.getSettings();
-
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 
-canvas.setAttribute("height", settings.board_height);
-canvas.setAttribute("width", settings.board_width);
+let controls = {up: 0, down: 0};
+const socket = new WebSocket('ws://localhost:8080');
+//const socket = new WebSocket('ws://10.12.5.5:8080');
 
-// settings
-const paddle_height = settings.paddle_height;
-const paddle_width = settings.paddle_width;
-const paddle_margin = settings.paddle_to_wall_dist;
-const paddle_start = (canvas.height / 2) - (paddle_height / 2);
-const ball_radius = settings.ball_radius;
+let paddle_height;
+let paddle_width;
+let paddle_margin;
+let paddle_start;
+let ball_radius;
+let board_width;
+let board_height;
 
-let controls_p1 = {up: 0, down: 0};
-let controls_p2 = {up: 0, down: 0};
+let settings_applied = false;
 
 document.addEventListener('keydown', (e) => {
-	if (e.key === 'w') {
-		controls_p1.up = 1;
-	}
-	else if (e.key === 's') {
-		controls_p1.down = 1;
-	}
-	else if (e.key === 'ArrowUp') {
-		controls_p2.up = 1;
+	if (e.key === 'ArrowUp') {
+		controls.up = 1;
 	}
 	else if (e.key === 'ArrowDown') {
-		controls_p2.down = 1;
+		controls.down = 1;
 	}
 });
 
 document.addEventListener('keyup', (e) => {
-	if (e.key === 'w') {
-		controls_p1.up = 0;
-	}
-	else if (e.key === 's') {
-		controls_p1.down = 0;
-	}
-	else if (e.key === 'ArrowUp') {
-		controls_p2.up = 0;
+	if (e.key === 'ArrowUp') {
+		controls.up = 0;
 	}
 	else if (e.key === 'ArrowDown') {
-		controls_p2.down = 0;
+		controls.down = 0;
 	}
 });
 
-let state = game.state;
+let state = null;
+
+function updateSettings(settings) {
+	canvas.setAttribute("height", settings.board_height);
+	canvas.setAttribute("width", settings.board_width);
+	board_width = settings.board_width;
+	board_height = settings.board_height;
+	paddle_height = settings.paddle_height;
+	paddle_width = settings.paddle_width;
+	paddle_margin = settings.paddle_to_wall_dist;
+	paddle_start = (canvas.height / 2) - (paddle_height / 2);
+	ball_radius = settings.ball_radius;
+	settings_applied = true;
+}
 
 function draw_paddle_1(offset) {
 	ctx.fillStyle = WHITE;
@@ -75,31 +78,31 @@ function draw_ball(ball_state) {
 function draw_scores(players) {
 	ctx.fillStyle = WHITE;
 	ctx.font = "48px serif";
-	ctx.fillText(players['player_1'].score, settings.board_width / 4, 50);
-	ctx.fillText(players['player_2'].score, settings.board_width * (3/4), 50);
+	ctx.fillText(players[0].score, board_width / 4, 50);
+	ctx.fillText(players[1].score, board_width * (3/4), 50);
 }
 
 function draw_waiting_for_players(players) {
 	ctx.fillStyle = WHITE;
 	ctx.font = "40px serif";
 	ctx.textAlign = "center"
-	ctx.fillText("Waiting for players", settings.board_width / 2, settings.board_height / 2);
+	ctx.fillText("Waiting for players", board_width / 2, board_height / 2);
 
 	ctx.font = "20px serif";
-	ctx.fillText("Press UP and DOWN to confirm", settings.board_width / 2, settings.board_height / 2 + 30);
+	ctx.fillText("Press UP and DOWN to confirm", board_width / 2, board_height / 2 + 30);
 
 	ctx.font = "30px serif";
-	if (players.player_1.ready) {
-		ctx.fillText("Player 1 READY", settings.board_width / 4, settings.board_height * 0.75);
+	if (players[0].ready) {
+		ctx.fillText("Player 1 READY", board_width / 4, board_height * 0.75);
 	}
 	else {
-		ctx.fillText("Waiting for Player 1", settings.board_width / 4, settings.board_height * 0.75);
+		ctx.fillText("Waiting for Player 1", board_width / 4, board_height * 0.75);
 	}
-	if (players.player_2.ready) {
-		ctx.fillText("Player 2 READY", settings.board_width * 0.75, settings.board_height * 0.75);
+	if (players[1].ready) {
+		ctx.fillText("Player 2 READY", board_width * 0.75, board_height * 0.75);
 	}
 	else {
-		ctx.fillText("Waiting for Player 2", settings.board_width * 0.75, settings.board_height * 0.75);
+		ctx.fillText("Waiting for Player 2", board_width * 0.75, board_height * 0.75);
 	}
 	
 }
@@ -108,7 +111,7 @@ function draw_remaining_timeout(timeout) {
 
 	ctx.font = "40px serif";
 	ctx.textAlign = "center"
-	ctx.fillText(`Resetting in ${timeout}...`, settings.board_width / 2, settings.board_height / 2);
+	ctx.fillText(`Resetting in ${timeout}...`, board_width / 2, board_height / 2);
 }
 
 
@@ -122,7 +125,7 @@ function draw_result(winner) {
 	else {
 		text = `Player ${winner.id} won the game`;
 	}
-	ctx.fillText(text, settings.board_width / 2, settings.board_height / 2);
+	ctx.fillText(text, board_width / 2, board_height / 2);
 }
 
 function draw_center_line()
@@ -138,11 +141,10 @@ function draw_center_line()
 
 
 function render() {
-	state = game.state;
-
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	draw_scores(state.players);
 
+	//console.log(`Game state is: ${state.game_state}`);
 	if (state.game_state === "not_started") {
 		draw_waiting_for_players(state.players);
 	}
@@ -161,27 +163,48 @@ function render() {
 }
 
 function updatePaddles() {
-	if (controls_p1.up == 1 && controls_p1.down == 0) {
-		game.inputPlayer1("up");
+	if (controls.up == 1 && controls.down == 0) {
+		socket.send(JSON.stringify({type: 'input', payload: {'id': USER_ID, 'input': 'up'}}));
 	}
-	else if (controls_p1.up == 0 && controls_p1.down == 1) {
-		game.inputPlayer1("down");
-	}
-	if (controls_p2.up == 1 && controls_p2.down == 0) {
-		game.inputPlayer2("up");
-	}
-	else if (controls_p2.up == 0 && controls_p2.down == 1) {
-		game.inputPlayer2("down");
+	else if (controls.up == 0 && controls.down == 1) {
+		socket.send(JSON.stringify({type: 'input', payload: {'id': USER_ID, 'input': 'down'}}));
 	}
 }
 
+socket.addEventListener('open', () => {
+	socket.send(JSON.stringify({ type: 'register', payload: {'id': USER_ID, 'input': ''} }));
+});
 
-// Temporary function to refresh game
-function refreshGame() {
-	game.refreshGame();
+socket.addEventListener('message', (event) => {
+	//console.log('Received:', event.data);
+	const {type, payload} = JSON.parse(event.data);
+	if (type === 'settings') {
+		updateSettings(payload);
+	}
+	else if (type === 'state') {
+		state = payload;
+	}
+});
+
+socket.addEventListener('error', (e) => {
+  console.error('WS Error:', e);
+});
+
+socket.addEventListener('close', () => {
+  console.warn('WebSocket closed');
+});
+
+function wait_for_connection() {
+	console.log(`Waiting: settings_applied: ${settings_applied} state: ${state}`);
+	if (settings_applied != false && state != null) {
+		setInterval(updatePaddles, 10);
+		setInterval(render, 10);
+		console.log("Starting");
+	}
+	else {
+		setTimeout(wait_for_connection, 100);
+	}
 }
 
-setInterval(updatePaddles, 10);
-setInterval(render, 10);
-setInterval(refreshGame, 10);
+wait_for_connection();
 
