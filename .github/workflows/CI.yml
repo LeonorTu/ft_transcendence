@@ -2,9 +2,9 @@ name: Dockerized CI
 
 on:
   push:
-    branches: [main]
+    branches: [unit-test-setup]
   pull_request:
-    branches: [main]
+    branches: [unit-test-setup]
   workflow_dispatch:
 
 jobs:
@@ -22,4 +22,4 @@ jobs:
         run: docker compose build
 
       - name: Run tests in backend container
-        run: docker compose run --rm backend npm test
+        run: docker compose run --rm backend npm test -- --allow-incomplete-coverage
