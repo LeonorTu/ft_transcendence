@@ -38,19 +38,25 @@ to create test users:
 
 if you go to localhost:8888/documentation you can see the API endpoints instead
 
+--- 
+
 ## Unit tests
 
-When building more tests it's useful to use docker compose run --rm backend npm test --show-full-coverage to see the full coverage listing.  
+The backend uses TAP for testing. TAP will automatically run every file with "test" in its name as well as everything inside the test directory.
 
-Tap will automatically run every file with test on it and also everything inside the test directory.  
+### Running Unit Tests
+To run all the unit tests, execute: 
 
-To run the unit tests:  
 `docker-compose run --rm backend npm test`  
 
-To see full coverage report:  
+### Viewing Full Coverage Report
+If you want to see a detailed coverage report, run:  
+
 `docker-compose run --rm backend npm test -- --show-full-coverage`  
 
-To avoid tap returning 1 even if all tests would pass but the codebase coverage is not 100%:  
+### Allowing Incomplete coverage
+By default, TAP may return a non-zero exit code if code coverage is not 100%. To allow incomplete coverage and avoid failing the build, use:  
+
 `docker-compose run --rm backend npm test -- --allow-incomplete-coverage`  
 
-`Note: docker compose command can be system specific.`  
+`Note: The docker-compose command may be system specific. Adjust the command accordingly if your setup differs.`  
