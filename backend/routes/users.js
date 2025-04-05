@@ -7,6 +7,7 @@ const {
 	linkGoogleAccount,
 	uploadAvatar,
 	getUserAvatar,
+	removeAvatar,
 } = require('../handlers/users')
 
 const User = {
@@ -184,6 +185,24 @@ function usersRoutes(fastify, options, done) {
 		handler: uploadAvatar
 	}
 
+	const removeAvatarSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' }
+					}
+				},
+				400: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: removeAvatar
+	}
+
 	fastify.get('/users', getUsersSchema)
 
 	fastify.get('/user/:id', getUserSchema)
@@ -198,7 +217,9 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.get('/user/:username/avatar', getUserAvatarSchema)
 
-	fastify.post('/user/:username/upload_avatar', uploadAvatarSchema)
+	fastify.put('/user/:username/upload_avatar', uploadAvatarSchema)
+
+	fastify.put('/user/:username/remove_avatar', removeAvatarSchema)
 
 	done()
 }

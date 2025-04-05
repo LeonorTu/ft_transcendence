@@ -243,10 +243,9 @@ const uploadAvatar = async (request, reply) => {
 			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
 		}
 
-		// await sharp(data.file).resize(256 ,256).toFile(filePath)
 		await pipeline(
 			data.file,
-			sharp().resize(256, 256),
+			sharp().resize(256, 256, { fit: 'inside' }),
 			fs.createWriteStream(filePath)
 		)
 		
@@ -288,6 +287,28 @@ const getUserAvatar = async (request, reply) => {
 	}
 }
 
+const removeAvatar = async (request, reply) => {
+	try {
+		if (request.params.username != request.user.username) {
+			request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
+		}
+		defaultAvatar = `${request.user.username}_default.png`
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET avatar = ? WHERE username = ?', [defaultAvatar, request.user.username], (err) => {
+				if (err)
+					return reject(err)
+				resolve()
+			})
+		})
+		request.log.info('avatar removed succesfully')
+		return reply.status(200).send({ message: 'avatar removed succesfully'})
+	} catch (err) {
+		request.log.error(`Error removing avatar: ${err.message}`);
+		reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
 module.exports = {
 	getUsers,
 	registerUser,
@@ -297,4 +318,5 @@ module.exports = {
 	linkGoogleAccount,
 	uploadAvatar,
 	getUserAvatar,
+	removeAvatar,
 }
