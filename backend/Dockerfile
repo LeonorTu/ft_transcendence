@@ -2,6 +2,8 @@ FROM alpine:latest
 
 RUN apk add --no-cache sqlite npm nodejs openssl
 
+RUN npm install -g nodemon
+
 RUN mkdir -p /etc/transcendence/certs
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 	-keyout /etc/transcendence/certs/ssl.key \

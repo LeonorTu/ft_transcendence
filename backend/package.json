@@ -25,5 +25,10 @@
     "nodemon": "^3.1.9",
     "tap": "^21.1.0"
   },
-  "description": ""
+  "description": "",
+  "watch": ["server.js", "routes/", "handlers/"],
+  "ext": "js,json",
+  "ignore": ["node_modules/"],
+  "exec": "node server.js"
+
 }
