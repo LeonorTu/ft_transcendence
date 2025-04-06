@@ -90,7 +90,7 @@ class Game {
 		this.resetTimer = new Date();
 		this.remainingTimout = 0;
 		this.objects = {
-			ball: {x: BOARD_WIDTH/2, y: BOARD_HEIGHT/2, vx: 0, vy: 0, speed: DEFAULT_BALL_SPEED, start_dir: 1},
+			ball: {x: BOARD_WIDTH/2, y: BOARD_HEIGHT/2, vx: 0, vy: 0, speed: DEFAULT_BALL_SPEED, start_dir: 0},
 			left_paddle: new Paddle(PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2),
 			right_paddle: new Paddle(BOARD_WIDTH - PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2)
 		};
@@ -121,6 +121,14 @@ class Game {
 
 	/** Resets the ball to the center with a random starting direction */
 	resetBall() {
+		if (this.objects.ball.start_dir == 0) {
+			if (Math.random() > 0.5) {
+				this.objects.ball.start_dir = 1;
+			}
+			else {
+				this.objects.ball.start_dir = -1;
+			}
+		}
 		let angle;
 		if (this.objects.ball.start_dir == 1) {
 			angle = getRandom(-0.25 * PI, 0.25 * PI);
