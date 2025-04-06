@@ -323,4 +323,4 @@ class Game {
 	}
 }
 
-export {Game, Side, Input}
+module.exports = {Game, Side, Input}

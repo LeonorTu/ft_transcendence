@@ -12,8 +12,9 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 
 let controls = {up: 0, down: 0};
-const socket = new WebSocket('ws://localhost:8080');
-//const socket = new WebSocket('ws://10.12.5.5:8080');
+const origin = window.location.origin.split(':');
+// Use origin to get server url. Is this safe?
+const socket = new WebSocket(`ws://${origin[1]}:8080`);
 
 let paddle_height;
 let paddle_width;
