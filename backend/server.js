@@ -8,6 +8,7 @@ const fastify = require('fastify')({
 	// }
 })
 
+const fastifyOAuth2 = require('@fastify/oauth2')
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
@@ -46,6 +47,8 @@ fastify.register(require('@fastify/jwt'), {
 fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
+
+fastify.register(require('./routes/google'))
 
 module.exports = fastify
 
