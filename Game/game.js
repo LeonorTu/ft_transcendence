@@ -10,6 +10,8 @@
 //                                                                            //
 // ************************************************************************** //
 
+const PI = 3.14;
+
 const BOARD_WIDTH= 800;
 const BOARD_HEIGHT = 600;
 const PADDLE_HEIGHT = 100;
@@ -18,6 +20,13 @@ const PADDLE_TO_WALL_DIST = 20; // distance from wall to center of paddle
 const BALL_RADIUS = 10;
 const TOTAL_ROUNDS = 5;
 const RESET_TIMEOUT_MILLIS = 3000;
+const DEFAULT_BALL_SPEED = 2;
+
+
+/** Returns random number in range */
+const getRandom = (min, max) => {
+	return Math.random() * (max - min) + min;
+}
 
 const GameState = {
 	NOT_STARTED: "not_started",
@@ -81,10 +90,11 @@ class Game {
 		this.resetTimer = new Date();
 		this.remainingTimout = 0;
 		this.objects = {
-			ball: {x: BOARD_WIDTH/2, y: BOARD_HEIGHT/2, vx: 2, vy: 1},
+			ball: {x: BOARD_WIDTH/2, y: BOARD_HEIGHT/2, vx: 0, vy: 0, speed: DEFAULT_BALL_SPEED, start_dir: 1},
 			left_paddle: new Paddle(PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2),
 			right_paddle: new Paddle(BOARD_WIDTH - PADDLE_TO_WALL_DIST, BOARD_HEIGHT / 2)
 		};
+		this.resetBall();
 	}
 
 	get state() {
@@ -109,6 +119,24 @@ class Game {
 		}
 	}
 
+	/** Resets the ball to the center with a random starting direction */
+	resetBall() {
+		let angle;
+		if (this.objects.ball.start_dir == 1) {
+			angle = getRandom(-0.25 * PI, 0.25 * PI);
+		}
+		else if (this.objects.ball.start_dir == -1) {
+			angle = getRandom(0.75 * PI, 1.25 * PI);
+		}
+		const vx = Math.cos(angle) * DEFAULT_BALL_SPEED;
+		const vy = Math.sin(angle) * DEFAULT_BALL_SPEED;
+		this.objects.ball.x = BOARD_WIDTH / 2;
+		this.objects.ball.y = BOARD_HEIGHT / 2;
+		this.objects.ball.vx = vx;
+		this.objects.ball.vy = vy;
+		this.objects.ball.speed = DEFAULT_BALL_SPEED;
+		this.objects.ball.start_dir = -this.objects.ball.start_dir;
+	}
 	/**
 	 * Adds the player to the game. Return true of successful and false otherwise.
 	 *
@@ -140,10 +168,7 @@ class Game {
 		this.objects.left_paddle.y_offset = 0;
 		this.objects.right_paddle.y_offset = 0;
 		// Todo: maybe separate ball function with reset method
-		this.objects.ball.x = BOARD_WIDTH / 2;
-		this.objects.ball.y = BOARD_HEIGHT / 2;
-		this.objects.ball.vx = 2;
-		this.objects.ball.vy = 1;
+		this.resetBall();
 	}
 
 	acceptPlayerInput(id, input) {
