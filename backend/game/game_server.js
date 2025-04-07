@@ -1,0 +1,110 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   game_server.js                                     :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             //
+//   Updated: 2025/04/04 10:44:27 by pleander         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
+const { Game, Side } = require('./game.js');
+const Websocket = require('ws');
+
+const wss = new Websocket.Server({port: 8080});
+
+const ErrorType = {
+	GAME_DOES_NOT_EXIST_ERROR: 0,
+	PLAYER_IS_NOT_IN_GAME: 1
+
+};
+
+const MessageType = {
+	JOIN: "join",
+	CONTROL_INPUT: "input",
+	SETTINGS: "settings"
+
+};
+
+class Error {
+	constructor(error_type, msg) {
+		this.error_type = error_type;
+		this.msg = msg;
+	}
+};
+
+class GameServer {
+	constructor() {
+		const this.games = new map();
+		const this.socket_to_game = new map();
+		const this.sockets = new set();
+		let this.game_id_counter = 0;
+	}
+
+	createGame(player_id_1, player_id_2) {
+		const id = this.game_id_counter;
+		this.game_id_counter += 1;
+		this.games[id] = new Game(player_id_1, player_id_2);
+		return id;
+	}
+
+	joinGame(player_id, game_id) {
+		if (!this.games.has(game_id)) {
+			throw Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, `Game with id ${game_id} does not exist`);
+		}
+		player = this.games[game_id].getPlayer(player_id);
+		if (!player) {
+			throw Error(ErrorType.PLAYER_IS_NOT_IN_GAME, `Player with id ${id} is not in game ${game_id}`);
+		}
+		player.joined = true;
+	}
+
+	broadcastStates() {
+		this.socketToGame.forEach( (game, socket, _) => {
+			const msg = JSON.stringify({type: 'state', payload: game.state});
+			if (socket.readyState === WebSocket.OPEN) {
+				socket.send(msg);
+			}
+		});
+	}
+
+	refreshGames() {
+		this.games.forEach((id, game, _) => {
+			game.refreshGame();
+		});
+
+	}
+
+	run() {
+		wss.on('connection', (ws) => {
+			this.sockets.add(ws);
+			ws.on('message', (msg) => {
+				const {type, payload} = JSON.parse(msg);
+				if (type === MessageType.JOIN) {
+					joinGame(payload.player_id, payload.game_id);
+					this.socketToGame[ws] = this.games[game_id];
+					ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: this.games[payload.game_id].getSettings()}));
+					console.log(`Player with id ${payload.id} joined game ${payload.game_id}`);
+				}
+				else if (type === MessageType.CONTROL_INPUT) {
+					if (!this.games.has(payload.game_id)) {
+						throw(Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, `Game with id ${game_id} does not exist`));
+					}
+					this.games[game_id].acceptPlayerInput(payload.player_id, payload.player_input);
+				}
+			});
+		});
+	}
+};
+
+const gameServer = new GameServer();
+gameServer.run();
+
+setInterval(gameServer.broadcastStates, 1000 / 30); // 30 FPS
+setInterval( () => {
+	gameServer.refreshGames();
+}, 10);
+
+console.log("Server started");
