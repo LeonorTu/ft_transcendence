@@ -37,10 +37,10 @@ class Error {
 
 class GameServer {
 	constructor() {
-		const this.games = new map();
-		const this.socket_to_game = new map();
-		const this.sockets = new set();
-		let this.game_id_counter = 0;
+		this.games = new Map();
+		this.socket_to_game = new Map();
+		this.sockets = new Set();
+		this.game_id_counter = 0;
 	}
 
 	createGame(player_id_1, player_id_2) {
@@ -62,12 +62,14 @@ class GameServer {
 	}
 
 	broadcastStates() {
-		this.socketToGame.forEach( (game, socket, _) => {
-			const msg = JSON.stringify({type: 'state', payload: game.state});
-			if (socket.readyState === WebSocket.OPEN) {
-				socket.send(msg);
-			}
-		});
+		if (this.socket_to_game) {
+			this.socket_to_game.forEach( (game, socket, _) => {
+				const msg = JSON.stringify({type: 'state', payload: game.state});
+				if (socket.readyState === WebSocket.OPEN) {
+					socket.send(msg);
+				}
+			});
+		}
 	}
 
 	refreshGames() {
@@ -84,7 +86,7 @@ class GameServer {
 				const {type, payload} = JSON.parse(msg);
 				if (type === MessageType.JOIN) {
 					joinGame(payload.player_id, payload.game_id);
-					this.socketToGame[ws] = this.games[game_id];
+					this.socket_to_game[ws] = this.games[game_id];
 					ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: this.games[payload.game_id].getSettings()}));
 					console.log(`Player with id ${payload.id} joined game ${payload.game_id}`);
 				}
@@ -102,9 +104,9 @@ class GameServer {
 const gameServer = new GameServer();
 gameServer.run();
 
-setInterval(gameServer.broadcastStates, 1000 / 30); // 30 FPS
 setInterval( () => {
 	gameServer.refreshGames();
 }, 10);
+setInterval(gameServer.broadcastStates, 1000 / 30); // 30 FPS
 
 console.log("Server started");
