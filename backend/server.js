@@ -10,6 +10,15 @@ const fastify = require('fastify')({
 
 const fastifyOAuth2 = require('@fastify/oauth2')
 
+require('dotenv').config();
+// Check credential works
+try {
+	require('dotenv').config();
+	console.log("Environment loaded. GOOGLE_CLIENT_ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+  } catch (error) {
+	console.error("Error loading dotenv:", error.message);
+  }
+
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
 		securityDefinitions: {

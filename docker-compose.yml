@@ -21,6 +21,8 @@ services:
     environment:
       - SQLITE_DB_PATH=/data/database.sqlite
       - USER=${USER}
+    env_file:
+      - .env
     depends_on:
       - sqlite
 
