@@ -68,8 +68,8 @@ const registerUser = async (request, reply) => {
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)',
-				[newUser.username, newUser.password, newUser.avatar],
+				'INSERT INTO users (username, password, avatar, online_status) VALUES (?, ?, ?, ?)',
+				[newUser.username, newUser.password, newUser.avatar, 'offline'],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
@@ -309,6 +309,29 @@ const removeAvatar = async (request, reply) => {
 	}
 }
 
+const addFriend = async (request, reply) => {
+	const { user_id, friend_id } = request.body
+	try{
+		if (user_id === friend_id)
+			return reply.status(400).send({ error: "Can't add youself as friend" })
+		await new Promise ((resolve, reject) => {
+			db.run('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)', [user_id, friend_id], (err) => {
+				if (err)
+					return reject(err)
+				resolve ()
+			})
+		})
+		return reply.status(200).send({ message: 'Friend added!' });
+	} catch (err) {
+		if (err.message.includes('FOREIGN KEY constraint failed'))
+			return reply.status(400).send({ error: 'User or friend not found' });
+		if (err.message.includes('UNIQUE constraint failed'))
+			return reply.status(409).send({ error: 'You are already friends with this user' });
+		request.log.error(`Error adding friend: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
 module.exports = {
 	getUsers,
 	registerUser,
@@ -319,4 +342,5 @@ module.exports = {
 	uploadAvatar,
 	getUserAvatar,
 	removeAvatar,
+	addFriend,
 }

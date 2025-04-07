@@ -1,3 +1,5 @@
+const db = require('../db')
+
 const {
 	getUsers,
 	registerUser,
@@ -8,6 +10,7 @@ const {
 	uploadAvatar,
 	getUserAvatar,
 	removeAvatar,
+	addFriend,
 } = require('../handlers/users')
 
 const User = {
@@ -203,6 +206,28 @@ function usersRoutes(fastify, options, done) {
 		handler: removeAvatar
 	}
 
+	const addFriendSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					user_id: { type: 'integer' },
+					friend_id: { type: 'integer' },
+				},
+				required: [ 'user_id', 'friend_id' ],
+			},
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				409: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: addFriend
+	}
+
 	fastify.get('/users', getUsersSchema)
 
 	fastify.get('/user/:id', getUserSchema)
@@ -220,6 +245,8 @@ function usersRoutes(fastify, options, done) {
 	fastify.put('/user/:username/upload_avatar', uploadAvatarSchema)
 
 	fastify.put('/user/:username/remove_avatar', removeAvatarSchema)
+
+	fastify.post('/add_friend', addFriendSchema)
 
 	done()
 }
