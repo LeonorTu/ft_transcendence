@@ -20,7 +20,7 @@ const PADDLE_TO_WALL_DIST = 20; // distance from wall to center of paddle
 const BALL_RADIUS = 10;
 const TOTAL_ROUNDS = 5;
 const RESET_TIMEOUT_MILLIS = 3000;
-const DEFAULT_BALL_SPEED = 2;
+const DEFAULT_BALL_SPEED = 3;
 
 
 /** Returns random number in range */
@@ -59,6 +59,10 @@ class Paddle {
 	constructor(x_init, y_init) {
 		this.y_offset = 0;
 		this.initial_pos = [x_init, y_init]; // center of rect block
+	}
+
+	get yCenter () {
+		return (this.initial_pos[1] + this.y_offset);
 	}
 
 	getSides() {
@@ -257,12 +261,16 @@ class Game {
 
 		const lp_sides = this.objects.left_paddle.getSides();
 		const rp_sides = this.objects.right_paddle.getSides();
+		const max_bounce_angle = 0.45 * PI;
 		
 		// Hit right paddle
 		if (ball.vx > 0) {
 			let dx = rp_sides.xLeft - ball.x;
 			if (dx > 0 && dx <= BALL_RADIUS && (ball.y > rp_sides.yTop && ball.y < rp_sides.yBot)) {
-				ball.vx = -ball.vx;
+				const dy = ball.y - this.objects.right_paddle.yCenter;
+				const angle = -dy / (PADDLE_HEIGHT / 2) * max_bounce_angle;
+				ball.vx = Math.cos(angle + PI) * this.objects.ball.speed;
+				ball.vy = Math.sin(angle + PI) * this.objects.ball.speed;
 			}
 		}
 
@@ -270,7 +278,10 @@ class Game {
 		if (ball.vx < 0) {
 			let dx = ball.x - lp_sides.xRight;
 			if (dx > 0 && dx <= BALL_RADIUS && (ball.y > lp_sides.yTop && ball.y < lp_sides.yBot)) {
-				ball.vx = -ball.vx;
+				const dy = ball.y - this.objects.left_paddle.yCenter;
+				const angle = dy / (PADDLE_HEIGHT / 2) * max_bounce_angle;
+				ball.vx = Math.cos(angle) * this.objects.ball.speed;
+				ball.vy = Math.sin(angle) * this.objects.ball.speed;
 			}
 		}
 
