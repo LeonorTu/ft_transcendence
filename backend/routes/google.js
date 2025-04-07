@@ -24,7 +24,43 @@ function googleRoutes(fastify, options, done) {
   // Callback route
   fastify.get('/oauth2/google/callback', googleOAuthHandler)
   
-  done()
+  // Add a route for the root path with access_token
+  fastify.get('/', async (request, reply) => {
+    const { access_token, error } = request.query;
+    
+    if (error) {
+      // Handle authentication errors
+      return reply.send({ 
+        message: 'Authentication failed', 
+        error: error 
+      });
+    }
+    
+    if (access_token) {
+      // Handle successful authentication
+      try {
+        // You can verify the token if needed
+        const decoded = fastify.jwt.verify(access_token);
+        return reply.send({ 
+          message: 'Authentication successful',
+          user: {
+            id: decoded.id,
+            email: decoded.email
+          }
+        });
+      } catch (err) {
+        return reply.send({ 
+          message: 'Invalid token', 
+          error: err.message 
+        });
+      }
+    }
+    
+    // Regular homepage
+    return reply.send({ message: 'Welcome to the homepage' });
+  });
+  
+  done();
 }
 
 module.exports = googleRoutes
