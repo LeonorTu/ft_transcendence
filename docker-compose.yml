@@ -17,6 +17,7 @@ services:
     volumes:
       - sqlite-data:/data
       - ./backend:/app:rw
+      - /app/node_modules
     environment:
       - SQLITE_DB_PATH=/data/database.sqlite
       - USER=${USER}
