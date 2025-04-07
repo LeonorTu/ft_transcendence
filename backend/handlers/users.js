@@ -57,7 +57,7 @@ const registerUser = async (request, reply) => {
 		const svg = await avatarResponse.text()
 		const fileName = `${username}_default.png`
 		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
-		await sharp(Buffer.from(svg))/*.resize(256, 256)*/.png().toFile(filePath)
+		await sharp(Buffer.from(svg)).resize(256, 256).png().toFile(filePath)
 		request.log.info('Default avatar downloaded and converted to PNG');
 
 		const newUser = {
