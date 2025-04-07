@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { ThemeProvider } from 'styled-components'
-import { Link, Outlet } from 'react-router-dom'
-import styled from 'styled-components'
+import { useState } from 'react';
+import { ThemeProvider } from 'styled-components';
+import { Link, Outlet } from 'react-router-dom';
+import styled from 'styled-components';
 
 const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
-`
+`;
 
 const Drawer = styled.aside<{ $isOpen: boolean }>`
   width: 250px;
@@ -20,45 +20,56 @@ const Drawer = styled.aside<{ $isOpen: boolean }>`
   z-index: 5;
   display: flex;
   flex-direction: column;
-`
+`;
 
 const NavContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-`
+`;
 
 const NavList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 60px 0 0;
-`
+`;
 
 const NavItem = styled.li`
   padding: 0;
-`
+  margin-bottom: 1rem;
+`;
+
+const DrawerTitle = styled.div`
+  font-family: 'Press Start 2P', cursive; /* Pixel font */
+  font-size: 42px; /* Large font size for the title */
+  color: #fff; /* White text color */
+  text-align: center; /* Center the title */
+  margin-top: 2rem;
+`;
 
 const NavLink = styled(Link)`
   padding: 1rem 1.5rem;
   display: block;
   color: #fff;
   text-decoration: none;
-  font-family: 'Courier New', Courier, monospace; /* Monospace font */
-  font-size: 18px; /* Adjust size as needed */
-  letter-spacing: 2px; /* Add spacing between letters for blocky look */
-  text-transform: uppercase; /* Make text uppercase */
+  font-family: 'Press Start 2P', cursive; /* Pixel font */
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a2a2a;
+    background-color: #fff; /* Change background to white */
+    color: #000; /* Change font color to black */
   }
-`
+`;
+
 const DrawerFooter = styled.div`
   position: absolute;
   bottom: 0;
   width: 100%;
   padding: 1rem 0;
   border-top: 1px solid #333;
-`
+`;
 
 const LogoutButton = styled.button`
   width: 100%;
@@ -67,8 +78,8 @@ const LogoutButton = styled.button`
   border: none;
   color: #ff4757;
   text-align: left;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 18px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
@@ -77,38 +88,40 @@ const LogoutButton = styled.button`
   align-items: center;
 
   &:hover {
-    background-color: #2a2a2a;
+    background-color: #fff; /* Change background to white */
+    color: #000; /* Change font color to black */
   }
-`
+`;
+
 const Content = styled.main`
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
   transition: margin-left 0.3s ease;
   width: 100%;
-`
+`;
 
 const ToggleButton = styled.button`
   position: fixed;
   top: 10px;
   left: 10px;
   z-index: 10;
-  background: #646cff;
+  background: #69696b;
   border: none;
   color: white;
   width: 40px;
   height: 40px;
   border-radius: 4px;
   cursor: pointer;
-`
+`;
 
 const Layout = () => {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleLogout = () => {
     // Add logout later
-    console.log('Logging out...')
-  }
+    console.log('Logging out...');
+  };
 
   return (
     <ThemeProvider theme={{ isOpen }}>
@@ -118,6 +131,7 @@ const Layout = () => {
         </ToggleButton>
 
         <Drawer $isOpen={isOpen}>
+          <DrawerTitle>Pong</DrawerTitle>
           <NavContainer>
             <NavList>
               <NavItem>
@@ -145,7 +159,7 @@ const Layout = () => {
         </Content>
       </LayoutContainer>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default Layout
+export default Layout;
