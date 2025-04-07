@@ -17,7 +17,7 @@ function googleRoutes(fastify, options, done) {
       }
     },
     scope: ['profile', 'email'],
-    startRedirectPath: '/oauth2/google',
+    startRedirectPath: '/oauth2/google/',
     callbackUri: 'http://localhost:8888/oauth2/google/callback'
   })
 

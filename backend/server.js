@@ -3,8 +3,8 @@ const path = require('path')
 const fastify = require('fastify')({
 	logger: true,
 	// https: {
-		// key: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.key')), // to uncomment for https
-		// cert: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.crt')) // to uncomment for https
+	// 	key: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.key')), // to uncomment for https
+	// 	cert: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.crt')) // to uncomment for https
 	// }
 })
 
@@ -15,6 +15,7 @@ require('dotenv').config();
 try {
 	require('dotenv').config();
 	console.log("Environment loaded. GOOGLE_CLIENT_ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+	console.log(process.env.GOOGLE_CLIENT_ID)
   } catch (error) {
 	console.error("Error loading dotenv:", error.message);
   }

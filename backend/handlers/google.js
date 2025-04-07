@@ -13,6 +13,11 @@ const googleOAuthHandler = async function(request, reply) {
     if (!userInfoResponse.ok) {
       throw new Error('Failed to fetch user info from Google');
     }
+
+	if (userInfoResponse.ok) {
+		console.log("User info adquired corectly")
+	}
+    
     
     const googleUser = await userInfoResponse.json();
     
