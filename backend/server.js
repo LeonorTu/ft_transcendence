@@ -47,6 +47,8 @@ fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
 
+fastify.register(require('./routes/match'))
+
 fastify.register(require('./routes/tournament'))
 
 module.exports = fastify
