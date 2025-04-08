@@ -24,8 +24,8 @@ const ErrorType = {
 const MessageType = {
 	JOIN: "join",
 	CONTROL_INPUT: "input",
-	SETTINGS: "settings"
-
+	SETTINGS: "settings",
+	STATE: "state"
 };
 
 class Error {
@@ -52,11 +52,11 @@ class GameServer {
 
 	joinGame(player_id, game_id) {
 		if (!this.games.has(game_id)) {
-			throw Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, `Game with id ${game_id} does not exist`);
+			throw new Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, `Game with id ${game_id} does not exist`);
 		}
 		player = this.games[game_id].getPlayer(player_id);
 		if (!player) {
-			throw Error(ErrorType.PLAYER_IS_NOT_IN_GAME, `Player with id ${id} is not in game ${game_id}`);
+			throw new Error(ErrorType.PLAYER_IS_NOT_IN_GAME, `Player with id ${id} is not in game ${game_id}`);
 		}
 		player.joined = true;
 	}
@@ -64,7 +64,7 @@ class GameServer {
 	broadcastStates() {
 		if (this.socket_to_game) {
 			this.socket_to_game.forEach( (game, socket, _) => {
-				const msg = JSON.stringify({type: 'state', payload: game.state});
+				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
 				if (socket.readyState === WebSocket.OPEN) {
 					socket.send(msg);
 				}
@@ -80,33 +80,40 @@ class GameServer {
 	}
 
 	run() {
-		wss.on('connection', (ws) => {
-			this.sockets.add(ws);
-			ws.on('message', (msg) => {
-				const {type, payload} = JSON.parse(msg);
-				if (type === MessageType.JOIN) {
-					joinGame(payload.player_id, payload.game_id);
-					this.socket_to_game[ws] = this.games[game_id];
-					ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: this.games[payload.game_id].getSettings()}));
-					console.log(`Player with id ${payload.id} joined game ${payload.game_id}`);
-				}
-				else if (type === MessageType.CONTROL_INPUT) {
-					if (!this.games.has(payload.game_id)) {
-						throw(Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, `Game with id ${game_id} does not exist`));
+		try {
+			wss.on('connection', (ws) => {
+				this.sockets.add(ws);
+				ws.on('message', (msg) => {
+					const {type, payload} = JSON.parse(msg);
+					if (type === MessageType.JOIN) {
+						this.joinGame(payload.player_id, payload.game_id);
+						this.socket_to_game[ws] = this.games[game_id];
+						ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: this.games[payload.game_id].getSettings()}));
+						console.log(`Player with id ${payload.id} joined game ${payload.game_id}`);
 					}
-					this.games[game_id].acceptPlayerInput(payload.player_id, payload.player_input);
-				}
+					else if (type === MessageType.CONTROL_INPUT) {
+						if (!this.socket_to_game.has(ws)) {
+							throw new Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, "The client has not joined any games");
+						}
+						this.socket_to_game[ws].acceptPlayerInput(payload.player_id, payload.player_input);
+					}
+				});
 			});
-		});
+		}
+		catch (e) {
+			console.error(e.msg);
+		}
 	}
 };
 
-const gameServer = new GameServer();
-gameServer.run();
+//const gameServer = new GameServer();
+//gameServer.run();
 
-setInterval( () => {
-	gameServer.refreshGames();
-}, 10);
-setInterval(gameServer.broadcastStates, 1000 / 30); // 30 FPS
+// setInterval( () => {
+// 	gameServer.refreshGames();
+// }, 10);
+// setInterval(gameServer.broadcastStates, 1000 / 30); // 30 FPS
 
-console.log("Server started");
+//console.log("Server started");
+
+module.exports = { GameServer };
