@@ -21,9 +21,9 @@ RUN npm install --save-dev proxyquire
 
 COPY . .
 
-RUN mkdir -p /app/uploads/avatars
+#RUN mkdir -p /app/uploads/avatars
 
-RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
+#RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
 
 VOLUME /app/uploads/avatars
 
