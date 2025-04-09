@@ -1,8 +1,14 @@
-//const USER_ID = 0;
+const MessageType = {
+	JOIN: "join",
+	CONTROL_INPUT: "input",
+	SETTINGS: "settings",
+	STATE: "state"
+};
+
 const queryString = window.location.search;
-console.log(queryString);
 const urlParams = new URLSearchParams(queryString);
-let USER_ID = urlParams.get('id');
+const USER_ID = urlParams.get('player_id');
+const GAME_ID = urlParams.get('game_id');
 if (typeof(USER_ID) === undefined) USER_ID == 0;
 // colors
 const BLACK = "#000000";
@@ -165,24 +171,29 @@ function render() {
 
 function updatePaddles() {
 	if (controls.up == 1 && controls.down == 0) {
-		socket.send(JSON.stringify({type: 'input', payload: {'id': USER_ID, 'input': 'up'}}));
+		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'player_id': USER_ID, 'input': 'up'}}));
 	}
 	else if (controls.up == 0 && controls.down == 1) {
-		socket.send(JSON.stringify({type: 'input', payload: {'id': USER_ID, 'input': 'down'}}));
+		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'player_id': USER_ID, 'input': 'down'}}));
 	}
 }
 
 socket.addEventListener('open', () => {
-	socket.send(JSON.stringify({ type: 'register', payload: {'id': USER_ID, 'input': ''} }));
+	socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
+		'player_id': USER_ID,
+		'game_id': GAME_ID,
+		}
+	}));
 });
 
 socket.addEventListener('message', (event) => {
 	//console.log('Received:', event.data);
 	const {type, payload} = JSON.parse(event.data);
-	if (type === 'settings') {
+	if (type === MessageType.SETTINGS) {
 		updateSettings(payload);
 	}
-	else if (type === 'state') {
+	else if (type === MessageType.STATE) {
+		console.log("Got state:", payload);
 		state = payload;
 	}
 });

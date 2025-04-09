@@ -1,6 +1,7 @@
 const { GameServer } = require('../game/game_server')
 
 const game_server = new GameServer();
+game_server.run();
 
 const createNewGame = (request, reply) => {
 	const { player1_id, player2_id } = request.body;
