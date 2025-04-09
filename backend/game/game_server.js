@@ -46,7 +46,7 @@ class GameServer {
 	createGame(player_id_1, player_id_2) {
 		const id = this.game_id_counter;
 		this.game_id_counter += 1;
-		this.games[id] = new Game(player_id_1, player_id_2);
+		this.games.set(id, new Game(player_id_1, player_id_2));
 		return id;
 	}
 
