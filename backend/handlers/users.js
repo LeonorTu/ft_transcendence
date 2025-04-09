@@ -53,12 +53,20 @@ const registerUser = async (request, reply) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		// console.log(hashedPassword);
-		const avatarResponse = await fetch(`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
-		const svg = await avatarResponse.text()
-		const fileName = `${username}_default.png`
-		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
-		await sharp(Buffer.from(svg)).resize(256, 256).png().toFile(filePath)
-		request.log.info('Default avatar downloaded and converted to PNG');
+		let fileName
+		try {
+			const avatarResponse = await fetch(`https://aapi.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
+			if (!avatarResponse.ok)
+				throw new Error('External avatar API returned an error')
+			const svg = await avatarResponse.text()
+			fileName = `${username}_default.png`
+			const filePath = path.join(__dirname, '../uploads/avatars', fileName)
+			await sharp(Buffer.from(svg)).resize(256, 256).png().toFile(filePath)
+			request.log.info('Default avatar downloaded and converted to PNG');
+		} catch (avatarError) {
+			request.log.error(`Avatar generation failed: ${avatarError.message}. Using fallback avatar.`)
+			fileName = 'fallback.jpeg'
+		}
 
 		const newUser = {
 			username,

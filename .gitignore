@@ -31,5 +31,3 @@ Thumbs.db
 # Optional: ignore local database files
 *.sqlite
 *.sqlite3
-
-*.png

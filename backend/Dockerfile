@@ -2,6 +2,8 @@ FROM alpine:latest
 
 RUN apk add --no-cache sqlite npm nodejs openssl
 
+RUN npm install -g nodemon
+
 RUN mkdir -p /etc/transcendence/certs
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 	-keyout /etc/transcendence/certs/ssl.key \
@@ -19,9 +21,9 @@ RUN npm install --save-dev proxyquire
 
 COPY . .
 
-RUN mkdir -p /app/uploads/avatars
+#RUN mkdir -p /app/uploads/avatars
 
-RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
+#RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
 
 VOLUME /app/uploads/avatars
 
