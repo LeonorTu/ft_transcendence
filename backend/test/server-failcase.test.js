@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/03 01:56:01 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/04 14:30:34 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/09 17:27:19 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -14,10 +14,10 @@ const t = require('tap');
 const { spawn } = require('child_process');
 const net = require('net');
 
-/**
- * Test 1: server.js fails to bind port - Triggers catch block.
- * This test occupies port 8888 to force a port bind failure when server.js is spawned.
- */
+
+// Test 1: server.js fails to bind port - Triggers catch block.
+// This test occupies port 8888 to force a port bind failure when server.js is spawned.
+
 t.test('server.js fails to bind port -> triggers catch block', t => {
 	// Occupy port 8888 so the second server can’t bind.
 	const dummyServer = net.createServer();
