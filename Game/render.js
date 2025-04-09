@@ -20,7 +20,7 @@ const ctx = canvas.getContext("2d");
 let controls = {up: 0, down: 0};
 const origin = window.location.origin.split(':');
 // Use origin to get server url. Is this safe?
-const socket = new WebSocket(`ws://${origin[1]}:8080`);
+const socket = new WebSocket(`ws://${origin[1]}:9000`);
 
 let paddle_height;
 let paddle_width;
@@ -219,4 +219,3 @@ function wait_for_connection() {
 }
 
 wait_for_connection();
-

@@ -13,7 +13,7 @@
 const { Game, Side } = require('./game.js');
 const Websocket = require('ws');
 
-const wss = new Websocket.Server({port: 8080});
+const wss = new Websocket.Server({port: 9000});
 
 const ErrorType = {
 	GAME_DOES_NOT_EXIST_ERROR: 0,
