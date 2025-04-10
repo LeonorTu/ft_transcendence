@@ -248,6 +248,35 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.post('/add_friend', addFriendSchema)
 
+	fastify.put('/update_online/status/:username', async(request, reply) => {
+		const username = request.params.username
+		const status = request.body
+		try {
+			const userId = await new Promise((resolve, reject) => {
+				db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+					if (err)
+						return reject(err)
+					if (!row) {
+						request.log.warn(`User not found`)
+						return reply.status(404).send({error: `User not found`})
+					}
+					resolve(row.id)
+				})
+			})
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET online_status = ? WHERE username = ?', [status, username], (err) => {
+					if (err)
+						return reject(err)
+					resolve()
+				})
+			})
+			return reply.status(200).send({ message: 'online status updated succesfully'})
+		} catch (err) {
+			request.log.error(`Error updating user online tatus: ${err.message}`);
+			return reply.status(500).send({ error: 'Internal server error' });
+		}
+	})
+
 	done()
 }
 
