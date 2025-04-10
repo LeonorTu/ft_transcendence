@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server",
-    "dev": "nodemon server",
-    "test": "tap"
+    "start": "NODE_ENV=prod node server",
+    "dev": "NODE_ENV=dev nodemon server",
+    "test": "NODE_ENV=test tap"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,7 @@
 //   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/10 11:29:57 by pleander          #+#    #+#             //
-//   Updated: 2025/04/10 11:59:08 by pleander         ###   ########.fr       //
+//   Updated: 2025/04/10 15:16:18 by pleander         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -16,7 +16,7 @@ const fastify = require('../server');
 // TEST 1: Create a new game
 let gameId;
 
-t.test('Test 1: POST /game/new - creates a new game'), async t => {
+t.test('Test 1: POST /game/new - creates a new game', async t => {
 	const payload = {player1_id: '1', player2_id: '2'};
 
 	const res = await fastify.inject({
@@ -29,4 +29,14 @@ t.test('Test 1: POST /game/new - creates a new game'), async t => {
 	const body = JSON.parse(res.payload);
 	t.ok(body.game_id, 'Response includes a game_id');
 	gameId = body.game_id;
-}
+	t.end();
+});
+
+t.teardown(async () => {
+	try {
+		await fastify.close();
+	} catch (err) {
+		console.error('Teardown error: ', err);
+		throw err;
+	}
+});

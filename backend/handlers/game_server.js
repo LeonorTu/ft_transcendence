@@ -1,8 +1,11 @@
-const fastify = require('../server')
 const { GameServer, MessageType } = require('../game/game_server')
 
 const game_server = new GameServer();
-game_server.setupIntervals();
+
+// Don't run the server async processes or they break the tests
+if (process.env.NODE_ENV !== 'test') {
+	game_server.setupIntervals();
+}
 
 const runServer = (ws, req) => {
 	ws.on('message', (msg) => {
@@ -67,4 +70,4 @@ const getGame = (request, reply) => {
 	return reply.send(JSON.stringify(gameObj));
 };
 
-module.exports = { runServer, createNewGame, listGames, getGame }
+module.exports = { runServer, createNewGame, listGames, getGame, game_server }

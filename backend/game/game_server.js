@@ -6,7 +6,7 @@
 //   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             //
-//   Updated: 2025/04/04 10:44:27 by pleander         ###   ########.fr       //
+//   Updated: 2025/04/10 14:54:36 by pleander         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -38,6 +38,7 @@ class GameServer {
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
 		this.game_id_counter = 0;
+		this.intervals = [];
 	}
 
 	createGame(player_id_1, player_id_2) {
@@ -79,8 +80,23 @@ class GameServer {
 	}
 
 	setupIntervals() {
-		setInterval(() => this.refreshGames(), 10);
-		setInterval(() => this.broadcastStates(), 1000 / 30); // 30 FPS
+		this.intervals.push(
+			setInterval(() => this.refreshGames(), 10)
+		);
+		this.intervals.push(
+			setInterval(() => this.broadcastStates(), 1000 / 30)
+		); // 30 FPS
+	}
+
+	clearIntervals() {
+		for (const id of this.intervals) {
+			clearInterval(id);
+		}
+		this.intervals = [];
+	}
+
+	stop() {
+		this.clearIntervals();
 	}
 }
 
