@@ -4,7 +4,7 @@ const googleOAuthHandler = async function(request, reply) {
   try {
     // Exchange the authorization code for tokens
     const { token } = await this.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
-    
+
     // Use the access token to get user profile
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${token.access_token}` }
@@ -14,16 +14,11 @@ const googleOAuthHandler = async function(request, reply) {
       throw new Error('Failed to fetch user info from Google');
     }
 
-	if (userInfoResponse.ok) {
-		console.log("User info adquired corectly")
-	}
-    
-    
     const googleUser = await userInfoResponse.json();
     
-    // Check if user exists with this Google ID
+    // Check if user exists with the email
     const user = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM users WHERE google_id = ?', [googleUser.id], (err, row) => {
+      db.get('SELECT * FROM users WHERE email = ?', [googleUser.email], (err, row) => {
         if (err) return reject(err);
         resolve(row);
       });
@@ -39,7 +34,7 @@ const googleOAuthHandler = async function(request, reply) {
       const result = await new Promise((resolve, reject) => {
         db.run(
           'INSERT INTO users (username, email, google_id, password) VALUES (?, ?, ?, ?)',
-          [googleUser.email.split('@')[0], googleUser.email, googleUser.id, ''],
+          [googleUser.given_name, googleUser.email, googleUser.id, ''],
           function(err) {
             if (err) return reject(err);
             resolve(this.lastID);

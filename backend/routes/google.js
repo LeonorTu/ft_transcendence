@@ -25,7 +25,7 @@ function googleRoutes(fastify, options, done) {
   fastify.get('/oauth2/google/callback', googleOAuthHandler)
 
   const db = require('../db')
-  // Add a route for the root path with access_token
+
   fastify.get('/', async (request, reply) => {
 	const { access_token, error } = request.query;
 	
@@ -39,7 +39,6 @@ function googleRoutes(fastify, options, done) {
 	
 	if (access_token) {
 	  try {
-		// Verify token
 		const decoded = fastify.jwt.verify(access_token);
 		
 		// Fetch user details from database
@@ -72,11 +71,10 @@ function googleRoutes(fastify, options, done) {
 	
 	// Regular homepage (no token in URL)
 	return reply.send({ 
-	  message: 'Welcome to the homepage, Guest!',
-	  authenticated: false
+	  message: 'Welcome to the homepage, Guest!'
 	});
   });
-  
+
   done();
 }
 
