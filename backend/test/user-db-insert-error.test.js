@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/03 01:33:35 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/04 14:24:23 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/09 17:23:45 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -17,7 +17,7 @@ const dbMock = {
 	// Simulate "SELECT * FROM users WHERE username = ?" returning no user found.
 	get: (sql, params, cb) => {
 		if (/SELECT \* FROM users WHERE username/i.test(sql)) {
-			cb(null, null); // No user found, so proceed to insert.
+			cb(null, null);
 		} else {
 			cb(new Error('Unexpected DB call in get()'));
 		}
@@ -40,9 +40,9 @@ const fastify = t.mockRequire('../server', {
 	'../db': dbMock,
 });
 
-/**
- * Test 1: POST /user/register - Fails due to DB INSERT error.
- */
+
+// Test 1: POST /user/register - Fails due to DB INSERT error.
+
 t.test('POST /user/register -> fails on INSERT', async t => {
 	// Because "SELECT user" returns null, the code will try INSERT and fail.
 	const response = await fastify.inject({
@@ -60,9 +60,9 @@ t.test('POST /user/register -> fails on INSERT', async t => {
 	t.end();
 });
 
-/**
- * Test 2: GET /users - Returns 404 when no users exist (empty result).
- */
+
+// Test 2: GET /users - Returns 404 when no users exist (empty result).
+
 t.test('GET /users returns 404 when no users exist (empty result)', async t => {
 	// Create a mock DB that returns an empty array for the query in getUsers.
 	const dbEmptyMock = {
@@ -93,11 +93,11 @@ t.test('GET /users returns 404 when no users exist (empty result)', async t => {
 	t.end();
 });
 
-/**
- * Test 3: PUT /user/update - Returns 500 when DB.get fails in updateUser.
- * This forces the catch block to be executed.
- */
-t.test('PUT /user/update returns 500 when DB.get fails in updateUser', async t => {
+
+// Test 3: PUT /user/:username/update - Returns 500 when DB.get fails in updateUser.
+// This forces the catch block to be executed.
+
+t.test('PUT /user/:username/update returns 500 when DB.get fails in updateUser', async t => {
 	const dbFailUpdateMock = {
 		get: (sql, params, cb) => {
 			if (/SELECT id, username, password FROM users WHERE id = \?/.test(sql)) {
@@ -120,14 +120,15 @@ t.test('PUT /user/update returns 500 when DB.get fails in updateUser', async t =
 		}
 	});
 
+	// Decorate once more at the instance level
 	fastifyUpdateFail.decorateRequest('jwtVerify', async function () {
 		this.user = { id: 1, username: 'testuser' };
-	}, []);  // explicitly empty array of dependencies
+	}, []);
 
 	// Call the route, passing some Authorization header.
 	const res = await fastifyUpdateFail.inject({
 		method: 'PUT',
-		url: '/user/update',
+		url: '/user/testuser/update',
 		headers: { Authorization: 'Bearer faketoken' },
 		payload: { currentPassword: 'anything', newPassword: 'newpass' }
 	});
@@ -140,11 +141,11 @@ t.test('PUT /user/update returns 500 when DB.get fails in updateUser', async t =
 	t.end();
 });
 
-/**
- * Test 4: PUT /user/link_google_account - Returns 500 when DB.get fails in linkGoogleAccount.
- * This forces the catch block in linkGoogleAccount to be executed.
- */
-t.test('PUT /user/link_google_account returns 500 when DB.get fails in linkGoogleAccount', async t => {
+
+// Test 4: PUT /user/:username/link_google_account - Returns 500 when DB.get fails in linkGoogleAccount.
+// This forces the catch block in linkGoogleAccount to be executed.
+
+t.test('PUT /user/:username/link_google_account returns 500 when DB.get fails in linkGoogleAccount', async t => {
 	// Create a mock DB that simulates an error when checking for an existing Google account.
 	const dbFailLinkMock = {
 		get: (sql, params, cb) => {
@@ -172,11 +173,11 @@ t.test('PUT /user/link_google_account returns 500 when DB.get fails in linkGoogl
 
 	fastifyLinkFail.decorateRequest('jwtVerify', async function () {
 		this.user = { id: 1, username: 'dummy', password: '$2a$10$dummyhash' };
-	}, []);  // explicitly empty array of dependencies
+	}, []);
 
 	const res = await fastifyLinkFail.inject({
 		method: 'PUT',
-		url: '/user/link_google_account',
+		url: '/user/dummy/link_google_account',
 		headers: { Authorization: 'Bearer faketoken' },
 		payload: { email: 'x@example.com', google_id: 'failTest' }
 	});
@@ -189,9 +190,9 @@ t.test('PUT /user/link_google_account returns 500 when DB.get fails in linkGoogl
 	t.end();
 });
 
-/**
- * Teardown: Close Fastify instance.
- */
+
+// Teardown: Close Fastify instance.
+
 t.teardown(async () => {
 	await fastify.close();
 });
