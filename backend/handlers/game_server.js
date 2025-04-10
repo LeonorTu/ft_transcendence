@@ -1,7 +1,28 @@
-const { GameServer } = require('../game/game_server')
+const fastify = require('../server')
+const { GameServer, MessageType } = require('../game/game_server')
 
 const game_server = new GameServer();
-game_server.run();
+game_server.setupIntervals();
+
+const runServer = (ws, req) => {
+	ws.on('message', (msg) => {
+		const {type, payload} = JSON.parse(msg);
+		if (type === MessageType.JOIN) {
+			if (!game_server.joinGame(Number(payload.player_id), Number(payload.game_id))) {
+				return;
+			}
+			game_server.socket_to_game.set(ws, game_server.games.get(Number(payload.game_id)));
+			ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game_server.games.get(Number(payload.game_id)).getSettings()}));
+			//console.log(`Player with id ${Number(payload.player_id)} joined game ${payload.game_id}`);
+		}
+		else if (type === MessageType.CONTROL_INPUT) {
+			if (!game_server.socket_to_game.has(ws)) {
+				throw new Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, "The client has not joined any games");
+			}
+			game_server.socket_to_game.get(ws).acceptPlayerInput(payload.player_id, payload.input);
+		}
+	});
+};
 
 const createNewGame = (request, reply) => {
 	const { player1_id, player2_id } = request.body;
@@ -28,7 +49,6 @@ const listGames = (request, reply) => {
 	return reply.send(games);
 };
 
-
 const getGame = (request, reply) => {
 	const { id } = request.params;
 	if (!game_server.games.has(Number(id))) {
@@ -47,4 +67,4 @@ const getGame = (request, reply) => {
 	return reply.send(JSON.stringify(gameObj));
 };
 
-module.exports = { createNewGame, listGames, getGame }
+module.exports = { runServer, createNewGame, listGames, getGame }

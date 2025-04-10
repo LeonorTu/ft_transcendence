@@ -10,10 +10,7 @@
 //                                                                            //
 // ************************************************************************** //
 
-const { Game, Side } = require('./game.js');
-const Websocket = require('ws');
-
-const wss = new Websocket.Server({port: 9000});
+const { Game } = require('./game.js');
 
 const ErrorType = {
 	GAME_DOES_NOT_EXIST_ERROR: 0,
@@ -85,36 +82,6 @@ class GameServer {
 		setInterval(() => this.refreshGames(), 10);
 		setInterval(() => this.broadcastStates(), 1000 / 30); // 30 FPS
 	}
+}
 
-	run() {
-		this.setupIntervals();
-		try {
-			wss.on('connection', (ws) => {
-				this.sockets.add(ws);
-				ws.on('message', (msg) => {
-					const {type, payload} = JSON.parse(msg);
-					if (type === MessageType.JOIN) {
-						if (!this.joinGame(Number(payload.player_id), Number(payload.game_id))) {
-							return;
-						}
-						this.socket_to_game.set(ws, this.games.get(Number(payload.game_id)));
-						ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: this.games.get(Number(payload.game_id)).getSettings()}));
-						//console.log(`Player with id ${Number(payload.player_id)} joined game ${payload.game_id}`);
-					}
-					else if (type === MessageType.CONTROL_INPUT) {
-						if (!this.socket_to_game.has(ws)) {
-							throw new Error(ErrorType.GAME_DOES_NOT_EXIST_ERROR, "The client has not joined any games");
-						}
-						this.socket_to_game.get(ws).acceptPlayerInput(payload.player_id, payload.input);
-					}
-				});
-			});
-		}
-		catch (e) {
-			console.error(e.msg);
-		}
-		console.log("Game server started");
-	}
-};
-
-module.exports = { GameServer };
+module.exports = { GameServer, MessageType };

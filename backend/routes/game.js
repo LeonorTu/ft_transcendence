@@ -1,4 +1,4 @@
-const { createNewGame, listGames, getGame} = require('../handlers/game_server')
+const { runServer, createNewGame, listGames, getGame} = require('../handlers/game_server')
 
 const errorResponse = {
 	type: 'object',
@@ -93,6 +93,8 @@ function gameRoutes(fastify, options, done) {
 	fastify.get('/game/list', listGamesSchema);
 	
 	fastify.get('/game/list/:id', getGameSchema);
+
+	fastify.get('/game', { websocket: true }, runServer);
 
 	done();
 }

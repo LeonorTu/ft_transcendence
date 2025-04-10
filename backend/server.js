@@ -50,6 +50,7 @@ fastify.register(require('@fastify/static'), {
 })
 
 fastify.register(require('@fastify/multipart'))
+fastify.register(require('@fastify/websocket'))
 
 fastify.register(require('./routes/auth'))
 
