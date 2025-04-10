@@ -12,19 +12,15 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+#COPY package.json package-lock.json ./
+COPY . .
+
 RUN npm install
 
 # Unit test dependencies
 RUN npm install --save-dev tap 
 RUN npm install --save-dev proxyquire
 RUN npm install --save-dev form-data
-
-COPY . .
-
-#RUN mkdir -p /app/uploads/avatars
-
-#RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
 
 VOLUME /app/uploads/avatars
 

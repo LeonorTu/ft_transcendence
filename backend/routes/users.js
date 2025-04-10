@@ -11,6 +11,8 @@ const {
 	getUserAvatar,
 	removeAvatar,
 	addFriend,
+	updateOnlineStatus,
+	getUserFriends,
 } = require('../handlers/users')
 
 const User = {
@@ -18,6 +20,8 @@ const User = {
 	properties: {
 		id: { type: 'integer' },
 		username: { type: 'string' },
+		avatar: { type: 'string'},
+		online_status: {typ : 'string' },
 	}
 }
 
@@ -111,7 +115,7 @@ const getUserAvatarSchema = {
 				properties: {
 					file: {
 						type: 'string',
-						example: '/app/uploads/avatars/username_default.png' },
+						example: 'username_default.png' },
 				}
 			},
 			404: errorResponse,
@@ -119,6 +123,25 @@ const getUserAvatarSchema = {
 		}
 	},
 	handler: getUserAvatar
+}
+
+const getUserFriendsSchema = {
+	schema: {
+		response: {
+			200: {
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: {
+						friend_id: { type: 'integer' },
+					}
+				}
+			},
+			404: errorResponse,
+			500: errorResponse
+		}
+	},
+	handler: getUserFriends
 }
 
 function usersRoutes(fastify, options, done) {
@@ -228,6 +251,26 @@ function usersRoutes(fastify, options, done) {
 		handler: addFriend
 	}
 
+	const updateOnlineStatusSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					status: { type: 'string' },
+				},
+				required: [ 'status' ],
+			},
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: updateOnlineStatus
+	}
+
 	fastify.get('/users', getUsersSchema)
 
 	fastify.get('/user/:id', getUserSchema)
@@ -248,34 +291,9 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.post('/add_friend', addFriendSchema)
 
-	fastify.put('/update_online/status/:username', async(request, reply) => {
-		const username = request.params.username
-		const status = request.body
-		try {
-			const userId = await new Promise((resolve, reject) => {
-				db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
-					if (err)
-						return reject(err)
-					if (!row) {
-						request.log.warn(`User not found`)
-						return reply.status(404).send({error: `User not found`})
-					}
-					resolve(row.id)
-				})
-			})
-			await new Promise((resolve, reject) => {
-				db.run('UPDATE users SET online_status = ? WHERE username = ?', [status, username], (err) => {
-					if (err)
-						return reject(err)
-					resolve()
-				})
-			})
-			return reply.status(200).send({ message: 'online status updated succesfully'})
-		} catch (err) {
-			request.log.error(`Error updating user online tatus: ${err.message}`);
-			return reply.status(500).send({ error: 'Internal server error' });
-		}
-	})
+	fastify.get('/user/:username/friends', getUserFriendsSchema)
+
+	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
 
 	done()
 }

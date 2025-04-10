@@ -2,7 +2,7 @@ const db = require('../db')
 const bcrypt = require('bcryptjs')
 const fs = require('fs')
 const path = require('path')
-const { pipeline } = require('node:stream/promises')
+// const { pipeline } = require('node:stream/promises')
 const sharp = require('sharp');
 
 const getUsers = (request, reply) => {
@@ -30,6 +30,7 @@ const getUser = (request, reply) => {
 			request.log.warn(`User with id ${id} not found`)
 			return reply.status(404).send({error: `User with id ${id} not found`})
 		}
+		// row.avatar = `http://localhost:8888/user/${row.username}/avatar`
 		return reply.send(row)
 	})
 }
@@ -347,6 +348,80 @@ const addFriend = async (request, reply) => {
 	}
 }
 
+const getUserFriends = async (request, reply) => {
+	const username = request.params.username
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT id FROM users WHERE username = ?', [username],
+				(err, row) => {
+					if (err)
+						return reject(err)
+					if (!row)
+						resolve(null)
+					resolve(row)
+				}
+			)
+		})
+		if (!user)
+			return reply.status(404).send({ error: 'User not found' });
+		const friendsList = await new Promise((resolve, reject) => {
+			db.all('SELECT friend_id FROM friends WHERE user_id = ?', [user.id],
+				(err, rows) => {
+					if (err)
+						return reject(err)
+					resolve(rows)
+				}
+			)
+		})
+		return reply.send(friendsList)
+	} catch (err) {
+		request.log.error(`Error fetching friends: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const updateOnlineStatus = async (request, reply) => {
+	const username = request.params.username
+	const { status } = request.body
+	const allowedStatus = [ 'online', 'offline', 'away']
+	if (!allowedStatus.includes(status))
+		return reply.status(400).send({ error: 'Invalid status' })
+	if (request.params.username != request.user.username) {
+		request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+		return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
+	}
+	try {
+		const userId = await new Promise((resolve, reject) => {
+			db.get('SELECT id FROM users WHERE username = ?',
+				[username],
+				(err, row) => {
+					if (err)
+						return reject(err)
+					if (!row) {
+						request.log.warn(`User not found`)
+						return reply.status(404).send({error: `User not found`})
+					}
+					resolve(row.id)
+				}
+			)
+		})
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET online_status = ? WHERE id = ?',
+				[status, userId],
+				(err) => {
+				if (err)
+					return reject(err)
+				resolve()
+				}
+			)
+		})
+		return reply.status(200).send({ message: 'online status updated succesfully'})
+	} catch (err) {
+		request.log.error(`Error updating user online tatus: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
 module.exports = {
 	getUsers,
 	registerUser,
@@ -358,4 +433,6 @@ module.exports = {
 	getUserAvatar,
 	removeAvatar,
 	addFriend,
+	updateOnlineStatus,
+	getUserFriends,
 }
