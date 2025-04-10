@@ -1,11 +1,12 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { Game, Home, Login, Signup, Tournament, UserProfile } from './pages'
+import { Game, Home, Login, Signup, Tournament, UserProfile, Error } from './pages'
 import Layout from './components/Layout'
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
+    errorElement: <Error />,
     children: [
       {
         index: true,
