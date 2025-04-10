@@ -55,7 +55,7 @@ const registerUser = async (request, reply) => {
 		// console.log(hashedPassword);
 		let fileName
 		try {
-			const avatarResponse = await fetch(`https://aapi.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
+			const avatarResponse = await fetch(`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
 			if (!avatarResponse.ok)
 				throw new Error('External avatar API returned an error')
 			const svg = await avatarResponse.text()
@@ -235,13 +235,19 @@ const linkGoogleAccount = async (request, reply) => {
 
 const uploadAvatar = async (request, reply) => {
 	const data = await request.file()
+	const chunks = []
+	for await (const chunk of data.file) {
+		chunks.push(chunk)
+	}
+	const fileBuffer = Buffer.concat(chunks)
 	const allowedMimeTypes = [ 'image/png', 'image/jpeg' ]
 	try {
 		if (!allowedMimeTypes.includes(data.mimetype))
 			return reply.status(400).send({ error: 'Invalid file format. Only PNG and JPEG are allowed.' })
 
-		if (data.file.bytesRead > 2 * 1024 * 1024)
-			return reply.status(400).send({ error: 'File is too large. Maximum size is 2MB.' })
+		// console.log(fileBuffer.length)
+		if (fileBuffer.length >= 1 * 1024 * 1024)
+			return reply.status(400).send({ error: 'File is too large. Maximum size is 1MB.' })
 
 		const fileName = `${request.user.username}_custom.${data.mimetype.split('/')[1]}`
 		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
@@ -251,11 +257,12 @@ const uploadAvatar = async (request, reply) => {
 			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
 		}
 
-		await pipeline(
+		await sharp(fileBuffer).resize(256, 256, { fit: 'inside' }).toFile(filePath)
+/* 		await pipeline(
 			data.file,
 			sharp().resize(256, 256, { fit: 'inside' }),
 			fs.createWriteStream(filePath)
-		)
+		) */
 		
 		await new Promise((resolve, reject) => {
 			db.run('UPDATE users SET avatar = ? WHERE username = ?',
