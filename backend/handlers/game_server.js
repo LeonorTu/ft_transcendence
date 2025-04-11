@@ -1,4 +1,4 @@
-const { GameServer, MessageType } = require('../game/game_server')
+const { GameServer, MessageType, Error, ErrorType } = require('../game/game_server')
 
 const game_server = new GameServer();
 
@@ -32,24 +32,37 @@ const createNewGame = (request, reply) => {
 	try {
 		const game_id = game_server.createGame(player1_id, player2_id);
 		reply.status(200).send({
-			game_id: game_id
+			"game_id": game_id
 		});
 	}
 	catch (e) {
-		console.error(e.msg);
+		request.log.error(e);
+		if (e.error_type === ErrorType.BAD_PLAYER_ID) {
+			reply.status(400).send({ error: e.msg});
+		}
+		else {
+			reply.status(500).send({ error: 'Internal Server Error' });
+		}
+
 	}
 };
 
 const listGames = (request, reply) => {
-	let games = [];
-	for (const [key, value] of game_server.games) {
-		games.push({
-			game_id: key,
-			player1_id: value.players[0].id,
-			player2_id: value.players[1].id,
-		});
+	try {
+		let games = [];
+		for (const [key, value] of game_server.games) {
+			games.push({
+				game_id: key,
+				player1_id: value.players[0].id,
+				player2_id: value.players[1].id,
+			});
+		}
+		return reply.status(200).send(games);
 	}
-	return reply.send(games);
+	catch (e) {
+		reply.status(500).send({ error: 'Internal Server Error' });
+
+	}
 };
 
 const getGame = (request, reply) => {
@@ -58,16 +71,14 @@ const getGame = (request, reply) => {
 		return reply.status(404).send({error: `Game with id ${id} does not exist`});
 	}
 	const game = game_server.games.get(Number(id));
-	const gameObj = {
-				game_id: id,
-				finished_rounds: game.finished_rounds,
-				total_rounds: game.total_rounds,
-				winner: game.winner,
-				player1_id: game.players[0].id,
-				player2_id: game.players[1].id,
-				game_state: game.gameState,
-	};
-	return reply.send(JSON.stringify(gameObj));
+	return reply.status(200).send({
+		game_id: Number(id),
+		finished_rounds: game.finished_rounds,
+		total_rounds: game.total_rounds,
+		player1_id: game.players[0].id,
+		player2_id: game.players[1].id,
+		game_state: game.gameState,
+	});
 };
 
 module.exports = { runServer, createNewGame, listGames, getGame, game_server }

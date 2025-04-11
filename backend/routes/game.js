@@ -17,19 +17,14 @@ const GameListElement = {
 }
 
 const Game = {
-	schema: {
-		body: {
-			type: 'object',
-			properties: {
-				game_id: {type: 'integer'},
-				finished_rounds: {type: 'integer'},
-				total_rounds: {type: 'integer'},
-				winner:	{type: 'integer'},
-				player1_id: {type: 'integer'},
-				player2_id: {type: 'integer'},
-				game_state: {type: 'string'},
-			}
-		}
+	type: 'object',
+	properties: {
+		game_id: {type: 'integer'},
+		finished_rounds: {type: 'integer'},
+		total_rounds: {type: 'integer'},
+		player1_id: {type: 'integer'},
+		player2_id: {type: 'integer'},
+		game_state: {type: 'string'},
 	}
 }
 
@@ -74,10 +69,7 @@ const listGamesSchema = {
 const getGameSchema = {
 	schema: {
 		response: {
-			200: {
-				type: 'object',
-				items: Game
-			},
+			200: Game,
 			404: errorResponse,
 			500: errorResponse,
 		},

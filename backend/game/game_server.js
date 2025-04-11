@@ -13,8 +13,7 @@
 const { Game } = require('./game.js');
 
 const ErrorType = {
-	GAME_DOES_NOT_EXIST_ERROR: 0,
-	PLAYER_IS_NOT_IN_GAME: 1
+	BAD_PLAYER_ID: 0,
 
 };
 
@@ -37,14 +36,17 @@ class GameServer {
 		this.games = new Map();
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
-		this.game_id_counter = 0;
+		this.game_id_counter = 1;
 		this.intervals = [];
 	}
 
-	createGame(player_id_1, player_id_2) {
+	createGame(player1_id, player2_id) {
+		if (player1_id === player2_id) {
+			throw new Error(ErrorType.BAD_PLAYER_ID, "Error: bad player id")
+		}
 		const id = this.game_id_counter;
 		this.game_id_counter += 1;
-		this.games.set(id, new Game(player_id_1, player_id_2));
+		this.games.set(id, new Game(player1_id, player2_id));
 		return id;
 	}
 
@@ -100,4 +102,4 @@ class GameServer {
 	}
 }
 
-module.exports = { GameServer, MessageType };
+module.exports = { GameServer, MessageType, Error, ErrorType };

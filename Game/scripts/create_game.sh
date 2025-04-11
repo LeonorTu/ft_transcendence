@@ -10,8 +10,8 @@ fi
 
 curl -s -X POST http://localhost:8888/game/new \
 	 -H "Content-Type: application/json" \
-	 -d '{
-			"player1_id": "1",
-			"player2_id": "2"
-		 }'
+	 -d "{
+			\"player1_id\": \"$ID_1\",
+			\"player2_id\": \"$ID_2\"
+		 }"
 
