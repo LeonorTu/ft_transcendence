@@ -50,10 +50,13 @@ fastify.register(require('@fastify/static'), {
 })
 
 fastify.register(require('@fastify/multipart'))
+fastify.register(require('@fastify/websocket'))
 
 fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
+
+fastify.register(require('./routes/game'))
 
 module.exports = fastify
 
