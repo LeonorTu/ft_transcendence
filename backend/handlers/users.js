@@ -327,9 +327,12 @@ const removeAvatar = async (request, reply) => {
 
 const addFriend = async (request, reply) => {
 	const { user_id, friend_id } = request.body
+	const userId = request.user.id
 	try{
 		if (user_id === friend_id)
 			return reply.status(400).send({ error: "Can't add youself as friend" })
+		if (user_id !== userId)
+			return reply.status(400).send({ error: `You don't have permission to modify another user` });
 		await new Promise ((resolve, reject) => {
 			db.run('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)', [user_id, friend_id], (err) => {
 				if (err)
@@ -365,7 +368,7 @@ const getUserFriends = async (request, reply) => {
 		if (!user)
 			return reply.status(404).send({ error: 'User not found' });
 		const friendsList = await new Promise((resolve, reject) => {
-			db.all('SELECT friend_id FROM friends WHERE user_id = ?', [user.id],
+			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ?', [user.id],
 				(err, rows) => {
 					if (err)
 						return reject(err)
@@ -376,6 +379,37 @@ const getUserFriends = async (request, reply) => {
 		return reply.send(friendsList)
 	} catch (err) {
 		request.log.error(`Error fetching friends: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const removeFriend = async(request, reply) => {
+	const { friendshipId } = request.params
+	const userId = request.user.id
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('Select user_id FROM friends WHERE id = ?', [friendshipId], (err, row) => {
+				if (err)
+					return reject(err)
+				resolve(row)
+			})
+		})
+		if (user.user_id !== userId)
+			return reply.status(400).send({ error: `You don't have permission to modify another user` });
+		await new Promise((resolve, reject) => {
+			db.run('DELETE FROM friends WHERE id = ?', [friendshipId], function (err) {
+				if (err)
+					return reject(err)
+				if (this.changes === 0)
+					return reject(new Error('Friendship not found'))
+				resolve()
+			})
+		})
+		return reply.status(200).send({ message: 'friend removed' })
+	} catch (err) {
+		if (err.message === 'Friendship not found')
+			return reply.status(404).send({ error: 'Friendship not found' });
+		request.log.error(`Error removing friend: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });
 	}
 }
@@ -435,4 +469,5 @@ module.exports = {
 	addFriend,
 	updateOnlineStatus,
 	getUserFriends,
+	removeFriend,
 }

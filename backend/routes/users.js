@@ -13,6 +13,7 @@ const {
 	addFriend,
 	updateOnlineStatus,
 	getUserFriends,
+	removeFriend,
 } = require('../handlers/users')
 
 const User = {
@@ -133,6 +134,8 @@ const getUserFriendsSchema = {
 				items: {
 					type: 'object',
 					properties: {
+						id: { type: 'integer' },
+						user_id: { type : 'integer' },
 						friend_id: { type: 'integer' },
 					}
 				}
@@ -251,6 +254,19 @@ function usersRoutes(fastify, options, done) {
 		handler: addFriend
 	}
 
+	const removeFriendSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: removeFriend
+	}
+
 	const updateOnlineStatusSchema = {
 		onRequest: [fastify.authenticate],
 		schema: {
@@ -292,6 +308,8 @@ function usersRoutes(fastify, options, done) {
 	fastify.post('/add_friend', addFriendSchema)
 
 	fastify.get('/user/:username/friends', getUserFriendsSchema)
+
+	fastify.delete('/remove_friend/:friendshipId', removeFriendSchema)
 
 	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
 
