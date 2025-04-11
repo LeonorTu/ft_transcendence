@@ -1,6 +1,6 @@
 import { Link, useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import styled from 'styled-components';
-import img from '/Pixel-art-not-found.png'
+import img from '/Pixel-art-not-found.png';
 
 // Styled components
 const ErrorContainer = styled.div`
@@ -15,7 +15,7 @@ const ErrorContainer = styled.div`
 
 const ErrorHeading = styled.h1`
   font-size: clamp(3rem, 10vw, 8rem); /* Responsive font size */
-  font-size: 5rem;
+  font-size: 4rem;
   margin-bottom: 6rem;
   color: rgb(255, 255, 255);
   font-weight: bold;
@@ -53,9 +53,9 @@ const Error: React.FC = () => {
     return (
       <ErrorContainer>
         <ErrorContent>
-          <img src={img} alt="not found" />
+          <img src={img} alt='not found' />
           <ErrorHeading>Page Not Found</ErrorHeading>
-          <HomeButton to="/">back home</HomeButton>
+          <HomeButton to='/'>back home</HomeButton>
         </ErrorContent>
       </ErrorContainer>
     );
@@ -63,10 +63,12 @@ const Error: React.FC = () => {
 
   return (
     <ErrorContainer>
-      <ErrorHeading style={{ fontSize: '3rem' }}>
-        Something Went Wrong
-      </ErrorHeading>
-      <HomeButton to="/">back home</HomeButton>
+      <ErrorContent>
+        <ErrorHeading>
+          Something Went Wrong
+        </ErrorHeading>
+        <HomeButton to='/'>back home</HomeButton>
+      </ErrorContent>
     </ErrorContainer>
   );
 };
