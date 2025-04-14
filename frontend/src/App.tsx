@@ -10,6 +10,7 @@ import {
 } from './pages';
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
+import { action as loginAction } from './pages/Login';
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       {
         path: 'login',
         element: <Login />,
+        action: loginAction,
       },
       {
         path: 'signup',

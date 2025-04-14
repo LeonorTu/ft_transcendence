@@ -1,6 +1,9 @@
 import { FormInput, SubmitBtn } from '../components';
-import { Form, Link } from 'react-router-dom';
+import { ActionFunctionArgs, Form, Link, redirect } from 'react-router-dom';
 import styled from 'styled-components';
+import { customFetch } from '../utils';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
 
 const Container = styled.section`
   height: 100vh;
@@ -95,13 +98,32 @@ const GoogleButton = styled.button`
   }
 `;
 
+export const action = async({ request }:ActionFunctionArgs)=>{
+  const formData = await request.formData();
+  const username = formData.get('username') as string;
+  const password = formData.get('password') as string;
+  try{
+    const response = await customFetch.post('/user/login',{username, password});
+    toast.success("logged in successfully");
+    return redirect('/')
+  } catch(error)
+  {
+    let errorMessage = 'please double check your credentials';
+    if (error instanceof AxiosError && error.response?.data?.error){
+      errorMessage = error.response.data.error;
+    }
+    toast.error(errorMessage);
+    return null;
+  }
+}
+
 const Login: React.FC = () => {
   return (
     <Container>
       <FormContainer method='post'>
         <Title>Login</Title>
-        <FormInput type='text' label='username' name='identifier' />
-        <FormInput type='password' label='password' name='password' />
+        <FormInput type='text' label='username' name='username' required/>
+        <FormInput type='password' label='password' name='password' required/>
         <ButtonContainer>
           <SubmitBtn text='login' />
         </ButtonContainer>
