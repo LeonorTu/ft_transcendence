@@ -1,0 +1,101 @@
+const t = require('tap');
+const db = require('../db');
+const fastify = require('../server');
+
+// Clear users table before running the tests
+t.before(async () => {
+	await new Promise((resolve, reject) => {
+		db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+	});
+});
+
+t.test('online status tests', async t => {
+	const userA = { username: 'userA', password: 'passA' };
+	
+	// register userA
+	const regA = await fastify.inject({
+		method: 'POST',
+		url: '/user/register',
+		payload: userA,
+	});
+	const userAId = JSON.parse(regA.payload).id;
+	const userAUsername = JSON.parse(regA.payload).username;
+
+	// login userA
+	const loginA = await fastify.inject({
+		method: 'POST',
+		url: '/user/login',
+		payload: userA,
+	});
+	const tokenA = JSON.parse(loginA.payload).token;
+
+	// get default online status of userA
+	let statusUserA = await fastify.inject({
+		method: 'GET',
+		url: `user/${userAId}`
+	})
+	t.equal(JSON.parse(statusUserA.payload).online_status, 'offline', 'user is correctly set offline at registration')
+
+	// set userA status to online
+	let updatedStatus = await fastify.inject({
+		method: 'PUT',
+		url: `/update_online_status/${userAUsername}`,
+		headers: { Authorization: `Bearer ${tokenA}` },
+		payload: { status: 'online' },
+	})
+	t.equal(updatedStatus.statusCode, 200, 'online status set to online succesfully')
+	statusUserA = await fastify.inject({
+		method: 'GET',
+		url: `user/${userAId}`
+	})
+	t.equal(JSON.parse(statusUserA.payload).online_status, 'online', 'user status updated also on db successfully')
+
+	// set userA status to away
+	updatedStatus = await fastify.inject({
+		method: 'PUT',
+		url: `/update_online_status/${userAUsername}`,
+		headers: { Authorization: `Bearer ${tokenA}` },
+		payload: { status: 'away' },
+	})
+	t.equal(updatedStatus.statusCode, 200, 'online status set to away succesfully')
+	statusUserA = await fastify.inject({
+		method: 'GET',
+		url: `user/${userAId}`
+	})
+	t.equal(JSON.parse(statusUserA.payload).online_status, 'away', 'user status updated also on db successfully')
+
+	// set userA status to a wrong status
+	updatedStatus = await fastify.inject({
+		method: 'PUT',
+		url: `/update_online_status/${userAUsername}`,
+		headers: { Authorization: `Bearer ${tokenA}` },
+		payload: { status: 'wrongStatus' },
+	})
+	t.equal(updatedStatus.statusCode, 400, 'invalid status')
+
+	// try to set status of another user
+	updatedStatus = await fastify.inject({
+		method: 'PUT',
+		url: `/update_online_status/wrongUsername`,
+		headers: { Authorization: `Bearer ${tokenA}` },
+		payload: { status: 'online' },
+	})
+	t.equal(updatedStatus.statusCode, 400, 'permission denied')
+})
+
+t.teardown(async () => {
+	try {
+		await new Promise((resolve, reject) => {
+			db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+		});
+
+		await new Promise((resolve, reject) => {
+			db.close(err => (err ? reject(err) : resolve()));
+		});
+
+		await fastify.close();
+	} catch (err) {
+		console.error('Teardown error:', err);
+		throw err;
+	}
+});

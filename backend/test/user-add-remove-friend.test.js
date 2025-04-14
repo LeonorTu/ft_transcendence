@@ -10,10 +10,12 @@ t.before(async () => {
 	});
 });
 
-t.test('test test', async t => {
+t.test('add/remove friends tests', async t => {
 	const userA = { username: 'userA', password: 'passA' };
 	const userB = { username: 'userB', password: 'passB' };
 	const userC = { username: 'userC', password: 'passC' };
+
+	// register userA
 	const regA = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
@@ -22,20 +24,23 @@ t.test('test test', async t => {
 	const userAId = JSON.parse(regA.payload).id;
 	const userAUsername = JSON.parse(regA.payload).username;
 
+	// register userB
 	const regB = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
 		payload: userB,
 	});
 	const userBId = JSON.parse(regB.payload).id;
-	
+
+	// register userC
 	const regC = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
 		payload: userC,
 	});
 	const userCId = JSON.parse(regC.payload).id;
-	
+
+	// login userA
 	const loginA = await fastify.inject({
 		method: 'POST',
 		url: '/user/login',
@@ -43,40 +48,81 @@ t.test('test test', async t => {
 	});
 	const tokenA = JSON.parse(loginA.payload).token;
 
-	// add friend_id 2
+	// add userB as friend to userA
 	const friend1 = await fastify.inject({
 		method: 'POST',
-		url: 'add_friend',
+		url: '/add_friend',
 		headers: { Authorization: `Bearer ${tokenA}` },
 		payload: { user_id: userAId, friend_id: userBId },
 	});
-	// t.equal(friend1.statusCode, 200, 'friend added succesfully')
+	t.equal(friend1.statusCode, 200, 'friend added succesfully')
 
-	// add friend_id 3
+	// add userC as friend to userA
 	const friend2 = await fastify.inject({
 		method: 'POST',
-		url: 'add_friend',
+		url: '/add_friend',
 		headers: { Authorization: `Bearer ${tokenA}` },
 		payload: { user_id: userAId, friend_id: userCId },
 	});
-	// t.equal(friend2.statusCode, 200, 'friend added succesfully')
+	t.equal(friend2.statusCode, 200, 'friend added succesfully')
 
-	const users = await fastify.inject({
+	let users = await fastify.inject({
 		method: 'GET',
 		url: `/user/${userAUsername}/friends`
 	})
-	t.equal(JSON.parse(users.payload)[0].user_id, userAId)
-	t.equal(JSON.parse(users.payload)[0].friend_id, userBId)
-	t.equal(JSON.parse(users.payload)[1].user_id, userAId)
-	t.equal(JSON.parse(users.payload)[1].friend_id, userCId)
+	t.equal(JSON.parse(users.payload)[0].user_id, userAId, 'checking friend list')
+	t.equal(JSON.parse(users.payload)[0].friend_id, userBId, 'checking friend list')
+	t.equal(JSON.parse(users.payload)[1].user_id, userAId, 'checking friend list')
+	t.equal(JSON.parse(users.payload)[1].friend_id, userCId, 'checking friend list')
 
+	// adding a non existing friend
 	const nonExistingFriend = await fastify.inject({
 		method: 'POST',
-		url: 'add_friend',
+		url: '/add_friend',
 		headers: { Authorization: `Bearer ${tokenA}` },
 		payload: { user_id: userAId, friend_id: '9999' },
 	});
 	t.equal(nonExistingFriend.statusCode, 400, 'not able to add a non existing user')
+
+	// removing userB from friend list of userA
+	friendshipId = JSON.parse(users.payload)[0].id
+	let removedFriend = await fastify.inject({
+		method: 'DELETE',
+		url: `/remove_friend/${friendshipId}`,
+		headers: { Authorization: `Bearer ${tokenA}` },
+	})
+	users = await fastify.inject({
+		method: 'GET',
+		url: `/user/${userAUsername}/friends`
+	})
+	t.equal(removedFriend.statusCode, 200, 'friend removed succesfully')
+	t.notSame(JSON.parse(users.payload)[0].id, friendshipId, 'removed friend is not in friend list anymore')
+
+	// login userB
+	const loginB = await fastify.inject({
+		method: 'POST',
+		url: '/user/login',
+		payload: userB,
+	});
+	const tokenB = JSON.parse(loginB.payload).token;
+
+	// trying to remove a friend from userA friend list with userB login token
+	friendshipId = JSON.parse(users.payload)[0].id
+	removedFriend = await fastify.inject({
+		method: 'DELETE',
+		url: `/remove_friend/${friendshipId}`,
+		headers: { Authorization: `Bearer ${tokenB}` },
+	})
+	t.equal(removedFriend.statusCode, 400, 'not able to remove a friend from another user')
+
+	// trying to add userB as friend of userA with userB login token
+	const selfMadeFriend = await fastify.inject({
+		method: 'POST',
+		url: '/add_friend',
+		headers: { Authorization: `Bearer ${tokenB}` },
+		payload: { user_id: userAId, friend_id: userBId },
+	});
+	t.equal(selfMadeFriend.statusCode, 400, 'not able to add yourself as friend of another user')
 })
 
 t.teardown(async () => {
