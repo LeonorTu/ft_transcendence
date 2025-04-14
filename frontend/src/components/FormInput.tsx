@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 interface FormInputProps {
   label: string;
@@ -7,6 +7,7 @@ interface FormInputProps {
   value?: string;
   defaultValue?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
 }
 
 const FormGroup = styled.div`
@@ -43,6 +44,7 @@ const FormInput: React.FC<FormInputProps> = ({
   value,
   defaultValue,
   onChange,
+  required = false,
 }) => {
   return (
     <FormGroup>
@@ -54,6 +56,7 @@ const FormInput: React.FC<FormInputProps> = ({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange}
+        required={required}
       />
     </FormGroup>
   );

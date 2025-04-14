@@ -1,10 +1,5 @@
 import { FormInput, SubmitBtn } from '../components';
-import {
-  ActionFunctionArgs,
-  Form,
-  Link,
-  redirect
-} from 'react-router-dom';
+import { ActionFunctionArgs, Form, Link, redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { customFetch } from '../utils';
 import { toast } from 'react-toastify';
@@ -71,6 +66,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const confirmPassword = formData.get('confirmPassword') as string;
 
   if (password !== confirmPassword) {
+    console.log('Passwords do not match');
+
     toast.error('Passwords do not match');
     return null;
   }
@@ -100,12 +97,13 @@ const Signup: React.FC = () => {
     <Container>
       <FormContainer method='POST'>
         <Title>Signup</Title>
-        <FormInput type='text' label='username' name='username' />
-        <FormInput type='password' label='password' name='password' />
+        <FormInput type='text' label='username' name='username' required />
+        <FormInput type='password' label='password' name='password' required />
         <FormInput
           type='password'
           label='confirm password'
           name='confirmPassword'
+          required
         />
         <ButtonContainer>
           <SubmitBtn text='Signup' />
