@@ -1,6 +1,14 @@
 import { FormInput, SubmitBtn } from '../components';
-import { Form, Link } from 'react-router-dom';
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  redirect
+} from 'react-router-dom';
 import styled from 'styled-components';
+import { customFetch } from '../utils';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
 
 // Reuse the same styled components from the Login page
 const Container = styled.section`
@@ -55,6 +63,37 @@ const StyledLink = styled(Link)`
     text-decoration: underline;
   }
 `;
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const username = formData.get('username') as string;
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+
+  if (password !== confirmPassword) {
+    toast.error('Passwords do not match');
+    return null;
+  }
+
+  try {
+    const response = await customFetch.post('/user/register', {
+      username,
+      password,
+    });
+    toast.success('account created successfully');
+    return redirect('/login');
+  } catch (error: unknown) {
+    // Type the error properly
+    let errorMessage = 'please double check your credentials';
+
+    // Check if it's an axios error and has the expected structure
+    if (error instanceof AxiosError && error.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    }
+    toast.error(errorMessage);
+    return null;
+  }
+};
 
 const Signup: React.FC = () => {
   return (

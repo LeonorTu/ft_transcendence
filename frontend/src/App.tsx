@@ -1,6 +1,15 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { Game, Home, Login, Signup, Tournament, UserProfile, Error } from './pages'
-import Layout from './components/Layout'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import {
+  Game,
+  Home,
+  Login,
+  Signup,
+  Tournament,
+  UserProfile,
+  Error,
+} from './pages';
+import Layout from './components/Layout';
+import { action as signupAction } from './pages/Signup';
 
 const router = createBrowserRouter([
   {
@@ -23,6 +32,7 @@ const router = createBrowserRouter([
       {
         path: 'signup',
         element: <Signup />,
+        action: signupAction,
       },
       {
         path: 'tournament',
@@ -34,10 +44,10 @@ const router = createBrowserRouter([
       },
     ],
   },
-])
+]);
 
 const App = () => {
-  return <RouterProvider router={router} />
-}
+  return <RouterProvider router={router} />;
+};
 
-export default App
+export default App;
