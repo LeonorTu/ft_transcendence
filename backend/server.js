@@ -8,6 +8,12 @@ const fastify = require('fastify')({
 	// }
 })
 
+fastify.register(require('@fastify/cors'), {
+	origin: 'http://localhost:5173',
+	methods: ['GET', 'POST', 'PUT', 'DELETE'],
+	credentials: true
+})
+
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
