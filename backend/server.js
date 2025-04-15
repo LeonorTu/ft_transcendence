@@ -8,6 +8,7 @@ const fastify = require('fastify')({
 	// }
 })
 
+require('./cron');
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {

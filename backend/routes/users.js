@@ -295,6 +295,51 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.post('/user/login', loginUserSchema)
 
+	fastify.post('/user/logout', { onRequest: [fastify.authenticate] }, async(request, reply) => {
+		try{
+			const authHeader = request.headers.authorization
+			const userId = request.user.id
+			
+			// console.log(`header = ${authHeader}`)
+			
+			if (!authHeader || !authHeader.startsWith('Bearer'))
+				return reply.status(400).send({ error: 'No token provided' })
+			
+			const token = authHeader.split(' ')[1]
+			
+			await request.jwtVerify()
+			
+			// console.log(`token = ${token}`)
+
+			const decoded = fastify.jwt.decode(token)
+			const expiresAt = decoded.exp
+			// console.log(`expires at: ${expiresAt}`)
+			// const now = Math.floor(Date.now() / 1000)
+			// console.log(`now = ${now}`)
+			// console.log(`real time = ${(expiresAt - now) / 60 / 60}`)
+
+			await new Promise((resolve, reject) => {
+				db.run('INSERT INTO token_blacklist (token, expiration) VALUES (?, ?)', [token, expiresAt], (err) => {
+					if (err)
+						return reject(err)
+					resolve()
+				})
+			})
+
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET online_status = ? where id = ?', ['offline', userId], (err) => {
+					if (err)
+						return reject(err)
+					return resolve()
+				})
+			})
+
+			return reply.send({ message: 'Logged out successfully' });
+		} catch (err) {
+			return reply.status(401).send({ error: 'Invalid token' });
+		}
+	})
+
 	fastify.put('/user/:username/update', updateUserSchema)
 
 	fastify.put('/user/:username/link_google_account', linkGoogleAccountSchema)

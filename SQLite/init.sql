@@ -15,4 +15,10 @@ CREATE TABLE IF NOT EXISTS friends (
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
 	UNIQUE (user_id, friend_id)
-)
+);
+
+CREATE TABLE IF NOT EXISTS token_blacklist (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	token TEXT UNIQUE,
+	expiration INTEGER
+);
