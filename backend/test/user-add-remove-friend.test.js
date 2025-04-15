@@ -5,8 +5,21 @@ const fastify = require('../server');
 // Clear users && friends table before running the tests
 t.before(async () => {
 	await new Promise((resolve, reject) => {
-		db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
-		db.run('DELETE FROM friends', err => (err ? reject(err) : resolve()));
+		db.serialize(() => {
+			db.run('DELETE FROM users', err => {
+				if (err) return reject(err);
+			});
+			db.run('DELETE FROM friends', err => {
+				if (err) return reject(err);
+			});
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				if (err) return reject(err);
+			});
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", err => {
+				if (err) return reject(err);
+				resolve();
+			});
+		});
 	});
 });
 
@@ -128,11 +141,21 @@ t.test('add/remove friends tests', async t => {
 t.teardown(async () => {
 	try {
 		await new Promise((resolve, reject) => {
-			db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
-		});
-
-		await new Promise((resolve, reject) => {
-			db.run('DELETE FROM friends', err => (err ? reject(err) : resolve()));
+			db.serialize(() => {
+				db.run('DELETE FROM users', err => {
+					if (err) return reject(err);
+				});
+				db.run('DELETE FROM friends', err => {
+					if (err) return reject(err);
+				});
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+					if (err) return reject(err);
+				});
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", err => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
 		});
 
 		await new Promise((resolve, reject) => {

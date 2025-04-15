@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server",
     "dev": "nodemon server",
-    "test": "tap"
+    "test": "tap --jobs=1"
   },
   "keywords": [],
   "author": "",

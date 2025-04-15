@@ -5,7 +5,15 @@ const fastify = require('../server');
 // Clear users table before running the tests
 t.before(async () => {
 	await new Promise((resolve, reject) => {
-		db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+		db.serialize(() => {
+			db.run('DELETE FROM users', err => {
+				if (err) return reject(err);
+			});
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				if (err) return reject(err);
+				resolve();
+			});
+		});
 	});
 });
 
@@ -86,7 +94,15 @@ t.test('online status tests', async t => {
 t.teardown(async () => {
 	try {
 		await new Promise((resolve, reject) => {
-			db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+			db.serialize(() => {
+				db.run('DELETE FROM users', err => {
+					if (err) return reject(err);
+				});
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
 		});
 
 		await new Promise((resolve, reject) => {

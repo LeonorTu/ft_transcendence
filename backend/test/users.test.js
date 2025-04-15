@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   users.test.js                                      :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/09 18:18:57 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   users.test.js                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/15 13:29:51 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const t = require('tap');
 const path = require('path');
@@ -26,7 +26,15 @@ let authToken;
 
 t.before(async () => {
 	await new Promise((resolve, reject) => {
-		db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+		db.serialize(() => {
+			db.run('DELETE FROM users', err => {
+				if (err) return reject(err);
+			});
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				if (err) return reject(err);
+				resolve();
+			});
+		});
 	});
 });
 
@@ -537,7 +545,15 @@ t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
 t.teardown(async () => {
 	try {
 		await new Promise((resolve, reject) => {
-			db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+			db.serialize(() => {
+				db.run('DELETE FROM users', err => {
+					if (err) return reject(err);
+				});
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
 		});
 
 		await new Promise((resolve, reject) => {
