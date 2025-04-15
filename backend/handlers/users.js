@@ -124,6 +124,13 @@ const loginUser = async (request, reply) => {
 		const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 		request.log.info(`Generated JWT token for user ${user.username}`);
 
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET online_status = ? WHERE id = ?', ['online', user.id], (err) => {
+				if (err)
+					return reject(err)
+				resolve()
+			})
+		})
 		return reply.send({ token });
 	} catch (err) {
 		request.log.error(`Error during login: ${err.message}`);
