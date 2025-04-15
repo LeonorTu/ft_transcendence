@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/03 01:29:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/04 14:26:41 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/09 17:25:57 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -31,9 +31,9 @@ const fastify = t.mockRequire('../server', {
 	'../db': dbMock,
 });
 
-/**
- * Test 3: GET /users => 500 when DB.all() fails.
- */
+
+// Test 3: GET /users => 500 when DB.all() fails.
+
 t.test('GET /users => 500 when DB.all() fails', async t => {
 	const res = await fastify.inject({
 		method: 'GET',
@@ -44,9 +44,9 @@ t.test('GET /users => 500 when DB.all() fails', async t => {
 	t.match(payload.error, /Database error/i, 'Shows DB failure message');
 });
 
-/**
- * Test 4: GET /user/:id => 500 when DB.get() fails.
- */
+
+// Test 4: GET /user/:id => 500 when DB.get() fails.
+
 t.test('GET /user/:id => 500 when DB.get() fails', async t => {
 	const res = await fastify.inject({
 		method: 'GET',
@@ -57,10 +57,10 @@ t.test('GET /user/:id => 500 when DB.get() fails', async t => {
 	t.match(payload.error, /Database error/i, 'Shows DB failure message');
 });
 
-/**
- * Test 5: POST /user/register => 500 when DB fails.
- * This triggers the catch block in registerUser.
- */
+
+// Test 5: POST /user/register => 500 when DB fails.
+// This triggers the catch block in registerUser.
+
 t.test('POST /user/register => 500 when DB fails', async t => {
 	const res = await fastify.inject({
 		method: 'POST',
@@ -72,9 +72,9 @@ t.test('POST /user/register => 500 when DB fails', async t => {
 	t.match(body.error, /internal server error/i, 'Matches the expected error message');
 });
 
-/**
- * Test 6: POST /user/login => 500 when DB fails.
- */
+
+// Test 6: POST /user/login => 500 when DB fails.
+
 t.test('POST /user/login => 500 when DB fails', async t => {
 	const res = await fastify.inject({
 		method: 'POST',
@@ -86,14 +86,13 @@ t.test('POST /user/login => 500 when DB fails', async t => {
 	t.match(body.error, /internal server error/i, 'Catches loginUser DB error');
 });
 
-/**
- * Test 7: PUT /user/update => 500 when DB fails.
- * Note: The status may be 401 if JWT fails before DB is accessed.
- */
-t.test('PUT /user/update => 500 when DB fails', async t => {
+
+// Test 7: PUT /user/:username/update => 500 when DB fails.
+
+t.test('PUT /user/:username/update => 500 when DB fails', async t => {
 	const res = await fastify.inject({
 		method: 'PUT',
-		url: '/user/update',
+		url: '/user/testuser/update',
 		headers: { Authorization: 'Bearer faketoken' },
 		payload: {
 			currentPassword: 'whatever',
@@ -103,23 +102,23 @@ t.test('PUT /user/update => 500 when DB fails', async t => {
 	t.ok([401, 500].includes(res.statusCode), 'Status is either 401 (JWT check) or 500 (DB error)');
 });
 
-/**
- * Test 8: PUT /user/link_google_account => 500 when DB fails.
- * Note: The status may be 401 if JWT fails before DB is accessed.
- */
-t.test('PUT /user/link_google_account => 500 when DB fails', async t => {
+
+// Test 8: PUT /user/:username/link_google_account => 500 when DB fails.
+// Note: The status may be 401 if JWT fails before DB is accessed.
+
+t.test('PUT /user/:username/link_google_account => 500 when DB fails', async t => {
 	const res = await fastify.inject({
 		method: 'PUT',
-		url: '/user/link_google_account',
+		url: '/user/testuser/link_google_account',
 		headers: { Authorization: 'Bearer faketoken' },
 		payload: { email: 'x', google_id: 'Y' },
 	});
 	t.ok([401, 500].includes(res.statusCode), 'Either JWT check fails or DB error occurs');
 });
 
-/**
- * Test 9: POST /user/login returns 500 when DB.get fails.
- */
+
+// Test 9: POST /user/login returns 500 when DB.get fails.
+
 t.test('POST /user/login returns 500 when DB.get fails', async t => {
 	const dbFailLoginMock = {
 		get: (sql, params, cb) => cb(new Error('Simulated login db.get error')),
@@ -142,155 +141,8 @@ t.test('POST /user/login returns 500 when DB.get fails', async t => {
 	await fastifyFailLogin.close();
 });
 
-// --- THESE TEST ARE NOT CURRENTLY WORKING ---
-//
-// /**
-//  * Test 10: POST /user/login returns 500 when DB.get fails (duplicate test)
-//  */
-// t.test('POST /user/login returns 500 when DB.get fails', async t => {
-//   const dbFailLoginMock = {
-//     get: (sql, params, cb) => cb(new Error('Simulated login db.get error')),
-//   };
-//
-//   const fastifyFailLogin = t.mockRequire('../server', {
-//     '../db': dbFailLoginMock,
-//   });
-//
-//   const res = await fastifyFailLogin.inject({
-//     method: 'POST',
-//     url: '/user/login',
-//     payload: { username: 'testuser', password: 'any' },
-//   });
-//
-//   t.equal(res.statusCode, 500, 'Should return 500 on DB.get failure during login');
-//   const body = JSON.parse(res.payload);
-//   t.match(body.error, /Internal server error/i);
-//
-//   await fastifyFailLogin.close();
-// });
-//
-// /**
-//  * Test 11: PUT /user/update returns 500 if DB.get fails when checking new username.
-//  */
-// t.test('PUT /user/update returns 500 if DB.get fails when checking new username', async t => {
-//   const dbFailUpdateUsernameMock = {
-//     get: (sql, params, cb) => {
-//       if (/SELECT \* FROM users WHERE username = \?/.test(sql)) {
-//         cb(new Error('Simulated username-check db.get error'));
-//       } else {
-//         cb(null, { id: 1, username: 'oldname', password: 'hashedpassword' });
-//       }
-//     },
-//     run: (sql, params, cb) => cb(null, { changes: 1 }),
-//   };
-//
-//   const fastifyUpdateUsernameFail = t.mockRequire('../server', {
-//     '../db': dbFailUpdateUsernameMock,
-//     '@fastify/jwt': (fastify, opts, done) => {
-//       fastify.decorateRequest('jwtVerify', async function () {
-//         this.user = { id: 1, username: 'oldname' };
-//       });
-//       done();
-//     },
-//   });
-//
-//   const res = await fastifyUpdateUsernameFail.inject({
-//     method: 'PUT',
-//     url: '/user/update',
-//     headers: { Authorization: 'Bearer faketoken' },
-//     payload: {
-//       currentPassword: 'any',
-//       newUsername: 'newuser',
-//     },
-//   });
-//
-//   t.equal(res.statusCode, 500, 'Should return 500 on DB.get failure when checking username');
-//   const body = JSON.parse(res.payload);
-//   t.match(body.error, /Internal server error/i);
-//
-//   await fastifyUpdateUsernameFail.close();
-// });
-//
-// /**
-//  * Test 12: PUT /user/update returns 500 if DB.run fails when updating password.
-//  */
-// t.test('PUT /user/update returns 500 if DB.run fails when updating password', async t => {
-//   const hashedPassword = await bcrypt.hash('oldpass', 10);
-//
-//   const dbFailUpdatePasswordMock = {
-//     get: (sql, params, cb) => cb(null, { id: 1, username: 'testuser', password: hashedPassword }),
-//     run: (sql, params, cb) => {
-//       if (/UPDATE users SET password/.test(sql)) {
-//         cb(new Error('Simulated password-update db.run error'));
-//       } else {
-//         cb(null, { changes: 1 });
-//       }
-//     },
-//   };
-//
-//   const fastifyUpdatePasswordFail = t.mockRequire('../server', {
-//     '../db': dbFailUpdatePasswordMock,
-//     '@fastify/jwt': (fastify, opts, done) => {
-//       fastify.decorateRequest('jwtVerify', async function () {
-//         this.user = { id: 1, username: 'testuser' };
-//       });
-//       done();
-//     },
-//   });
-//
-//   const res = await fastifyUpdatePasswordFail.inject({
-//     method: 'PUT',
-//     url: '/user/update',
-//     headers: { Authorization: 'Bearer faketoken' },
-//     payload: {
-//       currentPassword: 'oldpass',
-//       newPassword: 'newpass',
-//     },
-//   });
-//
-//   t.equal(res.statusCode, 500, 'Should return 500 on DB.run failure during password update');
-//   const body = JSON.parse(res.payload);
-//   t.match(body.error, /Internal server error/i);
-//
-//   await fastifyUpdatePasswordFail.close();
-// });
-//
-// /**
-//  * Test 13: PUT /user/link_google_account returns 500 when DB.run fails.
-//  */
-// t.test('PUT /user/link_google_account returns 500 when DB.run fails', async t => {
-//   const dbFailLinkGoogleMock = {
-//     get: (sql, params, cb) => cb(null, null),  // "No existing google account linked"
-//     run: (sql, params, cb) => cb(new Error('Simulated db.run error linking google account')),
-//   };
-//
-//   const fastifyLinkGoogleFail = t.mockRequire('../server', {
-//     '../db': dbFailLinkGoogleMock,
-//     '@fastify/jwt': (fastify, opts, done) => {
-//       fastify.decorateRequest('jwtVerify', async function () {
-//         this.user = { id: 1, username: 'dummy', password: 'dummyhash' };
-//       });
-//       done();
-//     },
-//   });
-//
-//   const res = await fastifyLinkGoogleFail.inject({
-//     method: 'PUT',
-//     url: '/user/link_google_account',
-//     headers: { Authorization: 'Bearer faketoken' },
-//     payload: { email: 'google@example.com', google_id: 'GOOGLE123' },
-//   });
-//
-//   t.equal(res.statusCode, 500, 'Should return 500 on DB.run failure during Google link');
-//   const body = JSON.parse(res.payload);
-//   t.match(body.error, /Internal server error/i);
-//
-//   await fastifyLinkGoogleFail.close();
-// });
+// Teardown: Close Fastify instance.
 
-/**
- * Test 14: Teardown - Close the mocked Fastify instance.
- */
 t.teardown(async () => {
 	await fastify.close();
 });

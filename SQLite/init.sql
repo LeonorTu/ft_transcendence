@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS users (
 	username TEXT NOT NULL UNIQUE,
 	email TEXT UNIQUE,
 	password TEXT NOT NULL,
-	google_id TEXT UNIQUE
+	google_id TEXT UNIQUE,
+	avatar TEXT
 );

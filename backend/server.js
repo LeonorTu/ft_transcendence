@@ -54,11 +54,22 @@ fastify.register(require('@fastify/jwt'), {
 	secret: 'supersecret'
 })
 
+fastify.register(require('@fastify/static'), {
+	root: path.join(__dirname, '/uploads/avatars'),
+	prefix: '/avatars/', // optional: default '/'
+	// constraints: { host: 'example.com' } // optional: default {}
+})
+
+fastify.register(require('@fastify/multipart'))
+fastify.register(require('@fastify/websocket'))
+
 fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
 
 fastify.register(require('./routes/google'))
+
+fastify.register(require('./routes/game'))
 
 module.exports = fastify
 

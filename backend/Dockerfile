@@ -18,8 +18,15 @@ RUN npm install
 # Unit test dependencies
 RUN npm install --save-dev tap 
 RUN npm install --save-dev proxyquire
+RUN npm install --save-dev form-data
 
 COPY . .
+
+#RUN mkdir -p /app/uploads/avatars
+
+#RUN rm -rf /app/uploads/avatars/.gitkeep /app/uploads/avatars/*.png
+
+VOLUME /app/uploads/avatars
 
 ENV SQLITE_DB_PATH=/data/database.sqlite
 

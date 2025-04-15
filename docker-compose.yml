@@ -14,8 +14,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8888:8888"
+      - "9000:9000"
     volumes:
       - sqlite-data:/data
+      - avatar-uploads:/app/uploads/avatars
       - ./backend:/app:rw
       - /app/node_modules
     environment:
@@ -28,4 +30,6 @@ services:
 
 volumes:
   sqlite-data:
+    driver: local
+  avatar-uploads:
     driver: local
