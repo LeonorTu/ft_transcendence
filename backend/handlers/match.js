@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/07 15:07:05 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/07 15:07:58 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/15 20:51:56 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -55,7 +55,6 @@ const getMatch = async (request, reply) => {
 		if (!match) {
 			return reply.status(404).send({ error: 'Match not found' });
 		}
-		// Optionally transform result field (if stored as CSV) into an array.
 		if (match.result) {
 			match.result = match.result.split(',').map(Number);
 		}
@@ -66,6 +65,7 @@ const getMatch = async (request, reply) => {
 	}
 };
 
+// Maybe a bad idea to have an endpoint for updating match results, but I'll leave it for testing purposes.
 const updateMatch = async (request, reply) => {
 	const { id } = request.params;
 	const { tournament_id, round, player1_id, player2_id, result, winner_id, loser_id } = request.body;
