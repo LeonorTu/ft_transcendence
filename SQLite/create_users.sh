@@ -12,7 +12,6 @@ curl -X POST http://localhost:8888/user/register \
 	 -H "Content-Type: application/json" \
 	 -d '{
 		   "username": "aaa",
-		   "email": "aaa@example.com",
 		   "password": "AAA"
 		 }'
 
@@ -20,7 +19,6 @@ curl -X POST http://localhost:8888/user/register \
 	 -H "Content-Type: application/json" \
 	 -d '{
 		   "username": "bbb",
-		   "email": "bbb@example.com",
 		   "password": "BBB"
 		 }'
 
@@ -28,7 +26,6 @@ curl -X POST http://localhost:8888/user/register \
 	 -H "Content-Type: application/json" \
 	 -d '{
 		   "username": "ccc",
-		   "email": "ccc@example.com",
 		   "password": "CCC"
 		 }'
 

@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/03 01:00:10 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/04 14:31:27 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/09 17:27:37 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -30,9 +30,9 @@ console.error = (msg) => {
 	capturedError += msg;
 };
 
-/**
- * Test 1: db.js error handling - Logs an error when the database fails to open.
- */
+
+// Test 1: db.js error handling - Logs an error when the database fails to open.
+
 t.test('db.js error handling: logs error when database fails to open', t => {
 	// Load the db module with sqlite3 replaced by our fake.
 	proxyquire('../db', {

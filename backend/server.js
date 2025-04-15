@@ -8,6 +8,12 @@ const fastify = require('fastify')({
 	// }
 })
 
+fastify.register(require('@fastify/cors'), {
+	origin: 'http://localhost:5173',
+	methods: ['GET', 'POST', 'PUT', 'DELETE'],
+	credentials: true
+})
+
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
@@ -43,6 +49,15 @@ fastify.register(require('@fastify/jwt'), {
 	secret: 'supersecret'
 })
 
+fastify.register(require('@fastify/static'), {
+	root: path.join(__dirname, '/uploads/avatars'),
+	prefix: '/avatars/', // optional: default '/'
+	// constraints: { host: 'example.com' } // optional: default {}
+})
+
+fastify.register(require('@fastify/multipart'))
+fastify.register(require('@fastify/websocket'))
+
 fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
@@ -50,6 +65,8 @@ fastify.register(require('./routes/users'))
 fastify.register(require('./routes/match'))
 
 fastify.register(require('./routes/tournament'))
+
+fastify.register(require('./routes/game'))
 
 module.exports = fastify
 

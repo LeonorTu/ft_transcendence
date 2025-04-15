@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/02 16:27:49 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/04 14:29:28 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/09 17:27:05 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -15,9 +15,9 @@ const fastify = require('../server');
 const db = require('../db');
 const { spawn } = require('child_process');
 
-/**
- * Test 1: Server initialization via fastify.ready() - Should start without errors.
- */
+
+// Test 1: Server initialization via fastify.ready() - Should start without errors.
+
 t.test('Server initializes correctly via fastify.ready()', t => {
 	fastify.ready(err => {
 		t.error(err, 'Server started without errors');
@@ -25,9 +25,9 @@ t.test('Server initializes correctly via fastify.ready()', t => {
 	});
 });
 
-/**
- * Test 2: Server start() function - Runs when executed as main.
- */
+
+// Test 2: Server start() function - Runs when executed as main.
+
 t.test('Server start() function runs when executed as main', t => {
 	const child = spawn('node', ['server.js'], {
 		env: {
@@ -63,14 +63,12 @@ t.test('Server start() function runs when executed as main', t => {
 	});
 });
 
-/**
- * Test 3: Teardown - Close database and Fastify instance to clean up resources.
- */
+
+// Test 3: Teardown - Close database and Fastify instance to clean up resources.
+
 t.teardown(async () => {
-	// Close the SQLite connection if still open.
 	await new Promise((resolve, reject) => {
 		db.close(err => (err ? reject(err) : resolve()));
 	});
-	// Close the Fastify instance.
 	await fastify.close();
 });

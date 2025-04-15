@@ -5,6 +5,9 @@ const {
 	updateUser,
 	loginUser,
 	linkGoogleAccount,
+	uploadAvatar,
+	getUserAvatar,
+	removeAvatar,
 } = require('../handlers/users')
 
 const User = {
@@ -19,6 +22,13 @@ const errorResponse = {
 	type: 'object',
 	properties: {
 		error: { type: 'string' },
+	}
+}
+
+const successResponse = {
+	type: 'object',
+	properties: {
+		message: { type: 'string' },
 	}
 }
 
@@ -90,6 +100,24 @@ const loginUserSchema = {
 	handler: loginUser
 }
 
+const getUserAvatarSchema = {
+	schema: {
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					file: {
+						type: 'string',
+						example: '/app/uploads/avatars/username_default.png' },
+				}
+			},
+			404: errorResponse,
+			500: errorResponse
+		}
+	},
+	handler: getUserAvatar
+}
+
 function usersRoutes(fastify, options, done) {
 
 	const updateUserSchema = {
@@ -109,12 +137,7 @@ function usersRoutes(fastify, options, done) {
 				],
 			},
 			response: {
-				200: {
-				type: 'object',
-					properties: {
-						message: { type: 'string' }
-					}
-				},
+				200: successResponse,
 				404: errorResponse,
 				500: errorResponse,
 			},
@@ -135,6 +158,19 @@ function usersRoutes(fastify, options, done) {
 				required: [ 'email', 'google_id' ],
 			},
 			response: {
+				200: successResponse,
+				400: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: linkGoogleAccount
+	}
+
+	const uploadAvatarSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
 				200: {
 					type: 'object',
 					properties: {
@@ -146,7 +182,25 @@ function usersRoutes(fastify, options, done) {
 			},
 			security: [{ bearerAuth: [] }],
 		},
-		handler: linkGoogleAccount
+		handler: uploadAvatar
+	}
+
+	const removeAvatarSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: {
+					type: 'object',
+					properties: {
+						message: { type: 'string' }
+					}
+				},
+				400: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: removeAvatar
 	}
 
 	fastify.get('/users', getUsersSchema)
@@ -156,11 +210,17 @@ function usersRoutes(fastify, options, done) {
 	fastify.post('/user/register', registerUserSchema)
 
 	fastify.post('/user/login', loginUserSchema)
-	
-	fastify.put('/user/update', updateUserSchema)
 
-	fastify.put('/user/link_google_account', linkGoogleAccountSchema)
-	
+	fastify.put('/user/:username/update', updateUserSchema)
+
+	fastify.put('/user/:username/link_google_account', linkGoogleAccountSchema)
+
+	fastify.get('/user/:username/avatar', getUserAvatarSchema)
+
+	fastify.put('/user/:username/upload_avatar', uploadAvatarSchema)
+
+	fastify.put('/user/:username/remove_avatar', removeAvatarSchema)
+
 	done()
 }
 

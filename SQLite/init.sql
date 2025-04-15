@@ -1,10 +1,11 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    email TEXT UNIQUE,
-    password TEXT NOT NULL,
-    google_id TEXT UNIQUE
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT NOT NULL UNIQUE,
+	email TEXT UNIQUE,
+	password TEXT NOT NULL,
+	google_id TEXT UNIQUE,
+	avatar TEXT
 );
 
 -- Tournaments table
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS matches (
     winner_id INTEGER,
     loser_id INTEGER,
     match_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT 'NOT_STARTED',
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
     FOREIGN KEY (player1_id) REFERENCES users(id),
     FOREIGN KEY (player2_id) REFERENCES users(id),
