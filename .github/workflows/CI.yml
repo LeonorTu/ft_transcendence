@@ -1,25 +1,31 @@
 name: Dockerized CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
+      
+      - name: Create dummy .env file for tests
+        run: |
+          cat > .env << EOL
+          NODE_ENV=test
+          GOOGLE_CLIENT_ID=test-client-id
+          GOOGLE_CLIENT_SECRET=test-client-secret
+          # Add any other required environment variables here
+          EOL
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-
+      
       - name: Build docker images
         run: docker compose build
-
+      
       - name: Run tests in backend container
         run: docker compose run --rm backend npm test -- --allow-incomplete-coverage
