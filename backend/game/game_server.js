@@ -39,8 +39,9 @@ class GameServer {
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
 		this.intervals = [];
-		
-		this.loadUnfinishedGamesFromDB();
+		if (process.env.NODE_ENV != 'test') {
+			this.loadUnfinishedGamesFromDB();
+		}
 	}
 
 
