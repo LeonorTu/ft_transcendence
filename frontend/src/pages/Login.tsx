@@ -110,7 +110,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (response.data.token) localStorage.setItem('token', response.data.token);
 
     toast.success('logged in successfully');
-    return redirect('/');
+    return redirect('/game');
   } catch (error) {
     let errorMessage = 'please double check your credentials';
     if (error instanceof AxiosError && error.response?.data?.error) {

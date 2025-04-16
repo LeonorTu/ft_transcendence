@@ -66,8 +66,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const confirmPassword = formData.get('confirmPassword') as string;
 
   if (password !== confirmPassword) {
-    console.log('Passwords do not match');
-
     toast.error('Passwords do not match');
     return null;
   }
@@ -80,13 +78,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     toast.success('account created successfully');
     return redirect('/login');
   } catch (error: unknown) {
-    // Type the error properly
     let errorMessage = 'please double check your credentials';
-
-    // Check if it's an axios error and has the expected structure
-    if (error instanceof AxiosError && error.response?.data?.error) {
-      errorMessage = error.response.data.error;
-    }
+    if (error instanceof AxiosError && error.message)
+      errorMessage = error.message;
     toast.error(errorMessage);
     return null;
   }
