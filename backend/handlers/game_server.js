@@ -1,3 +1,15 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   game_server.js                                     :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2025/04/16 10:03:53 by pleander          #+#    #+#             //
+//   Updated: 2025/04/16 10:03:55 by pleander         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
 const { GameServer, MessageType, Error, ErrorType } = require('../game/game_server')
 
 const game_server = new GameServer();
