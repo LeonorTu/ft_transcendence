@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/15 13:29:51 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/16 11:49:03 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -539,6 +539,26 @@ t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
 	t.end();
 });
 
+// TEST 18: logout user
+
+t.test('Test 18: logout user', async t => {
+	// login to ensure a valid token
+	const loginA = await fastify.inject({
+		method: 'POST',
+		url: '/user/login',
+		payload: { username: 'testuser', password: 'supersecret' },
+	});
+	t.equal(loginA.statusCode, 200, 'Login again success');
+	const testuserToken = JSON.parse(loginA.payload).token;
+
+	const wrongToken = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer wrongToken` },
+	})
+	t.equal(wrongToken.statusCode, 401, 'invalid token')
+	t.match(JSON.parse(wrongToken.payload).error, /Invalid token/i);
+})
 
 // TEARDOWN: Clean up DB and close Fastify
 
