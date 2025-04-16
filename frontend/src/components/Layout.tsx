@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { Link, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
@@ -117,42 +117,65 @@ const ToggleButton = styled.button`
 
 const Layout = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
+
+  // Check if the user is logged in by looking for a token in localStorage
+  useEffect(() => {
+    const handleTokenChange = () => {
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token); // Update login state
+    };
+
+    // Listen for the custom event
+    window.addEventListener('tokenChanged', handleTokenChange);
+
+    // Cleanup the event listener
+    return () => {
+      window.removeEventListener('tokenChanged', handleTokenChange);
+    };
+  }, []);
 
   const handleLogout = () => {
-    // Add logout later
-    console.log('Logging out...');
+    localStorage.removeItem('token'); // Remove token on logout
+    window.dispatchEvent(new Event('tokenChanged'));
+    setIsLoggedIn(false); // Update login state
+    console.log('Logged out...');
   };
 
   return (
     <ThemeProvider theme={{ isOpen }}>
       <LayoutContainer>
-        <ToggleButton onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? '←' : '→'}
-        </ToggleButton>
+        {isLoggedIn && ( // Show Drawer only if the user is logged in
+          <>
+            <ToggleButton onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? '←' : '→'}
+            </ToggleButton>
 
-        <Drawer $isOpen={isOpen}>
-          <DrawerTitle>Pong</DrawerTitle>
-          <NavContainer>
-            <NavList>
-              <NavItem>
-                <NavLink to='/'>Home</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink to='/game'>Game</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink to='/tournament'>Tournament</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink to='/profile'>Profile</NavLink>
-              </NavItem>
-            </NavList>
-          </NavContainer>
+            <Drawer $isOpen={isOpen}>
+              <DrawerTitle>Pong</DrawerTitle>
+              <NavContainer>
+                <NavList>
+                  <NavItem>
+                    <NavLink to='/'>Home</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink to='/game'>Game</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink to='/tournament'>Tournament</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink to='/profile'>Profile</NavLink>
+                  </NavItem>
+                </NavList>
+              </NavContainer>
 
-          <DrawerFooter>
-            <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
-          </DrawerFooter>
-        </Drawer>
+              <DrawerFooter>
+                <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
+              </DrawerFooter>
+            </Drawer>
+          </>
+        )}
 
         <Content>
           <Outlet />

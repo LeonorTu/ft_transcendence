@@ -107,7 +107,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       username,
       password,
     });
-    if (response.data.token) localStorage.setItem('token', response.data.token);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      window.dispatchEvent(new Event('tokenChanged')); // Notify Layout
+    }
 
     toast.success('logged in successfully');
     return redirect('/game');
