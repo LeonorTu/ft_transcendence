@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/16 11:49:03 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/16 15:46:00 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -551,13 +551,32 @@ t.test('Test 18: logout user', async t => {
 	t.equal(loginA.statusCode, 200, 'Login again success');
 	const testuserToken = JSON.parse(loginA.payload).token;
 
+	// logout with a wrong token
 	const wrongToken = await fastify.inject({
 		method: 'POST',
 		url: '/user/logout',
 		headers: { Authorization: `Bearer wrongToken` },
 	})
 	t.equal(wrongToken.statusCode, 401, 'invalid token')
-	t.match(JSON.parse(wrongToken.payload).error, /Invalid token/i);
+	t.match(JSON.parse(wrongToken.payload).error, /Unauthorized/i);
+
+	// logout userA
+	let logoutA = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer ${testuserToken}` },
+	})
+	t.equal(logoutA.statusCode, 200, 'userA logged out')
+	t.match(JSON.parse(logoutA.payload).message, /Logged out successfully/i);
+
+	// logout userA with the same token of previous logout that should have been blacklisted
+	logoutA = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer ${testuserToken}` },
+	})
+	t.equal(logoutA.statusCode, 401, 'userA cannot use a revoked token')
+	t.match(JSON.parse(logoutA.payload).error, /Token has been revoked/i);
 })
 
 // TEARDOWN: Clean up DB and close Fastify

@@ -140,19 +140,8 @@ const loginUser = async (request, reply) => {
 
 const logoutUser = async(request, reply) => {
 	try{
-		const authHeader = request.headers.authorization
 		const userId = request.user.id
-		
-		// console.log(`header = ${authHeader}`)
-		
-		if (!authHeader || !authHeader.startsWith('Bearer'))
-			return reply.status(400).send({ error: 'No token provided' })
-		
-		const token = authHeader.split(' ')[1]
-		
-		await request.jwtVerify()
-		
-		// console.log(`token = ${token}`)
+		const token = request.token
 
 		const decoded = request.jwtDecode(token)
 		const expiresAt = decoded.exp

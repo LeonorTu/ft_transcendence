@@ -14,6 +14,7 @@ module.exports = fp(async function(fastify, opts) {
 			const token = authHeader.split(' ')[1]
 			if (!token)
 				return reply.status(400).send({ error: "Missing token" });
+			request.token = token
 
 			const blacklisted = await new Promise((resolve, reject) => {
 				db.get('SELECT 1 from token_blacklist WHERE token = ?', [token], (err, row) => {
