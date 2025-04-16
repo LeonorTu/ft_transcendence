@@ -39,7 +39,10 @@ class GameServer {
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
 		this.intervals = [];
+		
+		this.loadUnfinishedGamesFromDB();
 	}
+
 
 	createGame(game_id, player1_id, player2_id) {
 		if (player1_id === player2_id) {
@@ -116,6 +119,29 @@ class GameServer {
 					resolve(game);
 				});
 			});
+		});
+	}
+	async loadUnfinishedGamesFromDB() {
+		const rows = await new Promise((resolve, reject) => {
+			db.all('SELECT * FROM matches WHERE status IN (?, ?, ?)', [GameState.ACTIVE, GameState.NOT_STARTED, GameState.RESETTING],
+			(err, rows) => {
+				if (err) {
+					return (reject(err));
+				}
+				resolve(rows);
+			});
+		});
+
+		if (this.games.has(rows.id)) {
+			throw new Error(ErrorType.GAME_ID_ALREADY_EXISTS, `Error: game id ${game_id} already exists`);
+		}
+		rows.forEach((row) => {
+			this.games.set(row.id, new Game(row.player1_id, row.player2_id));
+			const game = this.games.get(row.id);
+			game.players[0].score = row.player1_score;
+			game.players[1].score = row.player2_score;
+			game.gameState = row.status;
+			game.finished_rounds = row.finished_rounds;
 		});
 	}
 
