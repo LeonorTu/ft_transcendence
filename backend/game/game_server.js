@@ -10,7 +10,7 @@
 //                                                                            //
 // ************************************************************************** //
 
-const { Game } = require('./game.js');
+const { Game, GameState } = require('./game.js');
 const db = require('../db');
 
 const ErrorType = {
@@ -79,9 +79,24 @@ class GameServer {
 	refreshGames() {
 		this.games.forEach((game, id) => {
 			game.refreshGame();
+			if (game.gameState === GameState.FINSIHED) {
+				this.finishGame(game, id);
+			}
 		});
 	}
 
+	finishGame(game, id) {
+		new Promise((resolve, reject) => {
+			db.run('UPDATE matches SET winner_id = ?, loser_id = ?, status = ? WHERE id = ?', 
+			[game.winner.id, game.loser.id, game.gameState, id],
+				(err, game) => {
+					if (err)
+						return reject(err);
+					resolve(game);
+				});
+		});
+		this.games.delete(id); // Stop actively refreshing finished games
+	}
 
 	/** Updates game information in the database */
 	async updateDatabase() {
