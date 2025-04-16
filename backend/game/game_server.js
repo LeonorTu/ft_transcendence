@@ -11,6 +11,7 @@
 // ************************************************************************** //
 
 const { Game } = require('./game.js');
+const db = require('../db');
 
 const ErrorType = {
 	BAD_PLAYER_ID: 0,
@@ -81,6 +82,28 @@ class GameServer {
 		});
 	}
 
+
+	/** Updates game information in the database */
+	async updateDatabase() {
+		this.games.forEach( (value, key) => {
+			new Promise ((resolve, reject) => {
+				db.run(`UPDATE matches SET status = ?, finished_rounds = ?, player1_score = ?, player2_score = ? WHERE id = ?`, 
+					[
+						value.gameState,
+						value.finished_rounds, 
+						value.players[0].score,
+						value.players[1].score,
+						key
+					], 
+					(err, game) => {
+					if (err)
+						return reject(err);
+					resolve(game);
+				});
+			});
+		});
+	}
+
 	setupIntervals() {
 		this.intervals.push(
 			setInterval(() => this.refreshGames(), 10)
@@ -88,6 +111,9 @@ class GameServer {
 		this.intervals.push(
 			setInterval(() => this.broadcastStates(), 1000 / 30)
 		); // 30 FPS
+		this.intervals.push(
+			setInterval(() => this.updateDatabase(), 1000)
+		);
 	}
 
 	clearIntervals() {

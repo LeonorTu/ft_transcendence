@@ -14,10 +14,6 @@ const GameListElement = {
 		player1_id: {type: 'integer'},
 		player2_id: {type: 'integer'},
 		status: {type: 'string'},
-		current_round: {type: 'integer'},
-		winner_id: {type: 'integer'},
-		loser_id: {type: 'integer'},
-		match_time: {type: 'string'}
 	}
 }
 
@@ -27,8 +23,10 @@ const Game = {
 		id: {type: 'integer'},
 		player1_id: {type: 'integer'},
 		player2_id: {type: 'integer'},
+		player1_score: {type: 'integer'},
+		player2_score: {type: 'integer'},
 		status: {type: 'string'},
-		current_round: {type: 'integer'},
+		finished_rounds: {type: 'integer'},
 		winner_id: {type: 'integer'},
 		loser_id: {type: 'integer'},
 		match_time: {type: 'string'}
