@@ -27,8 +27,8 @@ t.test('Test 1: POST /game/new - creates a new game', async t => {
 
 	t.equal(res.statusCode, 200, 'Should return 200 on successful game creation');
 	const body = JSON.parse(res.payload);
-	t.ok(typeof body.game_id == 'number', 'Response includes a game_id');
-	gameId = body.game_id;
+	t.ok(typeof body.id == 'number', 'Response includes a game id');
+	gameId = body.id;
 });
 
 
@@ -64,7 +64,7 @@ t.test('Test 4: GET /game/list:id - List specific game information', async t => 
 	});
 	t.equal(res.statusCode, 200, 'Should return 200 for existing game');
 	const body = JSON.parse(res.payload);
-	t.equal(body.game_id, gameId, 'Should return the correct game');
+	t.equal(body.id, gameId, 'Should return the correct game');
 });
 
 

@@ -56,7 +56,7 @@ const createNewGame = async (request, reply) => {
 		});
 		game_server.createGame(gameId, player1_id, player2_id);
 		reply.status(200).send({
-			"game_id": gameId
+			"id": gameId
 		});
 	}
 	catch (e) {

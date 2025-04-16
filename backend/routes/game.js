@@ -47,7 +47,7 @@ const createGameSchema = {
 			200: {
 				type: 'object',
 				properties: {
-					game_id: {type: 'integer'}
+					id: {type: 'integer'}
 				}
 			},
 			400: errorResponse,
