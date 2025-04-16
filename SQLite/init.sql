@@ -31,16 +31,13 @@ CREATE TABLE IF NOT EXISTS tournament_registrations (
 -- Matches table
 CREATE TABLE IF NOT EXISTS matches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tournament_id INTEGER,  -- NULL for standalone matches
-    round INTEGER NOT NULL,
     player1_id INTEGER NOT NULL,
     player2_id INTEGER NOT NULL,
-    result TEXT,
-    winner_id INTEGER,
-    loser_id INTEGER,
-    match_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'NOT_STARTED',
-    FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
+    current_round INTEGER DEFAULT 0,
+    winner_id INTEGER DEFAULT NULL,
+    loser_id INTEGER DEFAULT NULL,
+    match_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (player1_id) REFERENCES users(id),
     FOREIGN KEY (player2_id) REFERENCES users(id),
     FOREIGN KEY (winner_id) REFERENCES users(id),

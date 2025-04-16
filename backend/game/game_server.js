@@ -6,7 +6,7 @@
 //   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             //
-//   Updated: 2025/04/10 14:54:36 by pleander         ###   ########.fr       //
+//   Updated: 2025/04/16 10:43:59 by pleander         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -14,6 +14,7 @@ const { Game } = require('./game.js');
 
 const ErrorType = {
 	BAD_PLAYER_ID: 0,
+	GAME_ID_ALREADY_EXISTS: 1,
 
 };
 
@@ -36,18 +37,17 @@ class GameServer {
 		this.games = new Map();
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
-		this.game_id_counter = 1;
 		this.intervals = [];
 	}
 
-	createGame(player1_id, player2_id) {
+	createGame(game_id, player1_id, player2_id) {
 		if (player1_id === player2_id) {
 			throw new Error(ErrorType.BAD_PLAYER_ID, "Error: bad player id")
 		}
-		const id = this.game_id_counter;
-		this.game_id_counter += 1;
-		this.games.set(id, new Game(player1_id, player2_id));
-		return id;
+		if (this.games.has(game_id)) {
+			throw new Error(ErrorType.GAME_ID_ALREADY_EXISTS, `Error: game id ${game_id} already exists`);
+		}
+		this.games.set(game_id, new Game(player1_id, player2_id));
 	}
 
 	joinGame(player_id, game_id) {

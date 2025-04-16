@@ -6,11 +6,12 @@
 //   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/16 10:03:53 by pleander          #+#    #+#             //
-//   Updated: 2025/04/16 10:03:55 by pleander         ###   ########.fr       //
+//   Updated: 2025/04/16 10:50:40 by pleander         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
-const { GameServer, MessageType, Error, ErrorType } = require('../game/game_server')
+const { GameServer, MessageType, Error, ErrorType } = require('../game/game_server');
+const db = require('../db');
 
 const game_server = new GameServer();
 
@@ -39,58 +40,64 @@ const runServer = (ws, req) => {
 	});
 };
 
-const createNewGame = (request, reply) => {
+const createNewGame = async (request, reply) => {
 	const { player1_id, player2_id } = request.body;
+	console.log("Creating game");
 	try {
-		const game_id = game_server.createGame(player1_id, player2_id);
+		const gameId = await new Promise((resolve, reject) => {
+			db.run(
+				'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
+				[player1_id, player2_id],
+				function(err) {
+					if (err) return (reject(err));
+					resolve(this.lastID);
+				}
+			);
+		});
+		game_server.createGame(gameId, player1_id, player2_id);
 		reply.status(200).send({
-			"game_id": game_id
+			"game_id": gameId
 		});
 	}
 	catch (e) {
 		request.log.error(e);
-		if (e.error_type === ErrorType.BAD_PLAYER_ID) {
+		if (e.error_type === ErrorType.BAD_PLAYER_ID || ErrorType.GAME_ID_ALREADY_EXISTS) {
 			reply.status(400).send({ error: e.msg});
 		}
 		else {
 			reply.status(500).send({ error: 'Internal Server Error' });
 		}
-
 	}
 };
 
 const listGames = (request, reply) => {
-	try {
-		let games = [];
-		for (const [key, value] of game_server.games) {
-			games.push({
-				game_id: key,
-				player1_id: value.players[0].id,
-				player2_id: value.players[1].id,
-			});
+	db.all('SELECT * FROM matches', [], (err, rows) => {
+		if (err) {
+			request.log.error(`Error fetching games: ${err.message}`);
+			return reply.status(500).send({error: `Database error: ${err.message}`});
 		}
-		return reply.status(200).send(games);
-	}
-	catch (e) {
-		reply.status(500).send({ error: 'Internal Server Error' });
-
-	}
+		if (rows.length === 0) {
+			request.log.warn('No games in database')
+			return reply.status(404).send({error: 'No games found'})
+		}
+		return reply.status(200).send(rows);
+	});
 };
 
 const getGame = (request, reply) => {
 	const { id } = request.params;
-	if (!game_server.games.has(Number(id))) {
-		return reply.status(404).send({error: `Game with id ${id} does not exist`});
-	}
-	const game = game_server.games.get(Number(id));
-	return reply.status(200).send({
-		game_id: Number(id),
-		finished_rounds: game.finished_rounds,
-		total_rounds: game.total_rounds,
-		player1_id: game.players[0].id,
-		player2_id: game.players[1].id,
-		game_state: game.gameState,
-	});
+	console.log(`Fetching game with id ${id}`);
+	db.get('SELECT * FROM matches WHERE id = ?', [id], (err, row) => {
+		if (err) {
+			request.log.error(`Error fetching game: ${err.message}`);
+			return reply.status(500).send({error: `Database error: ${err.message}`});
+		}
+		if (!row) {
+			request.log.warn(`Game with id ${id} not found`)
+			return reply.status(404).send({error: `Game with id ${id} not found`})
+		}
+		return reply.status(200).send(row);
+	})
 };
 
 module.exports = { runServer, createNewGame, listGames, getGame, game_server }
