@@ -10,6 +10,13 @@ const fastify = require('fastify')({
 
 require('./cron');
 
+fastify.register(require('@fastify/cors'), {
+	origin: 'http://localhost:5173',
+	methods: ['GET', 'POST', 'PUT', 'DELETE'],
+	credentials: true
+})
+
+
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
 		securityDefinitions: {
@@ -51,10 +58,17 @@ fastify.register(require('@fastify/static'), {
 })
 
 fastify.register(require('@fastify/multipart'))
+fastify.register(require('@fastify/websocket'))
 
 fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
+
+fastify.register(require('./routes/match'))
+
+fastify.register(require('./routes/tournament'))
+
+fastify.register(require('./routes/game'))
 
 module.exports = fastify
 
