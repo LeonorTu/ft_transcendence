@@ -75,7 +75,13 @@ fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
 
+
 fastify.register(require('./routes/google'))
+
+fastify.register(require('./routes/match'))
+
+fastify.register(require('./routes/tournament'))
+
 
 fastify.register(require('./routes/game'))
 
