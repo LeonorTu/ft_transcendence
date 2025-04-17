@@ -20,15 +20,15 @@ const getUsers = (request, reply) => {
 }
 
 const getUser = (request, reply) => {
-	const { id } = request.params
-	db.get('SELECT * from users WHERE id = ?', [id], (err, row) => {
+	const { username } = request.params
+	db.get('SELECT * from users WHERE username = ?', [username], (err, row) => {
 		if (err) {
 			request.log.error(`Error fetching user: ${err.message}`);
 			return reply.status(500).send({ error: 'Database error: ' + err.message });
 		}
 		if (!row) {
-			request.log.warn(`User with id ${id} not found`)
-			return reply.status(404).send({error: `User with id ${id} not found`})
+			request.log.warn(`User ${username} not found`)
+			return reply.status(404).send({error: `User ${username} not found`})
 		}
 		// row.avatar = `http://localhost:8888/user/${row.username}/avatar`
 		return reply.send(row)

@@ -26,13 +26,13 @@ t.test('online status tests', async t => {
 		url: '/user/register',
 		payload: userA,
 	});
-	const userAId = JSON.parse(regA.payload).id;
+	// const userAId = JSON.parse(regA.payload).id;
 	const userAUsername = JSON.parse(regA.payload).username;
 
 	// get default online status of userA
 	let statusUserA = await fastify.inject({
 		method: 'GET',
-		url: `user/${userAId}`
+		url: `user/${userAUsername}`
 	})
 	t.equal(JSON.parse(statusUserA.payload).online_status, 'offline', 'user is correctly set offline at registration')
 
@@ -47,7 +47,7 @@ t.test('online status tests', async t => {
 	// get status of userA afetr login
 	statusUserA = await fastify.inject({
 		method: 'GET',
-		url: `user/${userAId}`
+		url: `user/${userAUsername}`
 	})
 	t.equal(JSON.parse(statusUserA.payload).online_status, 'online', 'user is correctly set online after login')
 
@@ -61,7 +61,7 @@ t.test('online status tests', async t => {
 	t.equal(updatedStatus.statusCode, 200, 'online status set to away succesfully')
 	statusUserA = await fastify.inject({
 		method: 'GET',
-		url: `user/${userAId}`
+		url: `user/${userAUsername}`
 	})
 	t.equal(JSON.parse(statusUserA.payload).online_status, 'away', 'user status updated also on db successfully')
 

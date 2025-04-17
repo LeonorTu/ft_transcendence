@@ -310,7 +310,7 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.get('/users', getUsersSchema)
 
-	fastify.get('/user/:id', getUserSchema)
+	fastify.get('/user/:username', getUserSchema)
 
 	fastify.post('/user/register', registerUserSchema)
 
