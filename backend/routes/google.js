@@ -1,31 +1,43 @@
 const { googleOAuthHandler } = require('../handlers/google')
 const db = require('../db')
 
-const googleCallbackSchema = {
-  schema: {
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          token: { type: 'string' }
-        }
-      },
-      400: {
-        type: 'object',
-        properties: {
-          error: { type: 'string' }
-        }
-      },
-      500: {
-        type: 'object',
-        properties: {
-          error: { type: 'string' }
-        }
-      }
-    }
-  },
-  handler: googleOAuthHandler
-}
+const errorResponse = {
+	type: 'object',
+	properties: {
+	  error: { type: 'string' },
+	}
+  }
+  
+  const messageResponse = {
+	type: 'object',
+	properties: {
+	  message: { type: 'string' },
+	}
+  }
+  
+  const messageErrorResponse = {
+	type: 'object',
+	properties: {
+	  message: { type: 'string' },
+	  error: { type: 'string' }
+	}
+  }
+  
+  const googleCallbackSchema = {
+	schema: {
+	  response: {
+		200: {
+		  type: 'object',
+		  properties: {
+			token: { type: 'string' }
+		  }
+		},
+		400: errorResponse,
+		500: errorResponse,
+	  }
+	},
+	handler: googleOAuthHandler
+  }
 
 function googleRoutes(fastify, options, done) {
   // Register OAuth2 with Google configuration
@@ -60,13 +72,11 @@ function googleRoutes(fastify, options, done) {
         }
       },
       response: {
-        200: {
-          type: 'object',
-          properties: {
-            message: { type: 'string' },
-            error: { type: 'string' }
-          }
-        }
+        200: messageResponse,
+        400: messageErrorResponse,
+        401: messageErrorResponse,
+        404: messageErrorResponse,
+        500: errorResponse
       }
     },
     handler: async (request, reply) => {
@@ -74,7 +84,7 @@ function googleRoutes(fastify, options, done) {
       
       if (error) {
         // Handle authentication errors
-        return reply.send({ 
+        return reply.status(400).send({ 
           message: 'Authentication failed', 
           error: error 
         });
@@ -93,7 +103,7 @@ function googleRoutes(fastify, options, done) {
           });
           
           if (!user) {
-            return reply.send({
+            return reply.status(404).send({
               message: 'User not found in database',
               error: 'User record missing'
             });
@@ -105,7 +115,7 @@ function googleRoutes(fastify, options, done) {
           });
         } catch (err) {
           request.log.error(`Error processing homepage with token: ${err.message}`);
-          return reply.send({ 
+          return reply.status(401).send({ 
             message: 'Invalid token or database error', 
             error: err.message 
           });
