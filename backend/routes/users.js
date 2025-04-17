@@ -129,6 +129,13 @@ const getUserAvatarSchema = {
 
 const getUserFriendsSchema = {
 	schema: {
+		querystring: {
+			type: 'object',
+			properties: {
+				page: { type: 'integer', default: 1 },
+				limit: { type: 'integer', default: 10 }
+			}
+		},
 		response: {
 			200: {
 				type: 'array',

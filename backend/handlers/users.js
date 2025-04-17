@@ -395,6 +395,8 @@ const addFriend = async (request, reply) => {
 
 const getUserFriends = async (request, reply) => {
 	const username = request.params.username
+	const { page = 1, limit = 10 } = request.query
+	const offset = (page - 1) * limit
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get('SELECT id FROM users WHERE username = ?', [username],
@@ -410,7 +412,7 @@ const getUserFriends = async (request, reply) => {
 		if (!user)
 			return reply.status(404).send({ error: 'User not found' });
 		const friendsList = await new Promise((resolve, reject) => {
-			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ?', [user.id],
+			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ? LIMIT ? OFFSET ?', [user.id, limit, offset],
 				(err, rows) => {
 					if (err)
 						return reject(err)

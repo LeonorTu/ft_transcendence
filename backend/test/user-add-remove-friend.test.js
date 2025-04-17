@@ -136,6 +136,32 @@ t.test('add/remove friends tests', async t => {
 		payload: { user_id: userAId, friend_id: userBId },
 	});
 	t.equal(selfMadeFriend.statusCode, 400, 'not able to add yourself as friend of another user')
+
+	// trying to add a lot of friends and seeing if the friends list enpoint shows only 10 elements
+	const username = 'user'
+	for (let i = 3; i < 25; i++) {
+		const current_username = `${username}${i}`;
+		await fastify.inject({
+			method: 'POST',
+			url: '/user/register',
+			payload: {
+				username: current_username,
+				password: 'passA',
+			}
+		});
+
+		await fastify.inject({
+			method: 'POST',
+			url: '/add_friend',
+			headers: { Authorization: `Bearer ${tokenA}` },
+			payload: { user_id: userAId, friend_id: i },
+		});
+	}
+	const limitedList = await fastify.inject({
+		method: 'GET',
+		url: `/user/${userAUsername}/friends`
+	})
+	t.equal(JSON.parse(limitedList.payload).length, 10, 'limit of 10 for each page ok')
 })
 
 t.teardown(async () => {
