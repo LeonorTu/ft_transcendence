@@ -87,6 +87,7 @@ class Game {
 		this.finished_rounds = 0;
 		this.total_rounds = TOTAL_ROUNDS;
 		this.winner = null;
+		this.loser = null;
 		this.connected_players = 0;
 		this.players = [];
 		this.players.push(new Player(player1_id, Side.LEFT));
@@ -109,6 +110,7 @@ class Game {
 			"players": this.players,
 			"game_state": this.gameState,
 			"winner": this.winner,
+			"loser": this.loser,
 			"remaining_timeout": Math.floor(this.remainingTimout / 1000) + 1
 		}
 	}
@@ -340,12 +342,15 @@ class Game {
 					this.gameState = GameState.FINSIHED;
 					if (this.players[0].score > this.players[1].score) {
 						this.winner = this.players[0];
+						this.loser = this.players[1];
 					}
 					else if (this.players[1].score > this.players[0].score) {
 						this.winner = this.players[1];
+						this.loser = this.players[0];
 					}
 					else {
 						this.winner = null;
+						this.loser = null;
 					}
 					return;
 				}
@@ -369,4 +374,4 @@ class Game {
 	}
 }
 
-module.exports = {Game, Side, Input}
+module.exports = {Game, GameState, Side, Input}

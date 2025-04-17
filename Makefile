@@ -3,6 +3,9 @@ COMPOSE := docker compose
 up:
 	$(COMPOSE) up -d
 
+build:
+	$(COMPOSE) build
+
 logs:
 	$(COMPOSE) logs
 
@@ -12,7 +15,12 @@ down:
 test:
 	$(COMPOSE) run --rm backend npm test -- --allow-incomplete-coverage
 
-clean:
+clean: down
 	$(COMPOSE) rm
 
-.PHONY: up down clean
+fclean:
+	$(COMPOSE) down -v
+	$(COMPOSE) rm
+
+
+.PHONY: up down clean fclean logs build
