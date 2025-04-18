@@ -5,7 +5,23 @@ CREATE TABLE IF NOT EXISTS users (
 	email TEXT UNIQUE,
 	password TEXT NOT NULL,
 	google_id TEXT UNIQUE,
-	avatar TEXT
+	avatar TEXT,
+	online_status TEXT
+);
+
+CREATE TABLE IF NOT EXISTS friends (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	user_id INTEGER NOT NULL,
+	friend_id INTEGER NOT NULL,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
+	UNIQUE (user_id, friend_id)
+);
+
+CREATE TABLE IF NOT EXISTS token_blacklist (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	token TEXT UNIQUE,
+	expiration INTEGER
 );
 
 -- Tournaments table

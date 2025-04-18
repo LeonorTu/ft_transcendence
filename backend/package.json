@@ -5,7 +5,7 @@
   "scripts": {
     "start": "NODE_ENV=prod node server",
     "dev": "NODE_ENV=dev nodemon server",
-    "test": "NODE_ENV=test tap --passes"
+    "test": "NODE_ENV=test tap --passes --jobs=1"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +22,7 @@
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "fastify": "^5.2.2",
+    "node-cron": "^3.0.3",
     "sharp": "^0.33.5",
     "sqlite3": "^5.1.7",
     "ws": "^8.18.1",

@@ -8,6 +8,8 @@ const fastify = require('fastify')({
 	// }
 })
 
+require('./cron');
+
 const fastifyOAuth2 = require('@fastify/oauth2')
 
 fastify.register(require('@fastify/cors'), {

@@ -2,14 +2,14 @@ const db = require('../db')
 const bcrypt = require('bcryptjs')
 const fs = require('fs')
 const path = require('path')
-const { pipeline } = require('node:stream/promises')
+// const { pipeline } = require('node:stream/promises')
 const sharp = require('sharp');
 
 const getUsers = (request, reply) => {
 	db.all('SELECT id, username FROM users', [], (err, rows) => {
 		if (err) {
 			request.log.error(`Error fetching users: ${err.message}`);
-			return reply.status(500).send({error: 'Database error: ' +  + err.message });
+			return reply.status(500).send({error: 'Database error: ' + err.message });
 		}
 		if (rows.length === 0) {
 			request.log.warn('No users in database')
@@ -20,16 +20,17 @@ const getUsers = (request, reply) => {
 }
 
 const getUser = (request, reply) => {
-	const { id } = request.params
-	db.get('SELECT * from users WHERE id = ?', [id], (err, row) => {
+	const { username } = request.params
+	db.get('SELECT * from users WHERE username = ?', [username], (err, row) => {
 		if (err) {
 			request.log.error(`Error fetching user: ${err.message}`);
 			return reply.status(500).send({ error: 'Database error: ' + err.message });
 		}
 		if (!row) {
-			request.log.warn(`User with id ${id} not found`)
-			return reply.status(404).send({error: `User with id ${id} not found`})
+			request.log.warn(`User ${username} not found`)
+			return reply.status(404).send({error: `User ${username} not found`})
 		}
+		// row.avatar = `http://localhost:8888/user/${row.username}/avatar`
 		return reply.send(row)
 	})
 }
@@ -55,7 +56,7 @@ const registerUser = async (request, reply) => {
 		// console.log(hashedPassword);
 		let fileName
 		try {
-			const avatarResponse = await fetch(`https://aapi.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
+			const avatarResponse = await fetch(`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
 			if (!avatarResponse.ok)
 				throw new Error('External avatar API returned an error')
 			const svg = await avatarResponse.text()
@@ -76,8 +77,8 @@ const registerUser = async (request, reply) => {
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)',
-				[newUser.username, newUser.password, newUser.avatar],
+				'INSERT INTO users (username, password, avatar, online_status) VALUES (?, ?, ?, ?)',
+				[newUser.username, newUser.password, newUser.avatar, 'offline'],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
@@ -123,12 +124,54 @@ const loginUser = async (request, reply) => {
 		const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 		request.log.info(`Generated JWT token for user ${user.username}`);
 
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET online_status = ? WHERE id = ?', ['online', user.id], (err) => {
+				if (err)
+					return reject(err)
+				resolve()
+			})
+		})
 		return reply.send({ token });
 	} catch (err) {
 		request.log.error(`Error during login: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });
 	}
 };
+
+const logoutUser = async(request, reply) => {
+	try{
+		const userId = request.user.id
+		const token = request.token
+
+		const decoded = request.jwtDecode(token)
+		const expiresAt = decoded.exp
+		// console.log(`expires at: ${expiresAt}`)
+		// const now = Math.floor(Date.now() / 1000)
+		// console.log(`now = ${now}`)
+		// console.log(`real time = ${(expiresAt - now) / 60 / 60}`)
+
+		await new Promise((resolve, reject) => {
+			db.run('INSERT INTO token_blacklist (token, expiration) VALUES (?, ?)', [token, expiresAt], (err) => {
+				if (err)
+					return reject(err)
+				resolve()
+			})
+		})
+
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET online_status = ? where id = ?', ['offline', userId], (err) => {
+				if (err)
+					return reject(err)
+				return resolve()
+			})
+		})
+
+		return reply.status(200).send({ message: 'Logged out successfully' });
+	} catch (err) {
+		request.log.warn('Invalid token')
+		return reply.status(401).send({ error: 'Invalid token' });
+	}
+}
 
 const updateUser = async (request, reply) => {
 	const { currentPassword, newPassword, newUsername } = request.body
@@ -235,13 +278,19 @@ const linkGoogleAccount = async (request, reply) => {
 
 const uploadAvatar = async (request, reply) => {
 	const data = await request.file()
+	const chunks = []
+	for await (const chunk of data.file) {
+		chunks.push(chunk)
+	}
+	const fileBuffer = Buffer.concat(chunks)
 	const allowedMimeTypes = [ 'image/png', 'image/jpeg' ]
 	try {
 		if (!allowedMimeTypes.includes(data.mimetype))
 			return reply.status(400).send({ error: 'Invalid file format. Only PNG and JPEG are allowed.' })
 
-		if (data.file.bytesRead > 2 * 1024 * 1024)
-			return reply.status(400).send({ error: 'File is too large. Maximum size is 2MB.' })
+		// console.log(fileBuffer.length)
+		if (fileBuffer.length >= 1 * 1024 * 1024)
+			return reply.status(400).send({ error: 'File is too large. Maximum size is 1MB.' })
 
 		const fileName = `${request.user.username}_custom.${data.mimetype.split('/')[1]}`
 		const filePath = path.join(__dirname, '../uploads/avatars', fileName)
@@ -251,11 +300,12 @@ const uploadAvatar = async (request, reply) => {
 			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
 		}
 
-		await pipeline(
+		await sharp(fileBuffer).resize(256, 256, { fit: 'inside' }).toFile(filePath)
+/* 		await pipeline(
 			data.file,
 			sharp().resize(256, 256, { fit: 'inside' }),
 			fs.createWriteStream(filePath)
-		)
+		) */
 		
 		await new Promise((resolve, reject) => {
 			db.run('UPDATE users SET avatar = ? WHERE username = ?',
@@ -317,14 +367,152 @@ const removeAvatar = async (request, reply) => {
 	}
 }
 
+const addFriend = async (request, reply) => {
+	const { user_id, friend_id } = request.body
+	const userId = request.user.id
+	try{
+		if (user_id === friend_id)
+			return reply.status(400).send({ error: "Can't add youself as friend" })
+		if (user_id !== userId)
+			return reply.status(400).send({ error: `You don't have permission to modify another user` });
+		await new Promise ((resolve, reject) => {
+			db.run('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)', [user_id, friend_id], (err) => {
+				if (err)
+					return reject(err)
+				resolve ()
+			})
+		})
+		return reply.status(200).send({ message: 'Friend added!' });
+	} catch (err) {
+		if (err.message.includes('FOREIGN KEY constraint failed'))
+			return reply.status(400).send({ error: 'User or friend not found' });
+		if (err.message.includes('UNIQUE constraint failed'))
+			return reply.status(409).send({ error: 'You are already friends with this user' });
+		request.log.error(`Error adding friend: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const getUserFriends = async (request, reply) => {
+	const username = request.params.username
+	const { page = 1, limit = 10 } = request.query
+	const offset = (page - 1) * limit
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT id FROM users WHERE username = ?', [username],
+				(err, row) => {
+					if (err)
+						return reject(err)
+					if (!row)
+						resolve(null)
+					resolve(row)
+				}
+			)
+		})
+		if (!user)
+			return reply.status(404).send({ error: 'User not found' });
+		const friendsList = await new Promise((resolve, reject) => {
+			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ? LIMIT ? OFFSET ?', [user.id, limit, offset],
+				(err, rows) => {
+					if (err)
+						return reject(err)
+					resolve(rows)
+				}
+			)
+		})
+		return reply.send(friendsList)
+	} catch (err) {
+		request.log.error(`Error fetching friends: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const removeFriend = async(request, reply) => {
+	const { friendshipId } = request.params
+	const userId = request.user.id
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('Select user_id FROM friends WHERE id = ?', [friendshipId], (err, row) => {
+				if (err)
+					return reject(err)
+				resolve(row)
+			})
+		})
+		if (user.user_id !== userId)
+			return reply.status(400).send({ error: `You don't have permission to modify another user` });
+		await new Promise((resolve, reject) => {
+			db.run('DELETE FROM friends WHERE id = ?', [friendshipId], function (err) {
+				if (err)
+					return reject(err)
+				if (this.changes === 0)
+					return reject(new Error('Friendship not found'))
+				resolve()
+			})
+		})
+		return reply.status(200).send({ message: 'friend removed' })
+	} catch (err) {
+		if (err.message === 'Friendship not found')
+			return reply.status(404).send({ error: 'Friendship not found' });
+		request.log.error(`Error removing friend: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+const updateOnlineStatus = async (request, reply) => {
+	const username = request.params.username
+	const { status } = request.body
+	const allowedStatus = [ 'online', 'offline', 'away']
+	if (!allowedStatus.includes(status))
+		return reply.status(400).send({ error: 'Invalid status' })
+	if (request.params.username != request.user.username) {
+		request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
+		return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
+	}
+	try {
+		const userId = await new Promise((resolve, reject) => {
+			db.get('SELECT id FROM users WHERE username = ?',
+				[username],
+				(err, row) => {
+					if (err)
+						return reject(err)
+					if (!row) {
+						request.log.warn(`User not found`)
+						return reply.status(404).send({error: `User not found`})
+					}
+					resolve(row.id)
+				}
+			)
+		})
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET online_status = ? WHERE id = ?',
+				[status, userId],
+				(err) => {
+				if (err)
+					return reject(err)
+				resolve()
+				}
+			)
+		})
+		return reply.status(200).send({ message: 'online status updated succesfully'})
+	} catch (err) {
+		request.log.error(`Error updating user online tatus: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
 module.exports = {
 	getUsers,
 	registerUser,
 	getUser,
 	updateUser,
 	loginUser,
+	logoutUser,
 	linkGoogleAccount,
 	uploadAvatar,
 	getUserAvatar,
 	removeAvatar,
+	addFriend,
+	updateOnlineStatus,
+	getUserFriends,
+	removeFriend,
 }

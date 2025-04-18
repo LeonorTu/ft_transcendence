@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   users.test.js                                      :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/09 18:18:57 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   users.test.js                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/17 22:11:56 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const t = require('tap');
 const path = require('path');
@@ -18,7 +18,7 @@ const db = require('../db');
 const fastify = require('../server');
 
 // Store a user ID and token for later use
-let userId;
+let userUsername;
 let authToken;
 
 
@@ -26,7 +26,15 @@ let authToken;
 
 t.before(async () => {
 	await new Promise((resolve, reject) => {
-		db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+		db.serialize(() => {
+			db.run('DELETE FROM users', err => {
+				if (err) return reject(err);
+			});
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				if (err) return reject(err);
+				resolve();
+			});
+		});
 	});
 });
 
@@ -46,7 +54,7 @@ t.test('Test 1: POST /user/register (Positive) - creates a new user', async t =>
 	const body = JSON.parse(res.payload);
 	t.ok(body.id, 'Response includes an id');
 	t.equal(body.username, payload.username, 'Username matches');
-	userId = body.id;
+	userUsername = body.username;
 });
 
 
@@ -159,14 +167,14 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 // TEST 7: GET /user/:id (Positive)
 
 t.test('Test 7: GET /user/:id => returns the registered user', async t => {
-	t.ok(userId, 'User ID must be set from test #1');
+	t.ok(userUsername, 'User username must be set from test #1');
 	const res = await fastify.inject({
 		method: 'GET',
-		url: `/user/${userId}`,
+		url: `/user/${userUsername}`,
 	});
 	t.equal(res.statusCode, 200, 'Should return 200 for existing user');
 	const body = JSON.parse(res.payload);
-	t.equal(body.id, Number(userId), 'Returned ID matches stored userId');
+	// t.equal(body.username, userUsername, 'Returned ID matches stored userId');
 	t.equal(body.username, 'testuser', 'Returned username matches');
 });
 
@@ -181,7 +189,7 @@ t.test('Test 8: GET /users => 200 + array containing testuser', async t => {
 	t.equal(res.statusCode, 200, 'GET /users returns 200');
 	const list = JSON.parse(res.payload);
 	t.ok(Array.isArray(list), 'Response is an array');
-	const found = list.some(u => u.id === Number(userId));
+	const found = list.some(u => u.username === userUsername);
 	t.ok(found, 'Registered user is in the list');
 });
 
@@ -531,13 +539,60 @@ t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
 	t.end();
 });
 
+// TEST 18: logout user
+
+t.test('Test 18: logout user', async t => {
+	// login to ensure a valid token
+	const loginA = await fastify.inject({
+		method: 'POST',
+		url: '/user/login',
+		payload: { username: 'testuser', password: 'supersecret' },
+	});
+	t.equal(loginA.statusCode, 200, 'Login again success');
+	const testuserToken = JSON.parse(loginA.payload).token;
+
+	// logout with a wrong token
+	const wrongToken = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer wrongToken` },
+	})
+	t.equal(wrongToken.statusCode, 401, 'invalid token')
+	t.match(JSON.parse(wrongToken.payload).error, /Unauthorized/i);
+
+	// logout userA
+	let logoutA = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer ${testuserToken}` },
+	})
+	t.equal(logoutA.statusCode, 200, 'userA logged out')
+	t.match(JSON.parse(logoutA.payload).message, /Logged out successfully/i);
+
+	// logout userA with the same token of previous logout that should have been blacklisted
+	logoutA = await fastify.inject({
+		method: 'POST',
+		url: '/user/logout',
+		headers: { Authorization: `Bearer ${testuserToken}` },
+	})
+	t.equal(logoutA.statusCode, 401, 'userA cannot use a revoked token')
+	t.match(JSON.parse(logoutA.payload).error, /Token has been revoked/i);
+})
 
 // TEARDOWN: Clean up DB and close Fastify
 
 t.teardown(async () => {
 	try {
 		await new Promise((resolve, reject) => {
-			db.run('DELETE FROM users', err => (err ? reject(err) : resolve()));
+			db.serialize(() => {
+				db.run('DELETE FROM users', err => {
+					if (err) return reject(err);
+				});
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
 		});
 
 		await new Promise((resolve, reject) => {

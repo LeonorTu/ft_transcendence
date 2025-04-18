@@ -1,13 +1,20 @@
+const db = require('../db')
+
 const {
 	getUsers,
 	registerUser,
 	getUser,
 	updateUser,
 	loginUser,
+	logoutUser,
 	linkGoogleAccount,
 	uploadAvatar,
 	getUserAvatar,
 	removeAvatar,
+	addFriend,
+	updateOnlineStatus,
+	getUserFriends,
+	removeFriend,
 } = require('../handlers/users')
 
 const User = {
@@ -15,6 +22,8 @@ const User = {
 	properties: {
 		id: { type: 'integer' },
 		username: { type: 'string' },
+		avatar: { type: 'string'},
+		online_status: {typ : 'string' },
 	}
 }
 
@@ -108,7 +117,7 @@ const getUserAvatarSchema = {
 				properties: {
 					file: {
 						type: 'string',
-						example: '/app/uploads/avatars/username_default.png' },
+						example: 'username_default.png' },
 				}
 			},
 			404: errorResponse,
@@ -118,7 +127,48 @@ const getUserAvatarSchema = {
 	handler: getUserAvatar
 }
 
+const getUserFriendsSchema = {
+	schema: {
+		querystring: {
+			type: 'object',
+			properties: {
+				page: { type: 'integer', default: 1 },
+				limit: { type: 'integer', default: 10 }
+			}
+		},
+		response: {
+			200: {
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: {
+						id: { type: 'integer' },
+						user_id: { type : 'integer' },
+						friend_id: { type: 'integer' },
+					}
+				}
+			},
+			404: errorResponse,
+			500: errorResponse
+		}
+	},
+	handler: getUserFriends
+}
+
 function usersRoutes(fastify, options, done) {
+
+	const logoutUserSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				401: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: logoutUser
+	}
 
 	const updateUserSchema = {
 		onRequest: [fastify.authenticate],
@@ -203,13 +253,70 @@ function usersRoutes(fastify, options, done) {
 		handler: removeAvatar
 	}
 
+	const addFriendSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					user_id: { type: 'integer' },
+					friend_id: { type: 'integer' },
+				},
+				required: [ 'user_id', 'friend_id' ],
+			},
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				409: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: addFriend
+	}
+
+	const removeFriendSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: removeFriend
+	}
+
+	const updateOnlineStatusSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					status: { type: 'string' },
+				},
+				required: [ 'status' ],
+			},
+			response: {
+				200: successResponse,
+				400: errorResponse,
+				500: errorResponse
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: updateOnlineStatus
+	}
+
 	fastify.get('/users', getUsersSchema)
 
-	fastify.get('/user/:id', getUserSchema)
+	fastify.get('/user/:username', getUserSchema)
 
 	fastify.post('/user/register', registerUserSchema)
 
 	fastify.post('/user/login', loginUserSchema)
+
+	fastify.post('/user/logout', logoutUserSchema)
 
 	fastify.put('/user/:username/update', updateUserSchema)
 
@@ -220,6 +327,14 @@ function usersRoutes(fastify, options, done) {
 	fastify.put('/user/:username/upload_avatar', uploadAvatarSchema)
 
 	fastify.put('/user/:username/remove_avatar', removeAvatarSchema)
+
+	fastify.post('/add_friend', addFriendSchema)
+
+	fastify.get('/user/:username/friends', getUserFriendsSchema)
+
+	fastify.delete('/remove_friend/:friendshipId', removeFriendSchema)
+
+	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
 
 	done()
 }
