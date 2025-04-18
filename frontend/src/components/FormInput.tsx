@@ -33,7 +33,7 @@ const Input = styled.input`
   font-size: 12px;
 
   &:focus {
-    outline: 2px solid #646cff;
+    outline: 2px solid rgb(182, 58, 62);
   }
 `;
 
