@@ -10,21 +10,26 @@ const errorResponse = {
 const GameListElement = {
 	type: 'object',
 	properties: {
-		game_id: {type: 'integer'},
+		id: {type: 'integer'},
 		player1_id: {type: 'integer'},
-		player2_id: {type: 'integer'}
+		player2_id: {type: 'integer'},
+		status: {type: 'string'},
 	}
 }
 
 const Game = {
 	type: 'object',
 	properties: {
-		game_id: {type: 'integer'},
-		finished_rounds: {type: 'integer'},
-		total_rounds: {type: 'integer'},
+		id: {type: 'integer'},
 		player1_id: {type: 'integer'},
 		player2_id: {type: 'integer'},
-		game_state: {type: 'string'},
+		player1_score: {type: 'integer'},
+		player2_score: {type: 'integer'},
+		status: {type: 'string'},
+		finished_rounds: {type: 'integer'},
+		winner_id: {type: 'integer'},
+		loser_id: {type: 'integer'},
+		match_time: {type: 'string'}
 	}
 }
 
@@ -42,7 +47,7 @@ const createGameSchema = {
 			200: {
 				type: 'object',
 				properties: {
-					game_id: {type: 'integer'}
+					id: {type: 'integer'}
 				}
 			},
 			400: errorResponse,

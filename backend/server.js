@@ -3,12 +3,14 @@ const path = require('path')
 const fastify = require('fastify')({
 	logger: true,
 	// https: {
-		// key: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.key')), // to uncomment for https
-		// cert: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.crt')) // to uncomment for https
+	// 	key: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.key')), // to uncomment for https
+	// 	cert: fs.readFileSync(path.join(__dirname, '../etc/transcendence/certs', 'ssl.crt')) // to uncomment for https
 	// }
 })
 
 require('./cron');
+
+const fastifyOAuth2 = require('@fastify/oauth2')
 
 fastify.register(require('@fastify/cors'), {
 	origin: 'http://localhost:5173',
@@ -16,6 +18,17 @@ fastify.register(require('@fastify/cors'), {
 	credentials: true
 })
 
+if (process.env.NODE_ENV !== 'test') { 
+	require('dotenv').config();
+	// Check credential works
+	try {
+		require('dotenv').config();
+		console.log("Environment loaded. GOOGLE_CLIENT_ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+		console.log(process.env.GOOGLE_CLIENT_ID)
+	} catch (error) {
+		console.error("Error loading dotenv:", error.message);
+	}
+}
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
@@ -64,9 +77,11 @@ fastify.register(require('./routes/auth'))
 
 fastify.register(require('./routes/users'))
 
-fastify.register(require('./routes/match'))
+fastify.register(require('./routes/google'))
 
-fastify.register(require('./routes/tournament'))
+// Temporarily disable endpoints
+//fastify.register(require('./routes/match'))
+//fastify.register(require('./routes/tournament'))
 
 fastify.register(require('./routes/game'))
 

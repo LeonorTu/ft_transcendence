@@ -6,14 +6,16 @@
 //   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             //
-//   Updated: 2025/04/10 14:54:36 by pleander         ###   ########.fr       //
+//   Updated: 2025/04/16 10:43:59 by pleander         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
-const { Game } = require('./game.js');
+const { Game, GameState } = require('./game.js');
+const db = require('../db');
 
 const ErrorType = {
 	BAD_PLAYER_ID: 0,
+	GAME_ID_ALREADY_EXISTS: 1,
 
 };
 
@@ -36,18 +38,21 @@ class GameServer {
 		this.games = new Map();
 		this.socket_to_game = new Map();
 		this.sockets = new Set();
-		this.game_id_counter = 1;
 		this.intervals = [];
+		if (process.env.NODE_ENV != 'test') {
+			this.loadUnfinishedGamesFromDB();
+		}
 	}
 
-	createGame(player1_id, player2_id) {
+
+	createGame(game_id, player1_id, player2_id) {
 		if (player1_id === player2_id) {
 			throw new Error(ErrorType.BAD_PLAYER_ID, "Error: bad player id")
 		}
-		const id = this.game_id_counter;
-		this.game_id_counter += 1;
-		this.games.set(id, new Game(player1_id, player2_id));
-		return id;
+		if (this.games.has(game_id)) {
+			throw new Error(ErrorType.GAME_ID_ALREADY_EXISTS, `Error: game id ${game_id} already exists`);
+		}
+		this.games.set(game_id, new Game(player1_id, player2_id));
 	}
 
 	joinGame(player_id, game_id) {
@@ -78,6 +83,66 @@ class GameServer {
 	refreshGames() {
 		this.games.forEach((game, id) => {
 			game.refreshGame();
+			if (game.gameState === GameState.FINSIHED) {
+				this.finishGame(game, id);
+			}
+		});
+	}
+
+	finishGame(game, id) {
+		new Promise((resolve, reject) => {
+			db.run('UPDATE matches SET winner_id = ?, loser_id = ?, status = ? WHERE id = ?', 
+			[game.winner.id, game.loser.id, game.gameState, id],
+				(err, game) => {
+					if (err)
+						return reject(err);
+					resolve(game);
+				});
+		});
+		this.games.delete(id); // Stop actively refreshing finished games
+	}
+
+	/** Updates game information in the database */
+	async updateDatabase() {
+		this.games.forEach( (value, key) => {
+			new Promise ((resolve, reject) => {
+				db.run(`UPDATE matches SET status = ?, finished_rounds = ?, player1_score = ?, player2_score = ? WHERE id = ?`, 
+					[
+						value.gameState,
+						value.finished_rounds, 
+						value.players[0].score,
+						value.players[1].score,
+						key
+					], 
+					(err, game) => {
+					if (err)
+						return reject(err);
+					resolve(game);
+				});
+			});
+		});
+	}
+	async loadUnfinishedGamesFromDB() {
+		const rows = await new Promise((resolve, reject) => {
+			db.all('SELECT * FROM matches WHERE status IN (?, ?, ?)', [GameState.ACTIVE, GameState.NOT_STARTED, GameState.RESETTING],
+			(err, rows) => {
+				if (err) {
+					return (reject(err));
+				}
+				resolve(rows);
+			});
+		});
+
+		if (this.games.has(rows.id)) {
+			throw new Error(ErrorType.GAME_ID_ALREADY_EXISTS, `Error: game id ${game_id} already exists`);
+		}
+		rows.forEach((row) => {
+			this.games.set(row.id, new Game(row.player1_id, row.player2_id));
+			const game = this.games.get(row.id);
+			game.players[0].score = row.player1_score;
+			game.players[1].score = row.player2_score;
+			game.gameState = row.status;
+			game.finished_rounds = row.finished_rounds;
 		});
 	}
 
@@ -88,6 +153,9 @@ class GameServer {
 		this.intervals.push(
 			setInterval(() => this.broadcastStates(), 1000 / 30)
 		); // 30 FPS
+		this.intervals.push(
+			setInterval(() => this.updateDatabase(), 1000)
+		);
 	}
 
 	clearIntervals() {
