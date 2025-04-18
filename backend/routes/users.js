@@ -135,6 +135,13 @@ const getUserAvatarSchema = {
 
 const getUserFriendsSchema = {
 	schema: {
+		querystring: {
+			type: 'object',
+			properties: {
+				page: { type: 'integer', default: 1 },
+				limit: { type: 'integer', default: 10 }
+			}
+		},
 		response: {
 			200: {
 				type: 'array',
@@ -309,7 +316,7 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.get('/users', getUsersSchema)
 
-	fastify.get('/user/:id', getUserSchema)
+	fastify.get('/user/:username', getUserSchema)
 
 	fastify.post('/user/register', registerUserSchema)
 

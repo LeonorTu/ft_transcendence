@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/18 14:41:19 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:17:33 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ const db = require('../db');
 const fastify = require('../server');
 
 // Store a user ID and token for later use
-let userId;
+let userUsername;
 let authToken;
 
 
@@ -54,7 +54,7 @@ t.test('Test 1: POST /user/register (Positive) - creates a new user', async t =>
 	const body = JSON.parse(res.payload);
 	t.ok(body.id, 'Response includes an id');
 	t.equal(body.username, payload.username, 'Username matches');
-	userId = body.id;
+	userUsername = body.username;
 });
 
 
@@ -167,14 +167,14 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 // TEST 7: GET /user/:id (Positive)
 
 t.test('Test 7: GET /user/:id => returns the registered user', async t => {
-	t.ok(userId, 'User ID must be set from test #1');
+	t.ok(userUsername, 'User username must be set from test #1');
 	const res = await fastify.inject({
 		method: 'GET',
-		url: `/user/${userId}`,
+		url: `/user/${userUsername}`,
 	});
 	t.equal(res.statusCode, 200, 'Should return 200 for existing user');
 	const body = JSON.parse(res.payload);
-	t.equal(body.id, Number(userId), 'Returned ID matches stored userId');
+	// t.equal(body.username, userUsername, 'Returned ID matches stored userId');
 	t.equal(body.username, 'testuser', 'Returned username matches');
 });
 
@@ -189,7 +189,7 @@ t.test('Test 8: GET /users => 200 + array containing testuser', async t => {
 	t.equal(res.statusCode, 200, 'GET /users returns 200');
 	const list = JSON.parse(res.payload);
 	t.ok(Array.isArray(list), 'Response is an array');
-	const found = list.some(u => u.id === Number(userId));
+	const found = list.some(u => u.username === userUsername);
 	t.ok(found, 'Registered user is in the list');
 });
 

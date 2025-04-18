@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "registering 3 users"
 
 curl -X POST http://localhost:8888/user/register \
@@ -108,3 +110,33 @@ curl -X POST http://localhost:8888/add_friend \
 echo "\n\nthe friend list should remain the same"
 
 curl -s -X GET http://localhost:8888/user/aaa/friends
+
+echo "\n"
+
+USERNAME='user'
+
+for i in {3..25}
+do
+	CURRENT_USERNAME=${USERNAME}${i}
+	curl -X POST http://localhost:8888/user/register \
+	 -H "Content-Type: application/json" \
+	 -d "{\"username\": \"${CURRENT_USERNAME}\", \"password\": \"AAA\"}"
+	
+	
+	curl -X POST http://localhost:8888/add_friend \
+	 -H "Content-Type: application/json" \
+	 -H "authorization: Bearer ${TOKEN}" \
+	 -d "{ \"user_id\": \"1\", \"friend_id\": \"${i}\" }"
+done
+
+echo "\n"
+
+curl -s -X GET http://localhost:8888/user/aaa/friends
+
+echo "\n"
+
+curl -s -X GET http://localhost:8888/user/aaa/friends?page=2
+
+echo "\n"
+
+curl -s -X GET http://localhost:8888/user/aaa/friends?page=3

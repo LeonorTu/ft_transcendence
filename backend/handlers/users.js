@@ -28,15 +28,15 @@ const getUsers = (request, reply) => {
 }
 
 const getUser = (request, reply) => {
-	const { id } = request.params
-	db.get('SELECT * from users WHERE id = ?', [id], (err, row) => {
+	const { username } = request.params
+	db.get('SELECT * from users WHERE username = ?', [username], (err, row) => {
 		if (err) {
 			request.log.error(`Error fetching user: ${err.message}`);
 			return reply.status(500).send({ error: 'Database error: ' + err.message });
 		}
 		if (!row) {
-			request.log.warn(`User with id ${id} not found`)
-			return reply.status(404).send({error: `User with id ${id} not found`})
+			request.log.warn(`User ${username} not found`)
+			return reply.status(404).send({error: `User ${username} not found`})
 		}
 		// row.avatar = `http://localhost:8888/user/${row.username}/avatar`
 		return reply.send(row)
@@ -452,6 +452,8 @@ const addFriend = async (request, reply) => {
 
 const getUserFriends = async (request, reply) => {
 	const username = request.params.username
+	const { page = 1, limit = 10 } = request.query
+	const offset = (page - 1) * limit
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get('SELECT id FROM users WHERE username = ?', [username],
@@ -467,7 +469,7 @@ const getUserFriends = async (request, reply) => {
 		if (!user)
 			return reply.status(404).send({ error: 'User not found' });
 		const friendsList = await new Promise((resolve, reject) => {
-			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ?', [user.id],
+			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ? LIMIT ? OFFSET ?', [user.id, limit, offset],
 				(err, rows) => {
 					if (err)
 						return reject(err)
