@@ -24,9 +24,9 @@ t.before(async () => {
 });
 
 t.test('add/remove friends tests', async t => {
-	const userA = { username: 'userA', password: 'passA' };
-	const userB = { username: 'userB', password: 'passB' };
-	const userC = { username: 'userC', password: 'passC' };
+	const userA = { username: 'userA', password: 'passA', email: 'aaa@aaa.aaa'};
+	const userB = { username: 'userB', password: 'passB', email: 'bbb@bbb.bbb' };
+	const userC = { username: 'userC', password: 'passC', email: 'ccc@ccc.ccc' };
 
 	// register userA
 	const regA = await fastify.inject({

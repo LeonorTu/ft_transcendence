@@ -1,14 +1,39 @@
 const fp = require("fastify-plugin")
 const db = require('../db')
-const nodemailer = require('nodemailer')
+const {
+	verify2FACode,
+} = require('../handlers/auth')
 
-const transporter = nodemailer.createTransport({
-	service: 'gmail',
-	auth: {
-		user: process.env.TWOFA_GMAIL_USER,
-		pass: process.env.TWOFA_GMAIL_PASSWORD
+const errorResponse = {
+	type: 'object',
+	properties: {
+		error: { type: 'string' },
 	}
-})
+}
+
+const verify2FACodeSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				code: { type: 'string'},
+				username: { type: 'string'},
+			},
+			required: ['code', 'username'],
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					token: { type: 'string' }
+				}
+			},
+			401: errorResponse,
+			500: errorResponse,
+		},
+	},
+	handler: verify2FACode
+}
 
 module.exports = fp(async function(fastify, opts) {
 	// fastify.register(require("@fastify/jwt"), {
@@ -43,43 +68,5 @@ module.exports = fp(async function(fastify, opts) {
 		}
 	})
 
-	fastify.post('/2fa/send_email', async(request, reply) => {
-		const userEmail = request.body.email
-		// const code = '0000' // to change using a code generator
-		const code = Math.floor(100000 + Math.random() * 900000).toString();
-		/*
-		Math.random() -> generates a random number between 0 and 1
-		Math.random() * 900000 -> scales that number between 0 and 899999.999....
-		100000 + Math.random() * 900000 -> shifts the range up to 100000 - 999999.999...
-		*/
-		try {
-			await new Promise((resolve, reject) => {
-				db.run('UPDATE users SET email = ?, 2fa_code = ?, 2fa_code_expiration = ?',
-					[
-						userEmail,
-						code,
-						Date.now() + 5 * 60 * 1000
-					],
-					(err) => {
-						if (err)
-							reject (err)
-						return resolve()
-					}
-				)
-			})
-			const info = await transporter.sendMail({
-				from: `"Transcendence" <${process.env.TWOFA_GMAIL_USER}>`,
-				to: userEmail,
-				subject: '2FA Code',
-				text: `Your 2FA code is: ${code}`,
-				html: `<p>Your 2FA code is: <b>${code}</b></p>`,
-			})
-			console.log("Message sent: %s", info.messageId);
-			return reply.status(200).send({ message: '2FA code sent' });
-		} catch (err) {
-			console.error('Error sending email:', err);
-			return reply.status(500).send({ error: 'Failed to send 2FA code' });
-		}
-	})
+	fastify.post('/verify_2fa_code', verify2FACodeSchema)
 })
-

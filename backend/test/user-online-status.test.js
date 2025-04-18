@@ -18,7 +18,7 @@ t.before(async () => {
 });
 
 t.test('online status tests', async t => {
-	const userA = { username: 'userA', password: 'passA' };
+	const userA = { username: 'userA', password: 'passA', email: 'aaa@aaa.aaa' };
 	
 	// register userA
 	const regA = await fastify.inject({

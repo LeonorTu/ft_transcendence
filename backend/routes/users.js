@@ -97,10 +97,16 @@ const loginUserSchema = {
 		},
 		response: {
 			200: {
-				type: 'object',
-				properties: {
-					token: { type: 'string' }
-				}
+				anyOf: [
+					{
+						type: 'object',
+						properties: {
+							token: { type: 'string' }
+						},
+						required: ['token'],
+					},
+					successResponse
+				]
 			},
 			400: errorResponse,
 			500: errorResponse,

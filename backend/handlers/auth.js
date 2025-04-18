@@ -1,0 +1,36 @@
+const db = require('../db')
+
+const verify2FACode = async(request, reply) => {
+	const { code, username } = request.body
+	try {
+		const user = await new Promise((resolve, reject) => {
+			db.get('SELECT id, username, two_fa_code, two_fa_code_expiration FROM users WHERE username = ?', [username], (err, row) => {
+				if (err)
+					return reject(err)
+				resolve(row)
+			})
+		})
+		if (!user || user.two_fa_code !== code || Date.now() > user.two_fa_code_expiration) {
+			return reply.status(401).send({ error: 'Invalid or expired 2FA code' });
+		}
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET two_fa_code = NULL, two_fa_code_expiration = NULL, online_status = ? WHERE id = ?',
+				['online', user.id],
+				(err) => {
+				if (err)
+					return reject(err)
+				resolve()
+			})
+		})
+		const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
+		request.log.info(`Generated JWT token for user ${user.username}`);
+		return reply.status(200).send({ token });
+	} catch (err) {
+		request.log.error(`Error during during verification of 2FA code: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+}
+
+module.exports = {
+	verify2FACode,
+}

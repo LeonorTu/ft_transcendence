@@ -10,20 +10,23 @@ const fastify = require('fastify')({
 
 require('./cron');
 
-require('dotenv').config();
-try {
-	console.log("Environment loaded. 2FA_GMAIL_USER exists:", !!process.env.TWOFA_GMAIL_USER);
-	console.log(process.env.TWOFA_GMAIL_USER)
-} catch (error) {
-	console.error("Error loading dotenv:", error.message);
-}
-
 fastify.register(require('@fastify/cors'), {
 	origin: 'http://localhost:5173',
 	methods: ['GET', 'POST', 'PUT', 'DELETE'],
 	credentials: true
 })
 
+if (process.env.NODE_ENV !== 'test') { 
+	require('dotenv').config();
+	// Check credential works
+	try {
+		require('dotenv').config();
+		console.log("Environment loaded. GOOGLE_CLIENT_ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+		console.log(process.env.GOOGLE_CLIENT_ID)
+	} catch (error) {
+		console.error("Error loading dotenv:", error.message);
+	}
+}
 
 fastify.register(import('@fastify/swagger'), {
 	swagger: {
