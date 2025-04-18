@@ -42,8 +42,25 @@ const runServer = (ws, req) => {
 
 const createNewGame = async (request, reply) => {
 	const { player1_id, player2_id } = request.body;
-	console.log("Creating game");
 	try {
+		const p1_exists = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE id = ?', [player1_id], (err, row) => {
+				if (err) return (reject(err));
+					resolve(row);
+			});
+		});
+		if (!p1_exists) {
+			reply.status(400).send({ error: `player1_id ${player1_id} does not exist`});
+		}
+		const p2_exists = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE id = ?', [player2_id], (err, row) => {
+				if (err) return (reject(err));
+					resolve(row);
+			});
+		});
+		if (!p2_exists) {
+			reply.status(400).send({ error: `player2_id ${player2_id} does not exist`});
+		}
 		const gameId = await new Promise((resolve, reject) => {
 			db.run(
 				'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
