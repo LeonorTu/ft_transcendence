@@ -1,3 +1,15 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   game.test.js                                       :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2025/04/18 20:49:42 by pleander          #+#    #+#             //
+//   Updated: 2025/04/18 20:53:09 by pleander         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
@@ -58,7 +70,6 @@ t.before(async () => {
 
 t.test('Test 1: POST /game/new - creates a new game', async t => {
 	const payload = {player1_id: userAId, player2_id: userBId};
-	// const payload = {player1_id: '1', player2_id: '2'};
 	const res = await fastify.inject({
 		method: 'POST',
 		url: '/game/new',
@@ -71,9 +82,8 @@ t.test('Test 1: POST /game/new - creates a new game', async t => {
 	gameId = body.id;
 });
 
-
 t.test('Test 2: POST /game/new - creates a new game fails - same player id)', async t => {
-	const payload = {player1_id: '1', player2_id: '1'};
+	const payload = {player1_id: userAId, player2_id: userAId};
 
 	const res = await fastify.inject({
 		method: 'POST',
@@ -84,8 +94,44 @@ t.test('Test 2: POST /game/new - creates a new game fails - same player id)', as
 	t.equal(res.statusCode, 400, 'Should return 400 when player ids are equal');
 });
 
+t.test('Test 3: POST /game/new - creates a new game fails - non existing player id)', async t => {
+	const payload = {player1_id: 42, player2_id: userBId};
 
-t.test('Test 3: GET /game/list - lists games)', async t => {
+	const res = await fastify.inject({
+		method: 'POST',
+		url: '/game/new',
+		payload,
+	});
+
+	t.equal(res.statusCode, 400, 'Should return 400 when player id does not exist');
+});
+
+t.test('Test 4: POST /game/new - creates a new game fails - non existing player id)', async t => {
+	const payload = {player1_id: userAId, player2_id: 42};
+
+	const res = await fastify.inject({
+		method: 'POST',
+		url: '/game/new',
+		payload,
+	});
+
+	t.equal(res.statusCode, 400, 'Should return 400 when player id does not exist');
+});
+
+
+t.test('Test 5: POST /game/new - creates a new game fails - non existing player id)', async t => {
+	const payload = {player1_id: 84, player2_id: 42};
+
+	const res = await fastify.inject({
+		method: 'POST',
+		url: '/game/new',
+		payload,
+	});
+
+	t.equal(res.statusCode, 400, 'Should return 400 when player id does not exist');
+});
+
+t.test('Test 6: GET /game/list - lists games)', async t => {
 	const res = await fastify.inject({
 		method: 'GET',
 		url: '/game/list'
@@ -96,7 +142,7 @@ t.test('Test 3: GET /game/list - lists games)', async t => {
 	t.ok(body.length > 0, 'There should be at least one game in the game list');
 });
 
-t.test('Test 4: GET /game/list:id - List specific game information', async t => {
+t.test('Test 7: GET /game/list:id - List specific game information', async t => {
 	t.ok(gameId, 'Game ID must be set from earlier test');
 	const res = await fastify.inject({
 		method: 'GET',
@@ -107,8 +153,7 @@ t.test('Test 4: GET /game/list:id - List specific game information', async t => 
 	t.equal(body.id, gameId, 'Should return the correct game');
 });
 
-
-t.test('Test 5: GET /game/list:id - Fail to list non existing game', async t => {
+t.test('Test 8: GET /game/list:id - Fail to list non existing game', async t => {
 	t.ok(gameId, 'Game ID must be set from earlier test');
 	const res = await fastify.inject({
 		method: 'GET',
