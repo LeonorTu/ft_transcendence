@@ -7,9 +7,8 @@ const MessageType = {
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-const USER_ID = urlParams.get('player_id');
 const GAME_ID = urlParams.get('game_id');
-if (typeof(USER_ID) === undefined) USER_ID == 0;
+const TOKEN = urlParams.get('token');
 // colors
 const BLACK = "#000000";
 const WHITE = "#ffffff";
@@ -171,16 +170,16 @@ function render() {
 
 function updatePaddles() {
 	if (controls.up == 1 && controls.down == 0) {
-		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'player_id': USER_ID, 'input': 'up'}}));
+		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
 	}
 	else if (controls.up == 0 && controls.down == 1) {
-		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'player_id': USER_ID, 'input': 'down'}}));
+		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
 	}
 }
 
 socket.addEventListener('open', () => {
 	socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
-		'player_id': USER_ID,
+		'token': TOKEN,
 		'game_id': GAME_ID,
 		}
 	}));
@@ -202,8 +201,8 @@ socket.addEventListener('error', (e) => {
   console.error('WS Error:', e);
 });
 
-socket.addEventListener('close', () => {
-  console.warn('WebSocket closed');
+socket.addEventListener('close', (e) => {
+  console.warn(`WebSocket closed: (${e.code}: ${e.reason})`);
 });
 
 function wait_for_connection() {
