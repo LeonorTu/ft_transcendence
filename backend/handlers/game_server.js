@@ -40,6 +40,9 @@ const runServer = (ws, req) => {
 					throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
 				}
 				const game = game_server.games.get(Number(ws.game_id));
+				if (!game.getPlayer(ws.user_id).joined) {
+					console.warn(`Player with id ${ws.user_id} has not joined the game yet`)
+				}
 				game.acceptPlayerInput(ws.user_id, payload.input);
 			}
 		}
@@ -117,6 +120,7 @@ const listGames = (request, reply) => {
 
 const getGame = (request, reply) => {
 	const { id } = request.params;
+	console.log(`Fetching game with id ${id}`);
 	db.get('SELECT * FROM matches WHERE id = ?', [id], (err, row) => {
 		if (err) {
 			request.log.error(`Error fetching game: ${err.message}`);
