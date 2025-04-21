@@ -36,7 +36,7 @@ const getUser = (request, reply) => {
 }
 
 const registerUser = async (request, reply) => {
-	const { username, password } = request.body;
+	const { username, email, password } = request.body;
 	request.log.info(`Received registration request: ${username}`);
 
 	try {
@@ -51,6 +51,18 @@ const registerUser = async (request, reply) => {
 			request.log.warn('User with this username already exists');
 			return reply.status(400).send({ error: "User with this username already exists" });
 		}
+
+		const existingEmail = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+				if (err) return reject(err);
+				resolve(row);
+			});
+		});
+
+		if (existingEmail) {
+			request.log.warn('User with this email already exists');
+			return reply.status(400).send({ error: "Email address already registered. Please login or use a different email." });
+		  }
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		// console.log(hashedPassword);
@@ -71,14 +83,15 @@ const registerUser = async (request, reply) => {
 
 		const newUser = {
 			username,
+			email,
 			password: hashedPassword,
 			avatar: fileName,
 		};
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, password, avatar, online_status) VALUES (?, ?, ?, ?)',
-				[newUser.username, newUser.password, newUser.avatar, 'offline'],
+				'INSERT INTO users (username, email, password, avatar, online_status) VALUES (?, ?, ?, ?, ?)',
+				[newUser.username, newUser.email, newUser.password, newUser.avatar, 'offline'],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
@@ -90,6 +103,7 @@ const registerUser = async (request, reply) => {
 		return reply.status(200).send({
 			id: userId,
 			username: newUser.username,
+			email: newUser.email
 		});
 
 	} catch (err) {
