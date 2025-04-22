@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
+import { useEffect, useState } from 'react';
 
 // Add global styles to ensure no scrolling
 const GlobalStyle = createGlobalStyle`
@@ -96,6 +97,14 @@ const MenuItem = styled(Link)`
 `;
 
 const Home = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if the user is logged in by looking for a token in localStorage
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
   return (
     <>
       <GlobalStyle />
@@ -106,7 +115,7 @@ const Home = () => {
         <StartText>Start</StartText>
         <MenuContainer>
           <MenuItem to='/game'>local game</MenuItem>
-          <MenuItem to='/login'>remote game</MenuItem>
+          <MenuItem to={isLoggedIn ? '/game' : '/login'}>remote game</MenuItem>
         </MenuContainer>
       </HomeContainer>
     </>
