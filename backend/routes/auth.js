@@ -28,6 +28,7 @@ const verify2FACodeSchema = {
 					token: { type: 'string' }
 				}
 			},
+			400: errorResponse,
 			401: errorResponse,
 			500: errorResponse,
 		},

@@ -73,8 +73,9 @@ const registerUserSchema = {
 			properties: {
 				username: { type: 'string'},
 				password: { type: 'string'},
+				email: { type: 'string' },
 			},
-			required: ['username', 'password'],
+			required: ['username', 'password', 'email' ],
 		},
 		response: {
 			200: User,

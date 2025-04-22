@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   users.test.js                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/18 15:17:33 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/22 10:10:26 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -600,7 +600,40 @@ t.test('/verify_2fa_code', async t => {
 		t.equal(verifyCode.statusCode, 200, '2FA verification succeeded')
 		t.ok(JSON.parse(verifyCode.payload).token, 'Got token after 2FA')
 	} catch (err) {
-		console.error('Teardown error:', err);
+		console.error('2FA code verification error:', err);
+		throw err;
+	}
+	const wrongCode = await fastify.inject({
+		method: 'POST',
+		url: '/verify_2fa_code',
+		payload: { code: '000000', username: 'testuser'}
+	})
+	t.equal(wrongCode.statusCode, 401, 'Invalid 2FA code')
+
+	const wrongUsername = await fastify.inject({
+		method: 'POST',
+		url: '/verify_2fa_code',
+		payload: { code: code, username: 'wronguser'}
+	})
+	t.equal(wrongUsername.statusCode, 400, 'Invalid username')
+
+	try {
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET two_fa_code_expiration = ? WHERE username = ?',
+				[Date.now() - 1 * 60 * 1000, 'testuser'], (err) => {
+					if (err) return reject(err)
+						resolve()
+				}
+			)
+		})
+		const verifyCode = await fastify.inject({
+			method: 'POST',
+			url: '/verify_2fa_code',
+			payload: { code: code, username: 'testuser'}
+		})
+		t.equal(verifyCode.statusCode, 401, '2FA code expired')
+	} catch (err) {
+		console.error('2FA code verification error:', err);
 		throw err;
 	}
 })

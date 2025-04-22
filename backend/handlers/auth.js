@@ -10,7 +10,13 @@ const verify2FACode = async(request, reply) => {
 				resolve(row)
 			})
 		})
-		if (!user || user.two_fa_code !== code || Date.now() > user.two_fa_code_expiration) {
+
+		if (!user) {
+			request.log.warn('Invalid username');
+			return reply.status(400).send({ error: 'Invalid username' });
+		}
+
+		if (user.two_fa_code !== code || Date.now() > user.two_fa_code_expiration) {
 			return reply.status(401).send({ error: 'Invalid or expired 2FA code' });
 		}
 		await new Promise((resolve, reject) => {

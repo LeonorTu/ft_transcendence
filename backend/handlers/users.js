@@ -158,37 +158,38 @@ const loginUser = async (request, reply) => {
 				})
 			})
 			return reply.send({ token });
-		}
+		} else {
 
-		const code = Math.floor(100000 + Math.random() * 900000).toString();
-		/*
-		Math.random() -> generates a random number between 0 and 1
-		Math.random() * 900000 -> scales that number between 0 and 899999.999....
-		100000 + Math.random() * 900000 -> shifts the range up to 100000 - 999999.999...
-		*/
-		await new Promise((resolve, reject) => {
-			db.run('UPDATE users SET two_fa_code = ?, two_fa_code_expiration = ? WHERE username = ?',
-				[
-					code,
-					Date.now() + 5 * 60 * 1000,
-					username,
-				],
-				(err) => {
-					if (err)
-						reject (err)
-					return resolve()
-				}
-			)
-		})
-		const info = await transporter.sendMail({
-			from: `"Transcendence" <${process.env.TWOFA_GMAIL_USER}>`,
-			to: user.email,
-			subject: '2FA Code',
-			text: `Your 2FA code is: ${code}`,
-			html: `<p>Your 2FA code is: <b>${code}</b></p>`,
-		})
-		console.log("Message sent: %s", info.messageId);
-		return reply.status(200).send({ message: '2FA code sent' });
+			const code = Math.floor(100000 + Math.random() * 900000).toString();
+			/*
+			Math.random() -> generates a random number between 0 and 1
+			Math.random() * 900000 -> scales that number between 0 and 899999.999....
+			100000 + Math.random() * 900000 -> shifts the range up to 100000 - 999999.999...
+			*/
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET two_fa_code = ?, two_fa_code_expiration = ? WHERE username = ?',
+					[
+						code,
+						Date.now() + 5 * 60 * 1000,
+						username,
+					],
+					(err) => {
+						if (err)
+							reject (err)
+						return resolve()
+					}
+				)
+			})
+			const info = await transporter.sendMail({
+				from: `"Transcendence" <${process.env.TWOFA_GMAIL_USER}>`,
+				to: user.email,
+				subject: '2FA Code',
+				text: `Your 2FA code is: ${code}`,
+				html: `<p>Your 2FA code is: <b>${code}</b></p>`,
+			})
+			console.log("Message sent: %s", info.messageId);
+			return reply.status(200).send({ message: '2FA code sent' });
+		}
 	} catch (err) {
 		request.log.error(`Error during login: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });
