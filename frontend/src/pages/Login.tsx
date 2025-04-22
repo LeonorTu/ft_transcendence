@@ -112,7 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       window.dispatchEvent(new Event('tokenChanged')); // Notify Layout
     }
 
-    toast.success('logged in successfully');
+    toast.success('Logged in successfully');
     return redirect('/game');
   } catch (error) {
     let errorMessage = 'please double check your credentials';

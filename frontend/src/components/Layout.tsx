@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'styled-components';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { customFetch } from '../utils';
+import { AxiosError } from 'axios';
+import { toast } from 'react-toastify';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -120,6 +123,7 @@ const ToggleButton = styled.button`
 const Layout = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
+  const navigate = useNavigate();
 
   // Check if the user is logged in by looking for a token in localStorage
   useEffect(() => {
@@ -137,11 +141,21 @@ const Layout = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token'); // Remove token on logout
-    window.dispatchEvent(new Event('tokenChanged'));
-    setIsLoggedIn(false); // Update login state
-    console.log('Logged out...');
+  const handleLogout = async () => {
+    try {
+      await customFetch.post('/user/logout');
+      localStorage.removeItem('token'); // Remove token on logout
+      window.dispatchEvent(new Event('tokenChanged'));
+      setIsLoggedIn(false); // Update login state
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (error) {
+      let errorMessage = 'Error during logout';
+      if (error instanceof AxiosError && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      toast.error(errorMessage);
+    }
   };
 
   return (
