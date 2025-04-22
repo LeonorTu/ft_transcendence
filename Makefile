@@ -19,8 +19,7 @@ clean: down
 	$(COMPOSE) rm
 
 fclean:
-	$(COMPOSE) down -v
-	$(COMPOSE) rm
+	$(COMPOSE) rm -vfs
 
 
 .PHONY: up down clean fclean logs build
