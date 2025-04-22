@@ -54,7 +54,7 @@ const Title = styled.h1`
 
 const StartText = styled.h2`
   font-family: 'Press Start 2P', cursive;
-  color:rgb(160, 53, 56);
+  color: #646cff;
   text-align: center;
   margin-bottom: 3rem;
   font-size: 3rem;
@@ -79,7 +79,7 @@ const MenuItem = styled(Link)`
   position: relative;
 
   &:hover {
-    color: rgb(160, 53, 56);
+    color: #646cff;
   }
 
   &::before {

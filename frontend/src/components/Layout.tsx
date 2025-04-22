@@ -17,7 +17,6 @@ const Drawer = styled.aside<{ $isOpen: boolean }>`
     $isOpen ? 'translateX(0)' : 'translateX(-100%)'};
   height: 100vh;
   position: fixed;
-  left: 0;
   z-index: 5;
   display: flex;
   flex-direction: column;

@@ -8,7 +8,7 @@ interface SubmitBtnProps {
 const Button = styled.button`
   padding: 1rem;
   width: 100%;
-  background: rgb(182, 58, 62);
+  background: #646cff;
   color: #fff;
   font-family: 'Press Start 2P', cursive;
   font-size: 14px;
@@ -18,7 +18,7 @@ const Button = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background: rgb(122, 42, 45);
+    background: #535bf2;
   }
 
   &:disabled {

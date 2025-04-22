@@ -48,13 +48,13 @@ const LinkContainer = styled.p`
 
 const StyledLink = styled(Link)`
   margin-left: 0.5rem;
-  color: rgb(182, 58, 62);
+  color: #646cff;
   text-decoration: none;
   text-transform: capitalize;
   transition: color 0.3s;
 
   &:hover {
-    color: rgb(122, 42, 45);
+    color: #535bf2;
     text-decoration: underline;
   }
 `;
