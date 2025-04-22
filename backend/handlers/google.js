@@ -25,6 +25,11 @@ const googleOAuthHandler = async function(request, reply) {
     }
 
     const googleUser = await userInfoResponse.json();
+
+	if (!googleUser.email) {
+		request.log.error('Google account does not have an email');
+		return reply.redirect('/?error=missing_email');
+	}
     
     // Check if user exists with the email
     const user = await new Promise((resolve, reject) => {
@@ -35,38 +40,109 @@ const googleOAuthHandler = async function(request, reply) {
     });
     
     let userId;
+	let username;
     
-    if (user) {
-      // User exists, use their ID
-      userId = user.id;
+    if (existingUser) {
+		// User exists with this email, update google_id if not set
+		userId = existingUser.id;
+		username = existingUser.username;
+		
+		// If user exists but doesn't have a google_id, link the accounts
+		if (!existingUser.google_id) {
+		  await new Promise((resolve, reject) => {
+			db.run(
+			  'UPDATE users SET google_id = ? WHERE id = ?',
+			  [googleUser.id, existingUser.id],
+			  function(err) {
+				if (err) return reject(err);
+				resolve();
+			  }
+			);
+		  });
+		  request.log.info(`Linked Google account to existing user: ${existingUser.username}`);
+		}
     } else {
-      // Create new user
-      const result = await new Promise((resolve, reject) => {
-        db.run(
-          'INSERT INTO users (username, email, google_id, password) VALUES (?, ?, ?, ?)',
-          [googleUser.given_name, googleUser.email, googleUser.id, ''],
-          function(err) {
-            if (err) return reject(err);
-            resolve(this.lastID);
-          }
-        );
-      });
+      // Create new user with Google account
+      // Generate a unique username based on Google profile
+      const baseUsername = googleUser.name;
+      username = baseUsername;
       
-      userId = result;
-    }
+      // Check if username exists and add a suffix if needed
+      let usernameTaken = true;
+      let counter = 1;
+
+	  while (usernameTaken) {
+        const existingUsername = await new Promise((resolve, reject) => {
+          db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+            if (err) return reject(err);
+            resolve(row);
+          });
+        });
+        
+        if (!existingUsername) {
+          usernameTaken = false;
+        } else {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+      }
     
-    // Generate a JWT token
-    const jwtToken = await reply.jwtSign({ 
-      id: userId, 
-      email: googleUser.email 
-    });
-    
-    // Redirect to frontend with the token
-    return reply.redirect(`/?access_token=${jwtToken}`);
-    
+    // Generate avatar for the new user
+	let fileName;
+	try {
+	  const avatarResponse = await fetch(`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${username}`)
+	  if (!avatarResponse.ok)
+		throw new Error('External avatar API returned an error')
+	  const svg = await avatarResponse.text()
+	  fileName = `${username}_default.png`
+	  const filePath = path.join(__dirname, '../uploads/avatars', fileName)
+	  await sharp(Buffer.from(svg)).resize(256, 256).png().toFile(filePath)
+	  request.log.info('Default avatar downloaded and converted to PNG for Google user');
+	} catch (avatarError) {
+	  request.log.error(`Avatar generation failed: ${avatarError.message}. Using fallback avatar.`)
+	  fileName = 'fallback.jpeg'
+	}
+	
+	// Insert the new user
+	userId = await new Promise((resolve, reject) => {
+	  db.run(
+		'INSERT INTO users (username, email, google_id, password, avatar, online_status) VALUES (?, ?, ?, ?, ?, ?)',
+		[username, googleUser.email, googleUser.id, '', fileName, 'online'],
+		function(err) {
+		  if (err) return reject(err);
+		  resolve(this.lastID);
+		}
+	  );
+	});
+	
+	request.log.info(`Created new user from Google account: ${username}`);
+  }
+  
+  // Update user's online status
+  await new Promise((resolve, reject) => {
+	db.run(
+	  'UPDATE users SET online_status = ? WHERE id = ?',
+	  ['online', userId],
+	  function(err) {
+		if (err) return reject(err);
+		resolve();
+	  }
+	);
+  });
+  
+  // Generate a JWT token
+  const jwtToken = await reply.jwtSign({ 
+	id: userId, 
+	username: username,
+	email: googleUser.email 
+  });
+  
+  // Redirect to frontend with the token
+  return reply.redirect(`/?access_token=${jwtToken}`);
+  
   } catch (err) {
-    request.log.error(`Google OAuth error: ${err.message}`);
-    return reply.redirect('/?error=authentication_failed');
+  request.log.error(`Google OAuth error: ${err.message}`);
+  return reply.redirect('/?error=authentication_failed');
   }
 };
 
