@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ThemeProvider } from 'styled-components';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
-import { customFetch } from '../utils';
-import { AxiosError } from 'axios';
-import { toast } from 'react-toastify';
+import LogoutButton from './LogoutButton';
+import { useAuth } from '../hooks/useAuth';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -76,28 +75,6 @@ const DrawerFooter = styled.div`
   border-top: 1px solid #333;
 `;
 
-const LogoutButton = styled.button`
-  width: 100%;
-  padding: 1rem 1.5rem;
-  background: none;
-  border: none;
-  color: #ff4757;
-  text-align: left;
-  font-family: 'Press Start 2P', cursive;
-  font-size: 16px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-
-  &:hover {
-    background-color: #fff; /* Change background to white */
-    color: #000; /* Change font color to black */
-  }
-`;
-
 const Content = styled.main`
   flex: 1;
   padding: 1rem;
@@ -120,48 +97,15 @@ const ToggleButton = styled.button`
   cursor: pointer;
 `;
 
-const Layout = () => {
+const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
-  const navigate = useNavigate();
-
-  // Check if the user is logged in by looking for a token in localStorage
-  useEffect(() => {
-    const handleTokenChange = () => {
-      const token = localStorage.getItem('token');
-      setIsLoggedIn(!!token); // Update login state
-    };
-
-    // Listen for the custom event
-    window.addEventListener('tokenChanged', handleTokenChange);
-
-    // Cleanup the event listener
-    return () => {
-      window.removeEventListener('tokenChanged', handleTokenChange);
-    };
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await customFetch.post('/user/logout');
-      localStorage.removeItem('token'); // Remove token on logout
-      window.dispatchEvent(new Event('tokenChanged'));
-      setIsLoggedIn(false); // Update login state
-      toast.success('Logged out successfully');
-      navigate('/');
-    } catch (error) {
-      let errorMessage = 'Error during logout';
-      if (error instanceof AxiosError && error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      }
-      toast.error(errorMessage);
-    }
-  };
+  const { user } = useAuth();
+  console.log('User state in Layout:', user);
 
   return (
     <ThemeProvider theme={{ isOpen }}>
       <LayoutContainer>
-        {isLoggedIn && ( // Show Drawer only if the user is logged in
+        {user && ( // Show Drawer only if the user is logged in
           <>
             <ToggleButton onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? '←' : '→'}
@@ -187,7 +131,7 @@ const Layout = () => {
               </NavContainer>
 
               <DrawerFooter>
-                <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
+                <LogoutButton />
               </DrawerFooter>
             </Drawer>
           </>
