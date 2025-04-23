@@ -125,6 +125,8 @@ const registerUser = async (request, reply) => {
 const loginUser = async (request, reply) => {
 	const { username, password } = request.body;
 	request.log.info(`Received login request from: ${username}`);
+
+	const skip2fa = process.env.NODE_ENV !== 'prod'
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get('SELECT id, username, password, email FROM users WHERE username = ?', [username], (err, user) => {
@@ -146,7 +148,7 @@ const loginUser = async (request, reply) => {
 		}
 
 		// in tests a token is generated at login without 2FA
-		if (process.env.NODE_ENV === 'test') {
+		if (skip2fa) {
 			const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 			request.log.info(`Generated JWT token for user ${user.username}`);
 
