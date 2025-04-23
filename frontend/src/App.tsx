@@ -11,8 +11,7 @@ import {
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
 import { action as loginAction } from './pages/Login';
-import { AuthContext } from './context/AuthContext';
-import { useAuth } from './hooks/useAuth';
+import { AuthProvider } from './context/AuthContext';
 
 const router = createBrowserRouter([
   {
@@ -51,11 +50,10 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-  const { user, login, logout, setUser } = useAuth();
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthProvider>
       <RouterProvider router={router} />
-    </AuthContext.Provider>
+    </AuthProvider>
   );
 };
 

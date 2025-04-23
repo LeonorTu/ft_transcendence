@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -27,13 +27,24 @@ const StyledLogoutButton = styled.button`
 `;
 
 const LogoutButton: React.FC = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    if (!user?.authToken) {
+      throw new Error('No authentication token found');
+    }
     try {
-      await customFetch.post('/user/logout');
-      await logout();
+      await customFetch.post(
+        '/user/logout',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${user.authToken}`,
+          },
+        }
+      );
+      logout();
       toast.success('Logged out successfully');
       navigate('/');
     } catch (error) {

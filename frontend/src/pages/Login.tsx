@@ -10,8 +10,8 @@ import styled from 'styled-components';
 import { customFetch } from '../utils';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Container = styled.section`
   height: 100vh;
@@ -139,17 +139,19 @@ const Login: React.FC = () => {
   const actionData = useActionData();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const loginProcessed = useRef(false);
 
   useEffect(() => {
-    if (actionData?.token) {
+    if (actionData?.token && !loginProcessed.current) {
       const user = {
-        // id: actionData.id,
+        // id: actionData.id, // Ensure actionData contains 'id'
         // username: actionData.username,
         // email: actionData.email,
         authToken: actionData.token,
       };
       console.log('User data from actionData:', user);
       login(user);
+      loginProcessed.current = true;
       navigate('/game');
     }
   }, [actionData, login, navigate]);
