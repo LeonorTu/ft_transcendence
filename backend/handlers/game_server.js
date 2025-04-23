@@ -95,7 +95,7 @@ const createNewGame = async (request, reply) => {
 	}
 	catch (e) {
 		request.log.error(e);
-		if (e.error_type === ErrorType.BAD_PLAYER_ID || ErrorType.GAME_ID_ALREADY_EXISTS) {
+		if (e.error_type === ErrorType.BAD_PLAYER_ID || e.error_type === ErrorType.GAME_ID_ALREADY_EXISTS) {
 			reply.status(400).send({ error: e.msg});
 		}
 		else {
@@ -120,7 +120,6 @@ const listGames = (request, reply) => {
 
 const getGame = (request, reply) => {
 	const { id } = request.params;
-	console.log(`Fetching game with id ${id}`);
 	db.get('SELECT * FROM matches WHERE id = ?', [id], (err, row) => {
 		if (err) {
 			request.log.error(`Error fetching game: ${err.message}`);
