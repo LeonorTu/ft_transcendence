@@ -24,24 +24,43 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
 	expiration INTEGER
 );
 
--- Tournaments table
 CREATE TABLE IF NOT EXISTS tournaments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT NOT NULL
-    -- name TEXT
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  owner_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',    -- pending, active, completed, cancelled
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  started_at DATETIME,
+  finished_at DATETIME,
+  winner_id INTEGER,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (winner_id) REFERENCES users(id)
 );
 
--- Tournament Registrations table
-CREATE TABLE IF NOT EXISTS tournament_registrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tournament_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    registration_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'registered',
-    UNIQUE(tournament_id, user_id),
-    FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE IF NOT EXISTS tournament_players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  seed INTEGER,
+  FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE (tournament_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS tournament_matches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER NOT NULL,
+  player1_slot INTEGER,    -- references tournament_players.id
+  player2_slot INTEGER,    -- references tournament_players.id
+  round INTEGER NOT NULL,
+  match_id INTEGER,         -- references matches.id
+  status TEXT NOT NULL DEFAULT 'not_scheduled',  -- not_scheduled, scheduled, finished
+  winner_slot INTEGER,      -- 1 or 2, which player slot won
+  next_match_slot INTEGER,  -- id of tournament_matches row where winner advances
+  FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+  FOREIGN KEY (player1_slot) REFERENCES tournament_players(id),
+  FOREIGN KEY (player2_slot) REFERENCES tournament_players(id),
+  FOREIGN KEY (match_id) REFERENCES matches(id)
 );
 
 -- Matches table
