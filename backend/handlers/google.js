@@ -32,17 +32,18 @@ const googleOAuthHandler = async function(request, reply) {
 	}
     
     // Check if user exists with the email
-    const user = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM users WHERE email = ?', [googleUser.email], (err, row) => {
-        if (err) return reject(err);
-        resolve(row);
-      });
-    });
+    const existingUser = await new Promise((resolve, reject) => {
+		db.get('SELECT * FROM users WHERE email = ?', [googleUser.email], (err, row) => {
+		  if (err) return reject(err);
+		  resolve(row);
+		});
+	  });
     
     let userId;
 	let username;
     
     if (existingUser) {
+		request.log.info(`Linked Google account already registered with same email`);
 		// User exists with this email, update google_id if not set
 		userId = existingUser.id;
 		username = existingUser.username;
