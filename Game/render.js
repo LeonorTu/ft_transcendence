@@ -5,216 +5,219 @@ const MessageType = {
 	STATE: "state"
 };
 
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-const GAME_ID = urlParams.get('game_id');
-const TOKEN = urlParams.get('token');
 // colors
 const BLACK = "#000000";
 const WHITE = "#ffffff";
 
-const canvas = document.getElementById("game-canvas");
-const ctx = canvas.getContext("2d");
+const GAME_ENDPOINT = "game";
 
-let controls = {up: 0, down: 0};
-const origin = window.location.origin.split(':');
-// Use origin to get server url. Is this safe?
-const socket = new WebSocket(`ws://${origin[1]}:8888/game`);
+export class GameRenderer {
+	constructor(server_uri, server_port, game_id, user_token, document) {
+		this.server_uri = server_uri;
+		this.game_id = game_id;
+		this.user_token = user_token;
+		this.socket = new WebSocket(`ws://${server_uri}:${server_port}/${GAME_ENDPOINT}`);
 
-let paddle_height;
-let paddle_width;
-let paddle_margin;
-let paddle_start;
-let ball_radius;
-let board_width;
-let board_height;
+		this.settings_applied = false;
+		// game
+		this.state = null;
+		this.controls = {up: 0, down: 0};
 
-let settings_applied = false;
+		// window
+		this.document = document;
+		this.canvas = document.getElementById("game-canvas");
+		this.ctx = this.canvas.getContext("2d");
+		this.origin = window.location.origin.split(':');
 
-document.addEventListener('keydown', (e) => {
-	if (e.key === 'ArrowUp') {
-		controls.up = 1;
+		// game settings
+		this.paddle_height;
+		this.paddle_width;
+		this.paddle_margin;
+		this.paddle_start;
+		this.ball_radius;
+		this.board_width;
+		this.board_height;
+
+		this.init();
 	}
-	else if (e.key === 'ArrowDown') {
-		controls.down = 1;
+
+	init() {
+		this.document.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.up = 1;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.down = 1;
+			}
+		});
+
+		this.document.addEventListener('keyup', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.up = 0;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.down = 0;
+			}
+		});
+
+		this.socket.addEventListener('open', () => {
+			this.socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
+				'token': this.user_token,
+				'game_id': this.game_id,
+			}}));
+		});
+
+		this.socket.addEventListener('message', (event) => {
+			//console.log('Received:', event.data);
+			const {type, payload} = JSON.parse(event.data);
+			if (type === MessageType.SETTINGS) {
+				this.updateSettings(payload);
+			}
+			else if (type === MessageType.STATE) {
+				this.state = payload;
+			}
+		});
+
+		this.socket.addEventListener('error', (e) => {
+			console.error('WS Error:', e);
+		});
+
+		this.socket.addEventListener('close', (e) => {
+			console.warn(`WebSocket closed: (${e.code}: ${e.reason})`);
+		});
+
+		this.wait_for_connection();
 	}
-});
 
-document.addEventListener('keyup', (e) => {
-	if (e.key === 'ArrowUp') {
-		controls.up = 0;
+	updateSettings(settings) {
+		this.canvas.setAttribute("height", settings.board_height);
+		this.canvas.setAttribute("width", settings.board_width);
+		this.board_width = settings.board_width;
+		this.board_height = settings.board_height;
+		this.paddle_height = settings.paddle_height;
+		this.paddle_width = settings.paddle_width;
+		this.paddle_margin = settings.paddle_to_wall_dist;
+		this.paddle_start = (this.canvas.height / 2) - (this.paddle_height / 2);
+		this.ball_radius = settings.ball_radius;
+		this.settings_applied = true;
 	}
-	else if (e.key === 'ArrowDown') {
-		controls.down = 0;
+
+	draw_paddle_1(offset) {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.fillRect(this.paddle_margin, this.paddle_start + offset, this.paddle_width, this.paddle_height);
 	}
-});
 
-let state = null;
-
-function updateSettings(settings) {
-	canvas.setAttribute("height", settings.board_height);
-	canvas.setAttribute("width", settings.board_width);
-	board_width = settings.board_width;
-	board_height = settings.board_height;
-	paddle_height = settings.paddle_height;
-	paddle_width = settings.paddle_width;
-	paddle_margin = settings.paddle_to_wall_dist;
-	paddle_start = (canvas.height / 2) - (paddle_height / 2);
-	ball_radius = settings.ball_radius;
-	settings_applied = true;
-}
-
-function draw_paddle_1(offset) {
-	ctx.fillStyle = WHITE;
-	ctx.fillRect(paddle_margin, paddle_start + offset, paddle_width, paddle_height);
-}
-
-function draw_paddle_2(offset) {
-	ctx.fillStyle = WHITE;
-	ctx.fillRect(canvas.width - paddle_margin - paddle_width, paddle_start + offset, paddle_width, paddle_height);
-}
-
-function draw_ball(ball_state) {
-	ctx.fillStyle = WHITE;
-	ctx.beginPath();
-	ctx.arc(ball_state.x, ball_state.y, ball_radius, 0, Math.PI * 2, true);
-	ctx.fill();
-}
-
-function draw_scores(players) {
-	ctx.fillStyle = WHITE;
-	ctx.font = "48px serif";
-	ctx.fillText(players[0].score, board_width / 4, 50);
-	ctx.fillText(players[1].score, board_width * (3/4), 50);
-}
-
-function draw_waiting_for_players(players) {
-	ctx.fillStyle = WHITE;
-	ctx.font = "40px serif";
-	ctx.textAlign = "center"
-	ctx.fillText("Waiting for players", board_width / 2, board_height / 2);
-
-	ctx.font = "20px serif";
-	ctx.fillText("Press UP and DOWN to confirm", board_width / 2, board_height / 2 + 30);
-
-	ctx.font = "30px serif";
-	if (players[0].ready) {
-		ctx.fillText("Player 1 READY", board_width / 4, board_height * 0.75);
+	draw_paddle_2(offset) {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.fillRect(this.canvas.width - this.paddle_margin - this.paddle_width, this.paddle_start + offset, this.paddle_width, this.paddle_height);
 	}
-	else {
-		ctx.fillText("Waiting for Player 1", board_width / 4, board_height * 0.75);
-	}
-	if (players[1].ready) {
-		ctx.fillText("Player 2 READY", board_width * 0.75, board_height * 0.75);
-	}
-	else {
-		ctx.fillText("Waiting for Player 2", board_width * 0.75, board_height * 0.75);
-	}
-	
-}
 
-function draw_remaining_timeout(timeout) {
-
-	ctx.font = "40px serif";
-	ctx.textAlign = "center"
-	ctx.fillText(`Resetting in ${timeout}...`, board_width / 2, board_height / 2);
-}
-
-
-function draw_result(winner) {
-	ctx.font = "40px serif";
-	ctx.textAlign = "center"
-	let text;
-	if (winner == null) {
-		text = "The game is tie"
+	draw_ball(ball_state) {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.beginPath();
+		this.ctx.arc(ball_state.x, ball_state.y, this.ball_radius, 0, Math.PI * 2, true);
+		this.ctx.fill();
 	}
-	else {
-		text = `Player ${winner.id} won the game`;
-	}
-	ctx.fillText(text, board_width / 2, board_height / 2);
-}
 
-function draw_center_line()
-{
-	ctx.setLineDash([10, 10]);
-	ctx.strokeStyle = WHITE;
-	ctx.lineWidth = paddle_width / 2;
-	ctx.beginPath();
-	ctx.moveTo(canvas.width / 2, 0);
-	ctx.lineTo(canvas.width / 2, canvas.height);
-	ctx.stroke();
-}
+	draw_scores(players) {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.font = "48px serif";
+		this.ctx.fillText(players[0].score, this.board_width / 4, 50);
+		this.ctx.fillText(players[1].score, this.board_width * (3/4), 50);
+	}
 
+	draw_waiting_for_players(players) {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.font = "40px serif";
+		this.ctx.textAlign = "center"
+		this.ctx.fillText("Waiting for players", this.board_width / 2, this.board_height / 2);
 
-function render() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	draw_scores(state.players);
+		this.ctx.font = "20px serif";
+		this.ctx.fillText("Press UP and DOWN to confirm", this.board_width / 2, this.board_height / 2 + 30);
 
-	//console.log(`Game state is: ${state.game_state}`);
-	if (state.game_state === "not_started") {
-		draw_waiting_for_players(state.players);
-	}
-	else if (state.game_state === "active") {
-		draw_center_line();
-		draw_paddle_1(state.objects.left_paddle.y_offset);
-		draw_paddle_2(state.objects.right_paddle.y_offset);
-		draw_ball(state.objects.ball);
-	}
-	else if (state.game_state === "resetting") {
-		draw_remaining_timeout(state.remaining_timeout);
-	}
-	else if (state.game_state === "finished") {
-		draw_result(state.winner);
-	}
-}
-
-function updatePaddles() {
-	if (controls.up == 1 && controls.down == 0) {
-		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
-	}
-	else if (controls.up == 0 && controls.down == 1) {
-		socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
-	}
-}
-
-socket.addEventListener('open', () => {
-	socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
-		'token': TOKEN,
-		'game_id': GAME_ID,
+		this.ctx.font = "30px serif";
+		if (players[0].ready) {
+			this.ctx.fillText("Player 1 READY", this.board_width / 4, this.board_height * 0.75);
 		}
-	}));
-});
+		else {
+			this.ctx.fillText("Waiting for Player 1", this.board_width / 4, this.board_height * 0.75);
+		}
+		if (players[1].ready) {
+			this.ctx.fillText("Player 2 READY", this.board_width * 0.75, this.board_height * 0.75);
+		}
+		else {
+			this.ctx.fillText("Waiting for Player 2", this.board_width * 0.75, this.board_height * 0.75);
+		}
 
-socket.addEventListener('message', (event) => {
-	//console.log('Received:', event.data);
-	const {type, payload} = JSON.parse(event.data);
-	if (type === MessageType.SETTINGS) {
-		updateSettings(payload);
 	}
-	else if (type === MessageType.STATE) {
-		console.log("Got state:", payload);
-		state = payload;
+	draw_remaining_timeout(timeout) {
+
+		this.ctx.font = "40px serif";
+		this.ctx.textAlign = "center"
+		this.ctx.fillText(`Resetting in ${timeout}...`, this.board_width / 2, this.board_height / 2);
 	}
-});
 
-socket.addEventListener('error', (e) => {
-  console.error('WS Error:', e);
-});
-
-socket.addEventListener('close', (e) => {
-  console.warn(`WebSocket closed: (${e.code}: ${e.reason})`);
-});
-
-function wait_for_connection() {
-	console.log(`Waiting: settings_applied: ${settings_applied} state: ${state}`);
-	if (settings_applied != false && state != null) {
-		setInterval(updatePaddles, 10);
-		setInterval(render, 10);
-		console.log("Starting");
+	draw_result(winner) {
+		this.ctx.font = "40px serif";
+		this.ctx.textAlign = "center"
+		let text;
+		if (winner == null) {
+			text = "The game is tie"
+		}
+		else {
+			text = `Player ${winner.id} won the game`;
+		}
+		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);
 	}
-	else {
-		setTimeout(wait_for_connection, 100);
+
+	draw_center_line() {
+		this.ctx.setLineDash([10, 10]);
+		this.ctx.strokeStyle = WHITE;
+		this.ctx.lineWidth = this.paddle_width / 2;
+		this.ctx.beginPath();
+		this.ctx.moveTo(this.canvas.width / 2, 0);
+		this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
+		this.ctx.stroke();
+	}
+
+	render() {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		this.draw_scores(this.state.players);
+
+		if (this.state.game_state === "not_started") {
+
+			this.draw_waiting_for_players(this.state.players);
+		}
+		else if (this.state.game_state === "active") {
+			this.draw_center_line();
+			this.draw_paddle_1(this.state.objects.left_paddle.y_offset);
+			this.draw_paddle_2(this.state.objects.right_paddle.y_offset);
+			this.draw_ball(this.state.objects.ball);
+		}
+		else if (this.state.game_state === "resetting") {
+			this.draw_remaining_timeout(this.state.remaining_timeout);
+		}
+		else if (this.state.game_state === "finished") {
+			this.draw_result(this.state.winner);
+		}
+	}
+
+	updatePaddles() {
+		if (this.controls.up == 1 && this.controls.down == 0) {
+			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
+		}
+		else if (this.controls.up == 0 && this.controls.down == 1) {
+			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
+		}
+	}
+	wait_for_connection() {
+		//console.log(`Waiting: settings_applied: ${this.settings_applied} state: ${this.state}`);
+		if (this.settings_applied == true && this.state != null) {
+			setInterval(this.updatePaddles.bind(this), 10);
+			setInterval(this.render.bind(this), 10);
+		}
+		else {
+			setTimeout(this.wait_for_connection.bind(this), 100);
+		}
 	}
 }
-
-wait_for_connection();
