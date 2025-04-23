@@ -16,14 +16,16 @@ const db = require('../db');
 const ErrorType = {
 	BAD_PLAYER_ID: 0,
 	GAME_ID_ALREADY_EXISTS: 1,
-
+	GAME_DOES_NOT_EXIST: 2,
+	PLAYER_NOT_IN_GAME: 3
 };
 
 const MessageType = {
 	JOIN: "join",
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
-	STATE: "state"
+	STATE: "state",
+	GAME_RESULT: "result"
 };
 
 class Error {
@@ -36,7 +38,6 @@ class Error {
 class GameServer {
 	constructor() {
 		this.games = new Map();
-		this.socket_to_game = new Map();
 		this.sockets = new Set();
 		this.intervals = [];
 		if (process.env.NODE_ENV != 'test') {
@@ -57,24 +58,25 @@ class GameServer {
 
 	joinGame(player_id, game_id) {
 		if (!this.games.has(game_id)) {
-			console.error(`Game with id ${game_id} does not exist`);
-			return false;
+			throw new Error(ErrorType.GAME_DOES_NOT_EXIST,`Error: game with id ${game_id} does not exist` )
 		}
 		const player = this.games.get(game_id).getPlayer(player_id);
 		if (!player) {
-			console.error(`Player with id ${player_id} is not in game ${game_id}`);
-			return false;
+			throw new Error(ErrorType.PLAYER_NOT_IN_GAME, `Error: player with id ${player_id} is not in game ${game_id}`);
 		}
 		player.joined = true;
-		return true;
 	}
 
 	broadcastStates() {
-		if (this.socket_to_game) {
-			this.socket_to_game.forEach( (game, socket) => {
+		if (this.sockets) {
+			this.sockets.forEach( (sock) => {
+				if (!this.games.has(Number(sock.game_id))) {
+					console.warn("Game id does not exist");
+				}
+				const game = this.games.get(Number(sock.game_id));
 				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
-				if (socket.readyState === WebSocket.OPEN) {
-					socket.send(msg);
+				if (sock.readyState === WebSocket.OPEN) {
+					sock.send(msg);
 				}
 			});
 		}
@@ -98,6 +100,17 @@ class GameServer {
 						return reject(err);
 					resolve(game);
 				});
+		});
+		const msg = JSON.stringify({type: MessageType.GAME_RESULT, payload: {
+			winner_id: game.winner.id,
+			loser_id: game.loser.id,
+		}});
+		this.sockets.forEach( (sock) => {
+			if (sock.game_id == id) {
+				sock.send(msg);
+				sock.close(1000, "Game has finished");
+				this.sockets.delete(sock);
+			}
 		});
 		this.games.delete(id); // Stop actively refreshing finished games
 	}
