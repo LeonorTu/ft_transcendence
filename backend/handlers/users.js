@@ -6,7 +6,7 @@ const path = require('path')
 const sharp = require('sharp');
 
 const getUsers = (request, reply) => {
-	db.all('SELECT id, username FROM users', [], (err, rows) => {
+	db.all('SELECT id, username, email FROM users', [], (err, rows) => {
 		if (err) {
 			request.log.error(`Error fetching users: ${err.message}`);
 			return reply.status(500).send({error: 'Database error: ' + err.message });

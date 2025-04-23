@@ -22,6 +22,7 @@ const User = {
 	properties: {
 		id: { type: 'integer' },
 		username: { type: 'string' },
+		email: { type: 'string' },
 		avatar: { type: 'string'},
 		online_status: {typ : 'string' },
 	}
