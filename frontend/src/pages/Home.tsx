@@ -96,7 +96,7 @@ const MenuItem = styled(Link)`
   }
 `;
 
-const Home = () => {
+const Home: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {

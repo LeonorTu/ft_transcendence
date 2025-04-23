@@ -1,7 +1,7 @@
 import { useNavigation } from 'react-router-dom';
 import styled from 'styled-components';
 
-interface SubmitBtnProps {
+type SubmitBtnProps = {
   text?: string;
 }
 

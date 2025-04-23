@@ -1,9 +1,17 @@
 import { FormInput, SubmitBtn } from '../components';
-import { ActionFunctionArgs, Form, Link, redirect } from 'react-router-dom';
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  useActionData,
+  useNavigate,
+} from 'react-router-dom';
 import styled from 'styled-components';
 import { customFetch } from '../utils';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
+import { useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 const Container = styled.section`
   height: 100vh;
@@ -107,13 +115,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       username,
       password,
     });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      window.dispatchEvent(new Event('tokenChanged')); // Notify Layout
-    }
 
-    toast.success('Logged in successfully');
-    return redirect('/game');
+    if (response.data.token) {
+      toast.success('Logged in successfully');
+      return {
+        token: response.data.token,
+        // id: response.data.id,
+        // username: response.data.username,
+        // email: response.data.email,
+      };
+    }
   } catch (error) {
     let errorMessage = 'please double check your credentials';
     if (error instanceof AxiosError && error.response?.data?.error) {
@@ -125,6 +136,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Login: React.FC = () => {
+  const actionData = useActionData();
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (actionData?.token) {
+      const user = {
+        // id: actionData.id,
+        // username: actionData.username,
+        // email: actionData.email,
+        authToken: actionData.token,
+      };
+      console.log('User data from actionData:', user);
+      login(user);
+      navigate('/game');
+    }
+  }, [actionData, login, navigate]);
+
   return (
     <Container>
       <FormContainer method='post'>
