@@ -172,7 +172,12 @@ const Login: React.FC = () => {
           <span>OR</span>
         </OrDivider>
 
-        <GoogleButton type='button'>
+        <GoogleButton
+          type='button'
+          onClick={() => {
+            window.location.href = 'http://localhost:8888/oauth2/google/';
+          }}
+        >
           <svg
             width='22'
             height='22'
