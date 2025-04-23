@@ -24,7 +24,8 @@ const MessageType = {
 	JOIN: "join",
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
-	STATE: "state"
+	STATE: "state",
+	GAME_RESULT: "result"
 };
 
 class Error {
@@ -69,6 +70,9 @@ class GameServer {
 	broadcastStates() {
 		if (this.sockets) {
 			this.sockets.forEach( (sock) => {
+				if (!this.games.has(Number(sock.game_id))) {
+					console.warn("Game id does not exist");
+				}
 				const game = this.games.get(Number(sock.game_id));
 				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
 				if (sock.readyState === WebSocket.OPEN) {
@@ -96,6 +100,17 @@ class GameServer {
 						return reject(err);
 					resolve(game);
 				});
+		});
+		const msg = JSON.stringify({type: MessageType.GAME_RESULT, payload: {
+			winner_id: game.winner.id,
+			loser_id: game.loser.id,
+		}});
+		this.sockets.forEach( (sock) => {
+			if (sock.game_id == id) {
+				sock.send(msg);
+				sock.close(1000, "Game has finished");
+				this.sockets.delete(sock);
+			}
 		});
 		this.games.delete(id); // Stop actively refreshing finished games
 	}

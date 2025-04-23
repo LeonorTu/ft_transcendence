@@ -8,7 +8,7 @@ if [[ $USER == "" || $PASS == "" ]]; then
 	exit
 fi
 
-curl -X -s POST http://localhost:8888/user/register \
+curl -s -X POST http://localhost:8888/user/register \
          -H "Content-Type: application/json" \
          -d "{
                    \"username\": \"$USER\",
