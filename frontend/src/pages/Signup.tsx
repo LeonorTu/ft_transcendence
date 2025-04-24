@@ -61,6 +61,7 @@ const StyledLink = styled(Link)`
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
+  const email = formData.get('identifier') as string;
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
@@ -71,9 +72,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   try {
-    const response = await customFetch.post('/user/register', {
+    await customFetch.post('/user/register', {
       username,
       password,
+      email,
     });
     toast.success('account created successfully');
     return redirect('/login');
@@ -91,6 +93,7 @@ const Signup: React.FC = () => {
     <Container>
       <FormContainer method='POST'>
         <Title>Signup</Title>
+        <FormInput type='email' label='email' name='identifier' required />
         <FormInput type='text' label='username' name='username' required />
         <FormInput type='password' label='password' name='password' required />
         <FormInput

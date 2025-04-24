@@ -118,14 +118,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
 
     if (response.data.token) {
-      toast.success('Logged in successfully');
-      return {
-        token: response.data.token,
-        // id: response.data.id,
-        // username: response.data.username,
-        // email: response.data.email,
-      };
+      return { initialAuth: true, username };
     }
+
+    return null;
   } catch (error) {
     let errorMessage = 'please double check your credentials';
     if (error instanceof AxiosError && error.response?.data?.error) {
@@ -144,7 +140,12 @@ const Login: React.FC = () => {
   const loginProcessed = useRef(false);
 
   useEffect(() => {
-    console.log('Login useEffect triggered');
+    // Handle 2FA required response
+    if (actionData?.initialAuth) {
+      // Navigate to 2FA verification page
+      navigate('/login/verify-2fa', { state: { username: actionData.username } });
+      return;
+    }
 
     // Check URL parameters for access_token (Google login)
     const params = new URLSearchParams(window.location.search);
@@ -158,14 +159,12 @@ const Login: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
       return;
     }
-    console.log(accessToken, loginProcessed.current);
 
     // Handle Google OAuth success
     if (accessToken && !loginProcessed.current) {
       const user = {
         authToken: accessToken,
       };
-      console.log('User data from Google OAuth:', user);
       login(user);
       loginProcessed.current = true;
 
@@ -173,16 +172,6 @@ const Login: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
 
       toast.success('Logged in with Google successfully');
-      navigate('/game');
-    }
-    // Handle normal login (existing code)
-    else if (actionData?.token && !loginProcessed.current) {
-      const user = {
-        authToken: actionData.token,
-      };
-      console.log('User data from actionData:', user);
-      login(user);
-      loginProcessed.current = true;
       navigate('/game');
     }
   }, [actionData, login, navigate, location]);
