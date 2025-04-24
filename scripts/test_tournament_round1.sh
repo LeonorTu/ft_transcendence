@@ -14,7 +14,7 @@ for U in "${USERS[@]}"; do
   echo "- ensuring & logging in $U"
   curl -s -X POST "$BASE/user/register" \
        -H "Content-Type: application/json" \
-       -d "{\"username\":\"$U\",\"password\":\"pass123\"}" \
+       -d "{\"username\":\"$U\", \"password\":\"pass123\", \"email\":\"'$U'email123@mail.com\"}" \
     >/dev/null || true
 
   TOKEN=$(curl -s -X POST "$BASE/user/login" \

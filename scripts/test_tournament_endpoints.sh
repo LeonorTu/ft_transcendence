@@ -2,26 +2,27 @@
 set -euo pipefail
 
 BASE_URL="http://localhost:8888"
-USERS=(user1 user2 user3 user4 user5 user6 user7 user8)
+USERS=(user1 user2 user3 user4)
 TOKENS=()
 
 for USER in "${USERS[@]}"; do
   echo "--- Processing user: $USER ---"
   curl -s -X POST "$BASE_URL/user/register" \
     -H "Content-Type: application/json" \
-    -d "{ \"username\": \"$USER\", \"password\": \"pass123\" }" || true
-
+    -d "{ \"username\": \"$USER\", \"password\": \"pass123\", \"email\": \"'$USER'email123@mail.com\" }" || true
+  
+  echo
   LOGIN_RES=$(curl -s -X POST "$BASE_URL/user/login" \
     -H "Content-Type: application/json" \
     -d "{ \"username\": \"$USER\", \"password\": \"pass123\" }")
 
   TOKEN=$(echo "$LOGIN_RES" | jq -r '.token')
   if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-    echo "❌ Login failed for $USER: $LOGIN_RES" >&2
+    echo "Login failed for $USER: $LOGIN_RES" >&2
     exit 1
   fi
   TOKENS+=("$TOKEN")
-  echo "✅ Logged in $USER"
+  echo "Logged in $USER"
 done
 
 TOUR_NAME="TestTournament_$(date +%s)"
@@ -35,13 +36,16 @@ if [[ -z "$TOUR_ID" || "$TOUR_ID" == "null" ]]; then
   echo "Tournament creation failed: $CREATE_RES" >&2
   exit 1
 fi
+echo
+echo
 echo "Created tournament ID: $TOUR_ID"
 
 for i in "${!USERS[@]}"; do
-  echo "👉 ${USERS[$i]} joining tournament $TOUR_ID"
+  echo "${USERS[$i]} joining tournament $TOUR_ID"
   curl -s -X POST "$BASE_URL/tournament/$TOUR_ID/join" \
     -H "Authorization: Bearer ${TOKENS[$i]}" \
     | jq .
+  echo
 done
 
 echo "Starting tournament $TOUR_ID"

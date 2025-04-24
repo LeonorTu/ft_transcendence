@@ -22,7 +22,7 @@ register_and_login() {
   #register
   curl -s -X POST "$API_URL/user/register" \
     -H "Content-Type: application/json" \
-    -d "{\"username\":\"$USER\",\"password\":\"$PW\"}" >/dev/null || true
+    -d "{\"username\":\"$USER\", \"password\":\"$PW\", \"email\":\"'$USER'email123@mail.com\"}" >/dev/null || true
 
   #log in
   local LOGIN_RES
