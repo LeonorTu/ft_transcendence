@@ -304,40 +304,6 @@ const updateUser = async (request, reply) => {
 	}
 }
 
-const linkGoogleAccount = async (request, reply) => {
-	const { email, google_id } = request.body
-	const userId = request.user.id
-	try {
-		const existingGoogleUser = await new Promise((resolve, reject) => {
-			db.get('SELECT * FROM users WHERE google_id = ?', [google_id], (err, row) => {
-				if (err)
-					return reject(err);
-				resolve(row);
-			})
-		})
-		if (existingGoogleUser) {
-			request.log.warn('This Google account is already linked with another user')
-			return reply.status(400).send({ error: 'This Google account is already linked with another user'})
-		}
-		if (request.params.username != request.user.username) {
-			request.log.warn(`${request.user.username} is trying to update ${request.params.username}`)
-			return reply.status(400).send({ error: `You don't have permission to modify ${request.params.username}` });
-		}
-		await new Promise((resolve, reject) => {
-			db.run('UPDATE users SET email = ?, google_id = ? WHERE id = ?', [email, google_id, userId], function (err) {
-				if (err)
-					return reject(err);
-				resolve(this.changes);
-			})
-		})
-		request.log.info('Google account linked successfully')
-		return reply.status(200).send({ message: 'Google account linked successfully'})
-	} catch (err) {
-		request.log.error(`Error linking google account: ${err.message}`);
-		return reply.status(500).send({ error: 'Internal server error' });
-	}
-}
-
 const uploadAvatar = async (request, reply) => {
 	const data = await request.file()
 	const chunks = []
@@ -569,7 +535,6 @@ module.exports = {
 	updateUser,
 	loginUser,
 	logoutUser,
-	linkGoogleAccount,
 	uploadAvatar,
 	getUserAvatar,
 	removeAvatar,

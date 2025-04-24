@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   users.test.js                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: pmarkaid <pmarkaid@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/22 10:10:26 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/24 15:49:13 by pmarkaid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -285,109 +285,6 @@ t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async
 	});
 	t.equal(updateRes.statusCode, 400, '400 for duplicate new username');
 	t.match(JSON.parse(updateRes.payload).error, /already exists/i);
-});
-
-
-// TEST 13: linkGoogleAccount => positive and negative
-
-t.test('Test 13: PUT /user/:username/link_google_account => positive/duplicate', async t => {
-	// user1
-	const user1 = { username: 'googleUser1', password: 'pass1', email: 'googleUser1@aaa.aaa' };
-	const reg1 = await fastify.inject({
-		method: 'POST',
-		url: '/user/register',
-		payload: user1,
-	});
-	t.equal(reg1.statusCode, 200, 'User1 registration ok');
-	const login1 = await fastify.inject({
-		method: 'POST',
-		url: '/user/login',
-		payload: user1,
-	});
-	t.equal(login1.statusCode, 200, 'User1 login ok');
-	const token1 = JSON.parse(login1.payload).token;
-
-	// Link google
-	const linkRes1 = await fastify.inject({
-		method: 'PUT',
-		url: '/user/googleUser1/link_google_account',
-		headers: { Authorization: `Bearer ${token1}` },
-		payload: { email: 'google@example.com', google_id: 'GOOGLE123' },
-	});
-	t.equal(linkRes1.statusCode, 200, 'Google link for user1 => success');
-	t.match(JSON.parse(linkRes1.payload).message, /Google account linked successfully/i);
-
-	// user2
-	const user2 = { username: 'googleUser2', password: 'pass2', email: 'googleUser2@aaa.aaa' };
-	const reg2 = await fastify.inject({
-		method: 'POST',
-		url: '/user/register',
-		payload: user2,
-	});
-	t.equal(reg2.statusCode, 200, 'User2 registration ok');
-	const login2 = await fastify.inject({
-		method: 'POST',
-		url: '/user/login',
-		payload: user2,
-	});
-	t.equal(login2.statusCode, 200, 'User2 login ok');
-	const token2 = JSON.parse(login2.payload).token;
-
-	// Try linking same google to user2 => 400
-	const linkRes2 = await fastify.inject({
-		method: 'PUT',
-		url: '/user/googleUser2/link_google_account',
-		headers: { Authorization: `Bearer ${token2}` },
-		payload: { email: 'google@example.com', google_id: 'GOOGLE123' },
-	});
-	t.equal(linkRes2.statusCode, 400, 'Duplicate google account => 400');
-	t.match(JSON.parse(linkRes2.payload).error, /already linked/i);
-
-	t.end();
-});
-
-
-// TEST 14: Mismatch user => 400 in updateUser/linkGoogleAccount
-
-t.test('Test 14: Mismatch user => returns 400 in updateUser/linkGoogleAccount', async t => {
-	// Create mismatchUser
-	const regRes = await fastify.inject({
-		method: 'POST',
-		url: '/user/register',
-		payload: { username: 'mismatchUser', password: 'abc123', email: 'mismatchUser@aaa.aaa' },
-	});
-	t.equal(regRes.statusCode, 200, 'mismatchUser registration ok');
-
-	// login mismatchUser
-	const loginRes = await fastify.inject({
-		method: 'POST',
-		url: '/user/login',
-		payload: { username: 'mismatchUser', password: 'abc123' },
-	});
-	t.equal(loginRes.statusCode, 200, 'mismatchUser login ok');
-	const mismatchToken = JSON.parse(loginRes.payload).token;
-
-	// update mismatch => 400
-	const mismatchUpdate = await fastify.inject({
-		method: 'PUT',
-		url: '/user/NotThisUser/update',
-		headers: { Authorization: `Bearer ${mismatchToken}` },
-		payload: { currentPassword: 'abc123', newPassword: 'neverUsed' },
-	});
-	t.equal(mismatchUpdate.statusCode, 400, 'Param mismatch => 400');
-	t.match(JSON.parse(mismatchUpdate.payload).error, /permission|modify/i);
-
-	// link mismatch => 400
-	const mismatchLink = await fastify.inject({
-		method: 'PUT',
-		url: '/user/NotThisUser/link_google_account',
-		headers: { Authorization: `Bearer ${mismatchToken}` },
-		payload: { email: 'test@example.com', google_id: 'XYZ' },
-	});
-	t.equal(mismatchLink.statusCode, 400, 'Param mismatch => 400');
-	t.match(JSON.parse(mismatchLink.payload).error, /permission|modify/i);
-
-	t.end();
 });
 
 
