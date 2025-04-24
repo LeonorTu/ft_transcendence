@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
 	password TEXT NOT NULL,
 	google_id TEXT UNIQUE,
 	avatar TEXT,
-	online_status TEXT
+	online_status TEXT,
+	two_fa_code TEXT,
+	two_fa_code_expiration INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS friends (

@@ -1,5 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
-const path = process.env.SQLITE_DB_PATH;
+let path = process.env.SQLITE_DB_PATH || '/data/test.sqlite'
+if (process.env.NODE_ENV === 'test')
+	path = '/data/test.sqlite'
 
 const db = new sqlite3.Database(path, (err) => {
 	if (err) {

@@ -24,9 +24,9 @@ t.before(async () => {
 });
 
 t.test('add/remove friends tests', async t => {
-	const userA = { username: 'userA', password: 'passA' };
-	const userB = { username: 'userB', password: 'passB' };
-	const userC = { username: 'userC', password: 'passC' };
+	const userA = { username: 'userA', password: 'passA', email: 'aaa@aaa.aaa'};
+	const userB = { username: 'userB', password: 'passB', email: 'bbb@bbb.bbb' };
+	const userC = { username: 'userC', password: 'passC', email: 'ccc@ccc.ccc' };
 
 	// register userA
 	const regA = await fastify.inject({
@@ -139,14 +139,17 @@ t.test('add/remove friends tests', async t => {
 
 	// trying to add a lot of friends and seeing if the friends list enpoint shows only 10 elements
 	const username = 'user'
+	const email = `${username}@gmail.com`
 	for (let i = 3; i < 25; i++) {
 		const current_username = `${username}${i}`;
+		const email = `${current_username}@gmail.com`
 		await fastify.inject({
 			method: 'POST',
 			url: '/user/register',
 			payload: {
 				username: current_username,
 				password: 'passA',
+				email: email,
 			}
 		});
 
