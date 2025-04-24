@@ -2,7 +2,7 @@ const MessageType = {
 	JOIN: "join",
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
-	STATE: "state"
+	STATE: "state",
 };
 
 // colors
@@ -11,14 +11,17 @@ const WHITE = "#ffffff";
 
 const GAME_ENDPOINT = "game";
 
+const DEFAULT_WIDTH = 800;
+const DEFAULT_HEIGHT = 600;
+
 export class GameRenderer {
 	constructor(server_uri, server_port, game_id, user_token, document) {
 		this.server_uri = server_uri;
 		this.game_id = game_id;
 		this.user_token = user_token;
 		this.socket = new WebSocket(`ws://${server_uri}:${server_port}/${GAME_ENDPOINT}`);
+		this.connected = false;
 
-		this.settings_applied = false;
 		// game
 		this.state = null;
 		this.controls = {up: 0, down: 0};
@@ -35,13 +38,15 @@ export class GameRenderer {
 		this.paddle_margin;
 		this.paddle_start;
 		this.ball_radius;
-		this.board_width;
-		this.board_height;
+		this.board_width = DEFAULT_WIDTH;
+		this.board_height = DEFAULT_HEIGHT;
 
-		this.init();
+		// Default settings to keep from resizing if height and width are correct
+		this.canvas.setAttribute("height", this.board_height);
+		this.canvas.setAttribute("width", this.board_width);
 	}
 
-	init() {
+	start() {
 		this.document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowUp') {
 				this.controls.up = 1;
@@ -65,6 +70,7 @@ export class GameRenderer {
 				'token': this.user_token,
 				'game_id': this.game_id,
 			}}));
+			this.connected = true;
 		});
 
 		this.socket.addEventListener('message', (event) => {
@@ -86,7 +92,8 @@ export class GameRenderer {
 			console.warn(`WebSocket closed: (${e.code}: ${e.reason})`);
 		});
 
-		this.wait_for_connection();
+		setInterval(this.render.bind(this), 10);
+		this.waitForConnection();
 	}
 
 	updateSettings(settings) {
@@ -99,34 +106,33 @@ export class GameRenderer {
 		this.paddle_margin = settings.paddle_to_wall_dist;
 		this.paddle_start = (this.canvas.height / 2) - (this.paddle_height / 2);
 		this.ball_radius = settings.ball_radius;
-		this.settings_applied = true;
 	}
 
-	draw_paddle_1(offset) {
+	drawPaddle1(offset) {
 		this.ctx.fillStyle = WHITE;
 		this.ctx.fillRect(this.paddle_margin, this.paddle_start + offset, this.paddle_width, this.paddle_height);
 	}
 
-	draw_paddle_2(offset) {
+	drawPaddle2(offset) {
 		this.ctx.fillStyle = WHITE;
 		this.ctx.fillRect(this.canvas.width - this.paddle_margin - this.paddle_width, this.paddle_start + offset, this.paddle_width, this.paddle_height);
 	}
 
-	draw_ball(ball_state) {
+	drawBall(ball_state) {
 		this.ctx.fillStyle = WHITE;
 		this.ctx.beginPath();
 		this.ctx.arc(ball_state.x, ball_state.y, this.ball_radius, 0, Math.PI * 2, true);
 		this.ctx.fill();
 	}
 
-	draw_scores(players) {
+	drawScores(players) {
 		this.ctx.fillStyle = WHITE;
 		this.ctx.font = "48px serif";
 		this.ctx.fillText(players[0].score, this.board_width / 4, 50);
 		this.ctx.fillText(players[1].score, this.board_width * (3/4), 50);
 	}
 
-	draw_waiting_for_players(players) {
+	drawWaitingForPlayers(players) {
 		this.ctx.fillStyle = WHITE;
 		this.ctx.font = "40px serif";
 		this.ctx.textAlign = "center"
@@ -150,14 +156,14 @@ export class GameRenderer {
 		}
 
 	}
-	draw_remaining_timeout(timeout) {
-
+	drawRemainingTimout(timeout) {
+		this.ctx.fillStyle = WHITE;
 		this.ctx.font = "40px serif";
 		this.ctx.textAlign = "center"
 		this.ctx.fillText(`Resetting in ${timeout}...`, this.board_width / 2, this.board_height / 2);
 	}
 
-	draw_result(winner) {
+	drawResult(winner) {
 		this.ctx.font = "40px serif";
 		this.ctx.textAlign = "center"
 		let text;
@@ -168,9 +174,9 @@ export class GameRenderer {
 			text = `Player ${winner.id} won the game`;
 		}
 		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);
-	}
+	}D
 
-	draw_center_line() {
+	drawCenterLine() {
 		this.ctx.setLineDash([10, 10]);
 		this.ctx.strokeStyle = WHITE;
 		this.ctx.lineWidth = this.paddle_width / 2;
@@ -180,25 +186,39 @@ export class GameRenderer {
 		this.ctx.stroke();
 	}
 
-	render() {
-		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		this.draw_scores(this.state.players);
+	drawWaitingForConnection() {
+		this.ctx.fillStyle = WHITE;
+		this.ctx.font = "40px serif";
+		this.ctx.textAlign = "center"
+		this.ctx.fillText("Waiting for connection...", this.board_width / 2, this.board_height / 2);
+	}
 
+	renderGame() {
+		this.drawScores(this.state.players);
 		if (this.state.game_state === "not_started") {
-
-			this.draw_waiting_for_players(this.state.players);
+			this.drawWaitingForPlayers(this.state.players);
 		}
 		else if (this.state.game_state === "active") {
-			this.draw_center_line();
-			this.draw_paddle_1(this.state.objects.left_paddle.y_offset);
-			this.draw_paddle_2(this.state.objects.right_paddle.y_offset);
-			this.draw_ball(this.state.objects.ball);
+			this.drawCenterLine();
+			this.drawPaddle1(this.state.objects.left_paddle.y_offset);
+			this.drawPaddle2(this.state.objects.right_paddle.y_offset);
+			this.drawBall(this.state.objects.ball);
 		}
 		else if (this.state.game_state === "resetting") {
-			this.draw_remaining_timeout(this.state.remaining_timeout);
+			this.drawRemainingTimout(this.state.remaining_timeout);
 		}
 		else if (this.state.game_state === "finished") {
-			this.draw_result(this.state.winner);
+			this.drawResult(this.state.winner);
+		}
+	}
+
+	render() {
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		if (!this.connected || !this.state) {
+			this.drawWaitingForConnection();
+		}
+		else {
+			this.renderGame();
 		}
 	}
 
@@ -210,14 +230,13 @@ export class GameRenderer {
 			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
 		}
 	}
-	wait_for_connection() {
-		//console.log(`Waiting: settings_applied: ${this.settings_applied} state: ${this.state}`);
-		if (this.settings_applied == true && this.state != null) {
+
+	waitForConnection() {
+		if (this.connected) {
 			setInterval(this.updatePaddles.bind(this), 10);
-			setInterval(this.render.bind(this), 10);
 		}
 		else {
-			setTimeout(this.wait_for_connection.bind(this), 100);
+			setTimeout(this.waitForConnection.bind(this), 100);
 		}
 	}
 }

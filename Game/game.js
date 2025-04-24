@@ -1,4 +1,4 @@
-import { GameRenderer } from './render_refactor.js';
+import { GameRenderer } from './render.js';
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
@@ -10,5 +10,6 @@ const GAME_ID = urlParams.get('game_id');
 const USER_TOKEN = urlParams.get('token');
 
 const renderer = new GameRenderer(SERVER_URI, SERVER_PORT, GAME_ID, USER_TOKEN, document);
+renderer.start();
 
 
