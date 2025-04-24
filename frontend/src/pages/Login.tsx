@@ -5,6 +5,7 @@ import {
   Link,
   useActionData,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 import styled from 'styled-components';
 import { customFetch } from '../utils';
@@ -139,14 +140,44 @@ const Login: React.FC = () => {
   const actionData = useActionData();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const loginProcessed = useRef(false);
 
   useEffect(() => {
-    if (actionData?.token && !loginProcessed.current) {
+    console.log('Login useEffect triggered');
+
+    // Check URL parameters for access_token (Google login)
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('access_token');
+    const error = params.get('error');
+
+    // Handle Google OAuth errors
+    if (error) {
+      toast.error(`Authentication failed: ${error}`);
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    console.log(accessToken, loginProcessed.current);
+
+    // Handle Google OAuth success
+    if (accessToken && !loginProcessed.current) {
       const user = {
-        // id: actionData.id, // Ensure actionData contains 'id'
-        // username: actionData.username,
-        // email: actionData.email,
+        authToken: accessToken,
+      };
+      console.log('User data from Google OAuth:', user);
+      login(user);
+      loginProcessed.current = true;
+
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      toast.success('Logged in with Google successfully');
+      navigate('/game');
+    }
+    // Handle normal login (existing code)
+    else if (actionData?.token && !loginProcessed.current) {
+      const user = {
         authToken: actionData.token,
       };
       console.log('User data from actionData:', user);
@@ -154,7 +185,7 @@ const Login: React.FC = () => {
       loginProcessed.current = true;
       navigate('/game');
     }
-  }, [actionData, login, navigate]);
+  }, [actionData, login, navigate, location]);
 
   return (
     <Container>
