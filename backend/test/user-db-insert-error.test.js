@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   user-db-insert-error.test.js                       :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/03 01:33:35 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/09 17:23:45 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   user-db-insert-error.test.js                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/03 01:33:35 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/18 13:55:07 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const t = require('tap');
 
@@ -50,7 +50,8 @@ t.test('POST /user/register -> fails on INSERT', async t => {
 		url: '/user/register',
 		payload: {
 			username: 'mockFail',
-			password: 'somepass'
+			password: 'somepass',
+			email: 'aaa@aaa.aaa'
 		}
 	});
 

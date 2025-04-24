@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
 	password TEXT NOT NULL,
 	google_id TEXT UNIQUE,
 	avatar TEXT,
-	online_status TEXT
+	online_status TEXT,
+	two_fa_code TEXT,
+	two_fa_code_expiration INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS friends (
@@ -26,22 +28,22 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
 
 -- Tournaments table
 CREATE TABLE IF NOT EXISTS tournaments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT NOT NULL
-    -- name TEXT
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status TEXT NOT NULL
+	-- name TEXT
 );
 
 -- Tournament Registrations table
 CREATE TABLE IF NOT EXISTS tournament_registrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tournament_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    registration_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'registered',
-    UNIQUE(tournament_id, user_id),
-    FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	tournament_id INTEGER NOT NULL,
+	user_id INTEGER NOT NULL,
+	registration_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status TEXT DEFAULT 'registered',
+	UNIQUE(tournament_id, user_id),
+	FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
+	FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Matches table

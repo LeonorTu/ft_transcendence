@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   user-db-errors.test.js                             :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/03 01:29:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/09 17:25:57 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   user-db-errors.test.js                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/03 01:29:31 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/18 13:54:45 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const t = require('tap');
 const bcrypt = require('bcryptjs');
@@ -65,7 +65,7 @@ t.test('POST /user/register => 500 when DB fails', async t => {
 	const res = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
-		payload: { username: 'bad', password: 'badpw' },
+		payload: { username: 'bad', password: 'badpw', email: 'aaa@aaa.aaa' },
 	});
 	t.equal(res.statusCode, 500, 'DB error => 500');
 	const body = JSON.parse(res.payload);

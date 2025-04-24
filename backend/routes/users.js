@@ -74,9 +74,9 @@ const registerUserSchema = {
 			properties: {
 				username: { type: 'string'},
 				password: { type: 'string'},
-				email: { type: 'string'},
+				email: { type: 'string' },
 			},
-			required: ['username', 'password', 'email'],
+			required: ['username', 'password', 'email' ],
 		},
 		response: {
 			200: User,
@@ -99,10 +99,16 @@ const loginUserSchema = {
 		},
 		response: {
 			200: {
-				type: 'object',
-				properties: {
-					token: { type: 'string' }
-				}
+				anyOf: [
+					{
+						type: 'object',
+						properties: {
+							token: { type: 'string' }
+						},
+						required: ['token'],
+					},
+					successResponse
+				]
 			},
 			400: errorResponse,
 			500: errorResponse,

@@ -4,6 +4,14 @@ const fs = require('fs')
 const path = require('path')
 // const { pipeline } = require('node:stream/promises')
 const sharp = require('sharp');
+const nodemailer = require('nodemailer')
+const transporter = nodemailer.createTransport({
+	service: 'gmail',
+	auth: {
+		user: process.env.TWOFA_GMAIL_USER,
+		pass: process.env.TWOFA_GMAIL_PASSWORD
+	}
+})
 
 const getUsers = (request, reply) => {
 	db.all('SELECT id, username, email FROM users', [], (err, rows) => {
@@ -38,7 +46,11 @@ const getUser = (request, reply) => {
 const registerUser = async (request, reply) => {
 	const { username, email, password } = request.body;
 	request.log.info(`Received registration request: ${username}`);
-
+	const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	if (!isValid) {
+		request.log.warn('Invalid email');
+		return reply.status(400).send({ error: "User provided wrong email" });
+	}
 	try {
 		const existingUser = await new Promise((resolve, reject) => {
 			db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
@@ -115,9 +127,11 @@ const registerUser = async (request, reply) => {
 const loginUser = async (request, reply) => {
 	const { username, password } = request.body;
 	request.log.info(`Received login request from: ${username}`);
+
+	const skip2fa = process.env.NODE_ENV !== 'prod'
 	try {
 		const user = await new Promise((resolve, reject) => {
-			db.get('SELECT id, username, password FROM users WHERE username = ?', [username], (err, user) => {
+			db.get('SELECT id, username, password, email FROM users WHERE username = ?', [username], (err, user) => {
 				if (err)
 					return reject(err);
 				resolve(user);
@@ -135,17 +149,51 @@ const loginUser = async (request, reply) => {
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		}
 
-		const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
-		request.log.info(`Generated JWT token for user ${user.username}`);
+		// in tests a token is generated at login without 2FA
+		if (skip2fa) {
+			const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
+			request.log.info(`Generated JWT token for user ${user.username}`);
 
-		await new Promise((resolve, reject) => {
-			db.run('UPDATE users SET online_status = ? WHERE id = ?', ['online', user.id], (err) => {
-				if (err)
-					return reject(err)
-				resolve()
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET online_status = ? WHERE id = ?', ['online', user.id], (err) => {
+					if (err)
+						return reject(err)
+					resolve()
+				})
 			})
-		})
-		return reply.send({ token });
+			return reply.send({ token });
+		} else {
+
+			const code = Math.floor(100000 + Math.random() * 900000).toString();
+			/*
+			Math.random() -> generates a random number between 0 and 1
+			Math.random() * 900000 -> scales that number between 0 and 899999.999....
+			100000 + Math.random() * 900000 -> shifts the range up to 100000 - 999999.999...
+			*/
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET two_fa_code = ?, two_fa_code_expiration = ? WHERE username = ?',
+					[
+						code,
+						Date.now() + 5 * 60 * 1000,
+						username,
+					],
+					(err) => {
+						if (err)
+							reject (err)
+						return resolve()
+					}
+				)
+			})
+			const info = await transporter.sendMail({
+				from: `"Transcendence" <${process.env.TWOFA_GMAIL_USER}>`,
+				to: user.email,
+				subject: '2FA Code',
+				text: `Your 2FA code is: ${code}`,
+				html: `<p>Your 2FA code is: <b>${code}</b></p>`,
+			})
+			console.log("Message sent: %s", info.messageId);
+			return reply.status(200).send({ message: '2FA code sent' });
+		}
 	} catch (err) {
 		request.log.error(`Error during login: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });

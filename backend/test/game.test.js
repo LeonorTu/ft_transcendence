@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   game.test.js                                       :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/18 20:49:42 by pleander          #+#    #+#             //
-//   Updated: 2025/04/18 21:05:58 by pleander         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   game.test.js                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/18 20:49:42 by pleander          #+#    #+#             */
+/*   Updated: 2025/04/22 10:55:37 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const t = require('tap');
 const fastify = require('../server');
@@ -38,8 +38,8 @@ t.before(async () => {
 			});
 		});
 	});
-	const userA = { username: 'userA', password: 'passA' };
-	const userB = { username: 'userB', password: 'passB' };
+	const userA = { username: 'userA', password: 'passA', email: 'userA@aaa.aaa' };
+	const userB = { username: 'userB', password: 'passB', email: 'userB@aaa.aaa'  };
 
 	const regA = await fastify.inject({
 		method: 'POST',
