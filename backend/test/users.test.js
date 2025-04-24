@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 16:28:11 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/17 22:11:56 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/22 10:10:26 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ t.before(async () => {
 // TEST 1: Registration (Positive)
 
 t.test('Test 1: POST /user/register (Positive) - creates a new user', async t => {
-	const payload = { username: 'testuser', password: 'secret' };
+	const payload = { username: 'testuser', password: 'secret', email: 'testuser@aaa.aaa' };
 
 	const res = await fastify.inject({
 		method: 'POST',
@@ -61,7 +61,7 @@ t.test('Test 1: POST /user/register (Positive) - creates a new user', async t =>
 // TEST 2: Registration (Negative) - Duplicate username
 
 t.test('Test 2: POST /user/register (Duplicate) - returns 400 if username already exists', async t => {
-	const payload = { username: 'testuser', password: 'anothersecret' };
+	const payload = { username: 'testuser', password: 'anothersecret', email: 'testuser@testuser.aaa' };
 
 	const res = await fastify.inject({
 		method: 'POST',
@@ -131,7 +131,7 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 	const regRes = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
-		payload: { username: 'tempuser', password: 'temp' },
+		payload: { username: 'tempuser', password: 'temp', email: 'tempuser@aaa.aaa' },
 	});
 	t.equal(regRes.statusCode, 200, 'Temporary user registration succeeds');
 	const regBody = JSON.parse(regRes.payload);
@@ -249,8 +249,8 @@ t.test('Test 11: PUT /user/:username/update => 401 if wrong currentPassword', as
 // TEST 12: updateUser => 400 if new username already exists
 
 t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async t => {
-	const userA = { username: 'userA', password: 'passA' };
-	const userB = { username: 'userB', password: 'passB' };
+	const userA = { username: 'userA', password: 'passA', email: 'userA@aaa.aaa' };
+	const userB = { username: 'userB', password: 'passB', email: 'userB@aaa.aaa' };
 
 	// Register both:
 	const regA = await fastify.inject({
@@ -292,7 +292,7 @@ t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async
 
 t.test('Test 13: PUT /user/:username/link_google_account => positive/duplicate', async t => {
 	// user1
-	const user1 = { username: 'googleUser1', password: 'pass1' };
+	const user1 = { username: 'googleUser1', password: 'pass1', email: 'googleUser1@aaa.aaa' };
 	const reg1 = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
@@ -318,7 +318,7 @@ t.test('Test 13: PUT /user/:username/link_google_account => positive/duplicate',
 	t.match(JSON.parse(linkRes1.payload).message, /Google account linked successfully/i);
 
 	// user2
-	const user2 = { username: 'googleUser2', password: 'pass2' };
+	const user2 = { username: 'googleUser2', password: 'pass2', email: 'googleUser2@aaa.aaa' };
 	const reg2 = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
@@ -354,7 +354,7 @@ t.test('Test 14: Mismatch user => returns 400 in updateUser/linkGoogleAccount', 
 	const regRes = await fastify.inject({
 		method: 'POST',
 		url: '/user/register',
-		payload: { username: 'mismatchUser', password: 'abc123' },
+		payload: { username: 'mismatchUser', password: 'abc123', email: 'mismatchUser@aaa.aaa' },
 	});
 	t.equal(regRes.statusCode, 200, 'mismatchUser registration ok');
 
@@ -577,6 +577,65 @@ t.test('Test 18: logout user', async t => {
 	})
 	t.equal(logoutA.statusCode, 401, 'userA cannot use a revoked token')
 	t.match(JSON.parse(logoutA.payload).error, /Token has been revoked/i);
+})
+
+// TEST 19: /verify_2fa_code
+
+t.test('/verify_2fa_code', async t => {
+	const code = '123456'
+	try {
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET two_fa_code = ?, two_fa_code_expiration = ? WHERE username = ?',
+				[code, Date.now() + 5 * 60 * 1000, 'testuser'], (err) => {
+					if (err) return reject(err)
+						resolve()
+				}
+			)
+		})
+		const verifyCode = await fastify.inject({
+			method: 'POST',
+			url: '/verify_2fa_code',
+			payload: { code: code, username: 'testuser'}
+		})
+		t.equal(verifyCode.statusCode, 200, '2FA verification succeeded')
+		t.ok(JSON.parse(verifyCode.payload).token, 'Got token after 2FA')
+	} catch (err) {
+		console.error('2FA code verification error:', err);
+		throw err;
+	}
+	const wrongCode = await fastify.inject({
+		method: 'POST',
+		url: '/verify_2fa_code',
+		payload: { code: '000000', username: 'testuser'}
+	})
+	t.equal(wrongCode.statusCode, 401, 'Invalid 2FA code')
+
+	const wrongUsername = await fastify.inject({
+		method: 'POST',
+		url: '/verify_2fa_code',
+		payload: { code: code, username: 'wronguser'}
+	})
+	t.equal(wrongUsername.statusCode, 400, 'Invalid username')
+
+	try {
+		await new Promise((resolve, reject) => {
+			db.run('UPDATE users SET two_fa_code_expiration = ? WHERE username = ?',
+				[Date.now() - 1 * 60 * 1000, 'testuser'], (err) => {
+					if (err) return reject(err)
+						resolve()
+				}
+			)
+		})
+		const verifyCode = await fastify.inject({
+			method: 'POST',
+			url: '/verify_2fa_code',
+			payload: { code: code, username: 'testuser'}
+		})
+		t.equal(verifyCode.statusCode, 401, '2FA code expired')
+	} catch (err) {
+		console.error('2FA code verification error:', err);
+		throw err;
+	}
 })
 
 // TEARDOWN: Clean up DB and close Fastify
