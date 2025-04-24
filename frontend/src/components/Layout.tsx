@@ -100,7 +100,6 @@ const ToggleButton = styled.button`
 const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
   const { user } = useAuth();
-  console.log('User state in Layout:', user);
 
   return (
     <ThemeProvider theme={{ isOpen }}>

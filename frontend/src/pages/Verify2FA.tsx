@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Form,
   useActionData,
@@ -58,6 +58,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (response.data.token) {
       toast.success('Verification successful');
       return { token: response.data.token };
+    } else {
+      toast.error('Invalid verification code');
+      return null;
     }
   } catch (error: any) {
     let errorMessage = 'Verification failed';
@@ -72,18 +75,21 @@ const Verify2FA: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const hasNavigated = useRef(false);
+  const params = new URLSearchParams(location.search);
+  const username = location.state?.username || params.get('username');
 
-  const username = location.state?.username;
   useEffect(() => {
     if (!username) {
       navigate('/login');
       return;
     }
-    if (actionData?.token) {
+    if (actionData?.token && !hasNavigated.current) {
       const user = {
         authToken: actionData.token,
       };
       login(user);
+      hasNavigated.current = true;
       navigate('/game');
     }
   }, [username, actionData, login, navigate]);

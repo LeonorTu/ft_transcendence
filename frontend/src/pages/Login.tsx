@@ -117,7 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       password,
     });
 
-    if (response.data.token) {
+    if (response.data.message) {
       return { initialAuth: true, username };
     }
 
@@ -143,7 +143,10 @@ const Login: React.FC = () => {
     // Handle 2FA required response
     if (actionData?.initialAuth) {
       // Navigate to 2FA verification page
-      navigate('/login/verify-2fa', { state: { username: actionData.username } });
+       const url = `/login/verify-2fa?username=${encodeURIComponent(
+         actionData.username
+       )}`;
+       navigate(url, { state: { username: actionData.username } });
       return;
     }
 
