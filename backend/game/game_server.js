@@ -25,7 +25,6 @@ const MessageType = {
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
 	STATE: "state",
-	GAME_RESULT: "result"
 };
 
 class Error {
@@ -101,10 +100,7 @@ class GameServer {
 					resolve(game);
 				});
 		});
-		const msg = JSON.stringify({type: MessageType.GAME_RESULT, payload: {
-			winner_id: game.winner.id,
-			loser_id: game.loser.id,
-		}});
+		const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
 		this.sockets.forEach( (sock) => {
 			if (sock.game_id == id) {
 				sock.send(msg);
