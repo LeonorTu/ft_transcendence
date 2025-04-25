@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/22 16:51:28 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/24 19:06:32 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/25 16:20:18 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -16,6 +16,19 @@ const { game_server } = require('./game_server');
 function isPowerOfTwo(n) {
 	return (n > 0) && ((n & (n - 1)) === 0);
 }
+
+
+// Create a new tournament.
+// 
+// URL: POST /tournament/new
+// Body: { name: string }
+// Response: { tournament_id: number }
+// 
+// Front-end usage:
+//  • User fills in a “Create Tournament” form (name).
+//  • Client sends this request with the user’s JWT.
+//  • On success, navigates to the tournament lobby or details page,
+//    using the returned tournament_id for subsequent calls.
 
 const createTournament = async (request, reply) => {
 	const { name } = request.body;
@@ -37,6 +50,18 @@ const createTournament = async (request, reply) => {
 		return reply.status(500).send({ error: 'Internal server error' });
 	}
 };
+
+
+// Join an existing, pending tournament.
+// 
+// URL: POST /tournament/:id/join
+// Response: { message: 'Joined tournament' }
+// 
+// Front-end usage:
+//  • After listing or viewing a pending tournament, user clicks “Join.”
+//  • Client sends this request with the user’s JWT.
+//  • On 200, update UI to show the user is in the participant list.
+//  • On 409, disable the “Join” button (already joined).
 
 const joinTournament = async (request, reply) => {
 	const tournamentId = Number(request.params.id);
@@ -73,6 +98,18 @@ const joinTournament = async (request, reply) => {
 		return reply.status(500).send({ error: 'Internal server error' });
 	}
 };
+
+
+// Start the tournament: build the full bracket and schedule round-1 matches.
+// 
+// URL: POST /tournament/:id/start
+// Response: { message: 'Tournament started' }
+// 
+// Front-end usage:
+//  • Only the tournament owner can press “Start Tournament.”
+//  • Client sends this request with the owner’s JWT.
+//  • On success, the UI polls GET /tournament/:id/bracket to render the bracket,
+//    showing scheduled games for round 1.
 
 const startTournament = async (request, reply) => {
 	const tournamentId = Number(request.params.id);
@@ -205,6 +242,15 @@ const startTournament = async (request, reply) => {
 	}
 };
 
+// List all tournaments.
+// 
+// URL: GET /tournament/list
+// Response: [ { id, name, owner_id, status, created_at, … } ]
+// 
+// Front-end usage:
+//  • On the tournament overview page, fetch this list.
+//  • Render “Join” buttons for pending ones; “View bracket” for active/completed.
+
 const listTournaments = async (request, reply) => {
 	try {
 		const tours = await new Promise((resolve, reject) => {
@@ -220,7 +266,21 @@ const listTournaments = async (request, reply) => {
 	}
 };
 
-// Get bracket with matches
+
+// Fetch the full bracket for a tournament.
+// 
+// URL: GET /tournament/:id/bracket
+// Response: {
+//   tournament: { id,name,status,winner_id },
+//   matches: [ { tm_id, game_id, round, tm_status, player1_id, player2_id, … } ]
+// }
+// 
+// Front-end usage:
+//  • After starting (or for any active/completed), fetch this once.
+//  • Draw a bracket UI grouped by `round`.
+//  • For any `scheduled` match, show a “Play game” button that opens
+//    /game.html?game_id={game_id}&token={JWT}.
+
 const getBracket = async (request, reply) => {
 	const tournamentId = Number(request.params.id);
 	try {
@@ -258,7 +318,19 @@ const getBracket = async (request, reply) => {
 	}
 };
 
-// Report match result and advance bracket
+
+// Report the result of one tournament match, and advance the bracket.
+// 
+// URL: POST /tournament/:id/match/:tm_id/result
+// Body: { winner_slot: 1 | 2 }
+// Response: { message: 'Result recorded' }
+// 
+// Front-end usage:
+//  • After a real-time game finishes, front-end POSTs this with the slot
+//    number that won.
+//  • On success, client should re-fetch /tournament/:id/bracket to get
+//    updated `scheduled` or `finished` statuses.
+
 const reportMatchResult = async (request, reply) => {
 	const tournamentId = Number(request.params.id);
 	const tmId = Number(request.params.tm_id);

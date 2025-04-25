@@ -6,12 +6,25 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/24 18:57:03 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/25 16:24:55 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 const db = require('../db');
 const { game_server } = require('./game_server');
+
+// Create a new pending match (matchmaking lobby) and auto-join the creator.
+// 
+// Route: POST /matchmaking/new
+// Authentication: required (JWT)
+// Response: { pending_id: number }
+// 
+// Front-end flow:
+// 1. User clicks “Create Match.”
+// 2. Client sends POST /matchmaking/new with Authorization header.
+// 3. Server inserts a new pending_matches row and adds the creator to it.
+// 4. Server returns the pending_id.
+// 5. Front-end navigates to a “Waiting for opponent” screen, storing pending_id.
 
 const createMatchmaking = async (request, reply) => {
   const creatorId = request.user.id;
@@ -41,7 +54,18 @@ const createMatchmaking = async (request, reply) => {
   }
 };
 
-// List all open pending matches
+
+// List all open pending matches (lobbies) with their current player counts.
+// 
+// Route: GET /matchmaking/list
+// Authentication: required (JWT)
+// Response: Array of { id, creator_id, player_count }
+// 
+// Front-end flow:
+// 1. On the “Find Match” screen, client fetches this endpoint.
+// 2. Server returns a list of open lobbies.
+// 3. Front-end renders each entry with “Join” buttons and shows how many players are waiting.
+
 const listMatchmaking = async (request, reply) => {
   try {
     const rows = await new Promise((res, rej) =>
@@ -67,7 +91,28 @@ const listMatchmaking = async (request, reply) => {
   }
 };
 
-// Join an open pending match, create game and return gameid when 2 players
+
+// Join an open pending match. Once two players have joined, the server
+//   promotes the lobby to a real game and returns match_id.
+// 
+// Route: POST /matchmaking/:id/join
+// Authentication: required (JWT)
+// Response:
+//   • { message: 'Joined pending match' } if still waiting for a second player
+//   • { message: 'Match ready', match_id: number } when the 2nd player joins
+// 
+// Front-end flow:
+// 1. User clicks “Join” next to a pending lobby.
+// 2. Client sends POST /matchmaking/:pending_id/join with Authorization header.
+// 3. Server inserts the user, then counts players:
+//    – If count < 2: responds with { message: 'Joined pending match' }.
+//    – If count === 2: creates a real match, spins up the WebSocket game,
+//      and responds with { message: 'Match ready', match_id }.
+// 4. Front-end:
+//    – If no match_id: stays on “Waiting” screen, optionally polls list or status.
+//    – If match_id present: redirect to
+//         /game.html?game_id=<match_id>&token=<JWT>
+
 const joinMatchmaking = async (request, reply) => {
   const pendingId = Number(request.params.id);
   const userId    = request.user.id;
