@@ -5,7 +5,7 @@ PASS=$2
 EMAIL=$3
 
 if [[ $USER == "" || $PASS == "" || $EMAIL == "" ]]; then
-	echo "Pass username and password as arguments. ./create_game username password"
+	echo "Pass username, password and email as arguments. ./create_game username password email"
 	exit
 fi
 
