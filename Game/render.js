@@ -174,7 +174,7 @@ export class GameRenderer {
 			text = `Player ${winner.id} won the game`;
 		}
 		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);
-	}D
+	}
 
 	drawCenterLine() {
 		this.ctx.setLineDash([10, 10]);
