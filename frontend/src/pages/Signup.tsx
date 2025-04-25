@@ -1,60 +1,84 @@
 import { FormInput, SubmitBtn } from '../components';
 import { ActionFunctionArgs, Form, Link, redirect } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { customFetch } from '../utils';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 
-// Reuse the same styled components from the Login page
+const gridEffect = keyframes`
+  0% { background-position: 0px 0px; }
+  100% { background-position: 50px 50px; }
+`;
+
 const Container = styled.section`
   height: 100vh;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  background-size: 50px 50px;
+  animation: ${gridEffect} 20s linear infinite;
 `;
 
 const FormContainer = styled(Form)`
-  width: 24rem;
-  padding: 2rem;
-  background-color: #1a1a1a;
+  width: 26rem;
+  padding: 2.5rem;
+  background-color: rgba(10, 10, 10, 0.8);
   border: 2px solid #333;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 10;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 255, 170, 0.8),
+      transparent
+    );
+    z-index: 1;
+  }
 `;
 
 const Title = styled.h4`
   text-align: center;
-  font-size: 1.875rem;
-  font-weight: bold;
+  font-size: 2.5rem;
   font-family: 'Press Start 2P', cursive;
   color: #fff;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 `;
 
 const ButtonContainer = styled.div`
-  margin-top: 1rem;
+  margin-top: 1.5 rem;
 `;
 
 const LinkContainer = styled.p`
   text-align: center;
   font-family: 'Press Start 2P', cursive;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #fff;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 `;
 
 const StyledLink = styled(Link)`
   margin-left: 0.5rem;
-  color: #646cff;
+  color: #00ffaa;
   text-decoration: none;
   text-transform: capitalize;
   transition: color 0.3s;
 
   &:hover {
-    color: #535bf2;
+    color: #00dd99;
     text-decoration: underline;
   }
 `;
