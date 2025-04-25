@@ -8,6 +8,7 @@ import {
   UserProfile,
   Error,
   Verify2FA,
+  GameLobby,
 } from './pages';
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
       {
         path: 'game',
         element: <Game />,
+      },
+      {
+        path: 'lobby',
+        element: <GameLobby />,
       },
       {
         path: 'login',
