@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/25 16:24:55 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/25 16:31:34 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -26,7 +26,7 @@ const { game_server } = require('./game_server');
 // 4. Server returns the pending_id.
 // 5. Front-end navigates to a “Waiting for opponent” screen, storing pending_id.
 
-const createMatchmaking = async (request, reply) => {
+const createMatchLobby = async (request, reply) => {
   const creatorId = request.user.id;
   try {
     // Create the pending match
@@ -66,7 +66,7 @@ const createMatchmaking = async (request, reply) => {
 // 2. Server returns a list of open lobbies.
 // 3. Front-end renders each entry with “Join” buttons and shows how many players are waiting.
 
-const listMatchmaking = async (request, reply) => {
+const listMatchLobbies = async (request, reply) => {
   try {
     const rows = await new Promise((res, rej) =>
       db.all(
@@ -113,7 +113,7 @@ const listMatchmaking = async (request, reply) => {
 //    – If match_id present: redirect to
 //         /game.html?game_id=<match_id>&token=<JWT>
 
-const joinMatchmaking = async (request, reply) => {
+const joinMatchLobby = async (request, reply) => {
   const pendingId = Number(request.params.id);
   const userId    = request.user.id;
 
@@ -195,7 +195,7 @@ const joinMatchmaking = async (request, reply) => {
 };
 
 module.exports = {
-  createMatchmaking,
-  listMatchmaking,
-  joinMatchmaking
+  createMatchLobby,
+  listMatchLobbies,
+  joinMatchLobby
 };

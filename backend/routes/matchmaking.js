@@ -6,15 +6,15 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/23 14:47:13 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/24 19:00:44 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/25 16:32:50 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 const auth = require('../routes/auth');
 const {
-  createMatchmaking,
-  listMatchmaking,
-  joinMatchmaking
+  createMatchLobby,
+  listMatchLobbies,
+  joinMatchLobby
 } = require('../handlers/matchmaking');
 
 const errorResponse = {
@@ -55,7 +55,7 @@ function matchmakingRoutes(fastify, options, done) {
         500: errorResponse
       }
     },
-    handler: createMatchmaking
+    handler: createMatchLobby
   };
 
   const listSchema = {
@@ -66,7 +66,7 @@ function matchmakingRoutes(fastify, options, done) {
         500: errorResponse
       }
     },
-    handler: listMatchmaking
+    handler: listMatchLobbies
   };
 
   const joinSchema = {
@@ -80,7 +80,7 @@ function matchmakingRoutes(fastify, options, done) {
         500: errorResponse
       }
     },
-    handler: joinMatchmaking
+    handler: joinMatchLobby
   };
 
   fastify.post('/matchmaking/new',      createSchema);
