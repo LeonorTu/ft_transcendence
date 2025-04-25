@@ -2,8 +2,9 @@
 
 USER=$1
 PASS=$2
+EMAIL=$3
 
-if [[ $USER == "" || $PASS == "" ]]; then
+if [[ $USER == "" || $PASS == "" || $EMAIL == "" ]]; then
 	echo "Pass username and password as arguments. ./create_game username password"
 	exit
 fi
@@ -12,6 +13,7 @@ curl -s -X POST http://localhost:8888/user/register \
          -H "Content-Type: application/json" \
          -d "{
                    \"username\": \"$USER\",
-                   \"password\": \"$PASS\"
+                   \"password\": \"$PASS\",
+                   \"email\": \"$EMAIL\"
             }"
 
