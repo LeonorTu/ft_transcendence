@@ -4,11 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import {
-  createGameRenderer,
+  createGameRendererAdapter,
   GameRendererType,
-  DEFAULT_WIDTH,
-  DEFAULT_HEIGHT,
-} from '../utils/GameRenderer';
+} from '../utils/GameRendererAdapter';
+
+const DEFAULT_WIDTH = 800;
+const DEFAULT_HEIGHT = 600;
 
 const GameContainer = styled.div`
   display: flex;
@@ -153,21 +154,19 @@ const Game = () => {
       }
     };
 
-    // Create the renderer using the imported factory function
-    const renderer = createGameRenderer(
+    // Create the renderer using the adapter
+    const renderer = createGameRendererAdapter(
       gameId,
       user.authToken,
-      canvasRef as React.RefObject<HTMLCanvasElement>,
-      keyDownHandler,
-      keyUpHandler
+      canvasRef.current
     );
 
-    // Store the renderer for cleanup
-    rendererRef.current = renderer;
+    // Add event listeners
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
 
-    if (renderer) {
-      renderer.start();
-    }
+    rendererRef.current = renderer;
+    renderer.start();
 
     // Cleanup function
     return () => {
@@ -224,6 +223,12 @@ const Game = () => {
 
   return (
     <GameContainer>
+      <canvas
+        id='game-canvas'
+        style={{ display: 'none' }}
+        width={1}
+        height={1}
+      />
       <h1>Pong Game</h1>
 
       {!gameCreated ? (
