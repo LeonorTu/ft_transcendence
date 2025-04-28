@@ -23,7 +23,7 @@ const Card = styled.div`
   }
 `;
 
-const Avatar = styled.img`
+const Avatar = styled.img<{ online: boolean }>`
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -43,7 +43,7 @@ const Username = styled.h3`
   color: #333;
 `;
 
-const Status = styled.span`
+const Status = styled.span<{ online: boolean }>`
   font-size: 0.9rem;
   color: ${({ online }) => (online ? '#4caf50' : '#999')};
 `;
