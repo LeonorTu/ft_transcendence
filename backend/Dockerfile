@@ -18,7 +18,7 @@ COPY . .
 RUN npm install
 
 # Unit test dependencies
-RUN npm install --save-dev tap 
+RUN npm install --save-dev tap
 RUN npm install --save-dev proxyquire
 RUN npm install --save-dev form-data
 
@@ -28,4 +28,4 @@ ENV SQLITE_DB_PATH=/data/database.sqlite
 
 EXPOSE 8888
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
