@@ -204,6 +204,8 @@ const Login: React.FC = () => {
     // Handle Google OAuth success
     if (accessToken && !loginProcessed.current) {
       const user = {
+        id: "2",
+        username: "test",
         authToken: accessToken,
       };
       login(user);
