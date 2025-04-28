@@ -152,24 +152,6 @@ class Game {
 		this.objects.ball.speed = DEFAULT_BALL_SPEED;
 		this.objects.ball.start_dir = -this.objects.ball.start_dir;
 	}
-	/**
-	 * Adds the player to the game. Return true of successful and false otherwise.
-	 *
-	 * @param {int} id: Player id
-	 */
-	addPlayer(id, side) {
-		if (!Number.isInteger(id)) {
-			return false;
-		}
-		if (this.players.size < 2) {
-			if (this.getPlayer(id) == null) { // player does not exist yet
-				this.players.push(new Player(id, side));
-			}
-			this.connected_players += 1;
-			return true;
-		}
-		return false;
-	}
 
 	getPlayer(id) {
 		for (const p of this.players) {
