@@ -5,6 +5,11 @@ const MessageType = {
 	STATE: "state",
 };
 
+export const GameType = {
+	SINGLE_PLAYER: 1,
+	MULTI_PLAYER: 2
+};
+
 // colors
 const BLACK = "#000000";
 const WHITE = "#ffffff";
@@ -15,7 +20,7 @@ const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
 export class GameRenderer {
-	constructor(server_uri, server_port, game_id, user_token, document) {
+	constructor(server_uri, server_port, game_id, user_token, document, game_type) {
 		this.server_uri = server_uri;
 		this.game_id = game_id;
 		this.user_token = user_token;
@@ -23,8 +28,17 @@ export class GameRenderer {
 		this.connected = false;
 
 		// game
+		this.game_type = game_type;
 		this.state = null;
-		this.controls = {up: 0, down: 0};
+		if (game_type == GameType.MULTI_PLAYER) {
+			this.controls = {up: 0, down: 0};
+		}
+		else if (game_type == GameType.SINGLE_PLAYER) {
+			this.controls = {
+				player1: {up: 0, down: 0},
+				player2: {up: 0, down: 0}
+			};
+		}
 
 		// window
 		this.document = document;
@@ -46,7 +60,7 @@ export class GameRenderer {
 		this.canvas.setAttribute("width", this.board_width);
 	}
 
-	start() {
+	multiplayerKeyListener() {
 		this.document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowUp') {
 				this.controls.up = 1;
@@ -64,6 +78,46 @@ export class GameRenderer {
 				this.controls.down = 0;
 			}
 		});
+	}
+
+	singleplayerKeyListener() {
+		this.document.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.player1.up = 1;
+			}
+			else if (e.key === 'w')  {
+				this.controls.player2.up = 1;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.player1.down = 1;
+			}
+			else if (e.key == 's') {
+				this.controls.player2.down = 1;
+			}
+		});
+
+		this.document.addEventListener('keyup', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.player1.up = 0;
+			}
+			else if (e.key === 'w')  {
+				this.controls.player2.up = 0;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.player1.down = 0;
+			}
+			else if (e.key == 's') {
+				this.controls.player2.down = 0;
+			}
+		});
+	}
+	start() {
+		if (this.game_type == GameType.MULTI_PLAYER) {
+			this.multiplayerKeyListener();
+		}
+		else if (this.game_type == GameType.SINGLE_PLAYER) {
+			this.singleplayerKeyListener();
+		}
 
 		this.socket.addEventListener('open', () => {
 			this.socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
