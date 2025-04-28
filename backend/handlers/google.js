@@ -4,9 +4,9 @@ const googleOAuthHandler = async function(request, reply) {
   // In test environment, use mock behavior
   if (process.env.NODE_ENV === 'test') {
     // Create a mock JWT token for testing
-    const jwtToken = await reply.jwtSign({ 
-      id: 1, 
-      email: 'test@example.com' 
+    const jwtToken = await reply.jwtSign({
+      id: 1,
+      email: 'test@example.com'
     });
     return reply.redirect(`/?access_token=${jwtToken}`);
   }
@@ -19,13 +19,13 @@ const googleOAuthHandler = async function(request, reply) {
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${token.access_token}` }
     });
-    
+
     if (!userInfoResponse.ok) {
       throw new Error('Failed to fetch user info from Google');
     }
 
     const googleUser = await userInfoResponse.json();
-    
+
     // Check if user exists with the email
     const user = await new Promise((resolve, reject) => {
       db.get('SELECT * FROM users WHERE email = ?', [googleUser.email], (err, row) => {
@@ -33,9 +33,9 @@ const googleOAuthHandler = async function(request, reply) {
         resolve(row);
       });
     });
-    
+
     let userId;
-    
+
     if (user) {
       // User exists, use their ID
       userId = user.id;
@@ -51,19 +51,21 @@ const googleOAuthHandler = async function(request, reply) {
           }
         );
       });
-      
+
       userId = result;
     }
-    
+
     // Generate a JWT token
-    const jwtToken = await reply.jwtSign({ 
-      id: userId, 
-      email: googleUser.email 
+    const jwtToken = await reply.jwtSign({
+      id: userId,
+      email: googleUser.email
     });
-    
+
     // Redirect to frontend with the token
-    return reply.redirect(`/?access_token=${jwtToken}`);
-    
+    return reply.redirect(
+      `http://localhost:5173/login?access_token=${jwtToken}`
+    );
+
   } catch (err) {
     request.log.error(`Google OAuth error: ${err.message}`);
     return reply.redirect('/?error=authentication_failed');

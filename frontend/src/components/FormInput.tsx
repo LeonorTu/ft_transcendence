@@ -18,22 +18,27 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
   font-family: 'Press Start 2P', cursive;
-  font-size: 12px;
-  color: #fff;
-  text-transform: capitalize;
+  font-size: 0.8rem;
+  color: #ccc;
+  text-transform: uppercase;
 `;
 
 const Input = styled.input`
-  padding: 0.75rem;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #fff;
+  padding: 0.8rem;
+  background-color: rgba(30, 30, 30, 0.6);
+  border: 2px solid #444;
+  color: white;
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
+  transition: all 0.3s;
 
   &:focus {
-    outline: 2px solid #646cff;
+    outline: none;
+    border-color: #00ffaa;
+    box-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
   }
 `;
 

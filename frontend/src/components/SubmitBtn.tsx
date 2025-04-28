@@ -6,24 +6,30 @@ interface SubmitBtnProps {
 }
 
 const Button = styled.button`
-  padding: 1rem;
   width: 100%;
-  background: #646cff;
-  color: #fff;
   font-family: 'Press Start 2P', cursive;
-  font-size: 14px;
-  border: none;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border: 3px solid white;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  padding: 1rem;
   cursor: pointer;
-  margin-top: 1rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  position: relative;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
 
   &:hover {
-    background: #535bf2;
+    color: #00ffaa;
+    border-color: #00ffaa;
+    box-shadow: 0 0 30px rgba(0, 255, 170, 0.6);
   }
 
   &:disabled {
-    background: #555;
+    opacity: 0.6;
     cursor: not-allowed;
+    animation: none;
   }
 `;
 
