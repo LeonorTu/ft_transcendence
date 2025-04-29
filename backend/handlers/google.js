@@ -33,7 +33,7 @@ const googleOAuthHandler = async function(request, reply) {
     
     // Check if user exists with the email
     const existingUser = await new Promise((resolve, reject) => {
-		db.get('SELECT * FROM users WHERE email = ?', [googleUser.email], (err, row) => {
+		db.get('SELECT id, username FROM users WHERE email = ?', [googleUser.email], (err, row) => {
 		  if (err) return reject(err);
 		  resolve(row);
 		});
@@ -71,8 +71,9 @@ const googleOAuthHandler = async function(request, reply) {
       // Check if username exists and add a suffix if needed
       let usernameTaken = true;
       let counter = 1;
+      const maxAttempts = 1000; // Cap the counter to prevent overflow
 
-	  while (usernameTaken) {
+      while (usernameTaken && counter <= maxAttempts) {
         const existingUsername = await new Promise((resolve, reject) => {
           db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
             if (err) return reject(err);
@@ -86,6 +87,10 @@ const googleOAuthHandler = async function(request, reply) {
           username = `${baseUsername}${counter}`;
           counter++;
         }
+      }
+
+      if (usernameTaken) {
+        throw new Error('Failed to generate a unique username after maximum attempts');
       }
     
     // Generate avatar for the new user
