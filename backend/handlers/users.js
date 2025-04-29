@@ -528,10 +528,39 @@ const updateOnlineStatus = async (request, reply) => {
 	}
 }
 
+// Add this function in handlers/users.js with the other handler functions
+
+const getCurrentUser = async (request, reply) => {
+  const userId = request.user.id;
+  try {
+    const user = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT id, username, email, avatar, online_status FROM users WHERE id = ?',
+        [userId],
+        (err, row) => {
+          if (err) return reject(err);
+          resolve(row);
+        }
+      );
+    });
+
+    if (!user) {
+      request.log.warn(`User with ID ${userId} not found`);
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    return reply.send(user);
+  } catch (err) {
+    request.log.error(`Error fetching current user: ${err.message}`);
+    return reply.status(500).send({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
 	getUsers,
 	registerUser,
 	getUser,
+  getCurrentUser,
 	updateUser,
 	loginUser,
 	logoutUser,

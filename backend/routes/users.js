@@ -4,6 +4,7 @@ const {
 	getUsers,
 	registerUser,
 	getUser,
+  getCurrentUser,
 	updateUser,
 	loginUser,
 	logoutUser,
@@ -288,12 +289,25 @@ function usersRoutes(fastify, options, done) {
 			response: {
 				200: successResponse,
 				400: errorResponse,
-				500: errorResponse
+        500: errorResponse,
+      },
+      security: [{ bearerAuth: [] }],
+    },
+    handler: updateOnlineStatus,
+  };
+
+  const getCurrentUserSchema = {
+    onRequest: [fastify.authenticate],
+    schema: {
+      response: {
+        200: User,
+        404: errorResponse,
+        500: errorResponse,
 			},
 			security: [{ bearerAuth: [] }],
 		},
-		handler: updateOnlineStatus
-	}
+    handler: getCurrentUser,
+  };
 
 	fastify.get('/users', getUsersSchema)
 
@@ -321,7 +335,9 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
 
-	done()
+  fastify.get('/user/me', getCurrentUserSchema);
+  
+  done()
 }
 
 module.exports = usersRoutes
