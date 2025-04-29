@@ -6,11 +6,12 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/22 16:59:55 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/29 14:00:52 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/29 15:00:09 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 const auth = require('../routes/auth')
+const db = require('../db');
 
 const {
 	createTournament,
@@ -67,7 +68,7 @@ const TournamentPlayers = {
 		id: { type: 'integer' },
 		tournament_id: { type: 'integer' },
 		user_id: { type: 'integer' },
-		seed: { type: 'integer' },
+		// seed: { type: 'integer' },
 	}
 }
 
@@ -177,7 +178,7 @@ function tournamentRoutes(fastify, options, done) {
 	}
 
 	fastify.get('/tournament/list', listTournamentsSchema)
-	fastify.get('/tournament/info', infoTournamentsSchema)
+	fastify.get('/tournament/:id/info', infoTournamentsSchema)
 	fastify.post('/tournament/new', createTournamentSchema)
 	fastify.post('/tournament/:id/join', joinTournamentSchema)
 	fastify.post('/tournament/:id/start', startTournamentSchema)

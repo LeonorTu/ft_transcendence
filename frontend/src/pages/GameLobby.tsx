@@ -20,6 +20,12 @@ const Title = styled.h2`
 	margin-bottom: 2rem;
 `;
 
+const Title1 = styled.h3`
+	font-family: 'Press Start 2P', cursive;
+	font-size: 1.5rem;
+	margin-bottom: 2rem;
+`;
+
 const MatchList = styled.ul`
 	list-style: none;
 	padding: 0;
@@ -88,7 +94,7 @@ const GameLobby: React.FC = () => {
 	useEffect(() => {
 		const loadMatches = async () => {
 			try {
-				const response = await customFetch.get<MatchLobby[]>('/matchmaking/list');
+				const response = await customFetch.get<MatchLobby[]>('tournament/1/info');
 				console.log(response)
 				setMatches(response.data);
 			} catch (err: unknown) {
@@ -104,32 +110,33 @@ const GameLobby: React.FC = () => {
 		loadMatches();
 	}, []); // empty deps = run once on mount
 
-	const handleJoin = async (matchId: number) => {
-		try {
-			// Optionally show loading or disable button here
-			await customFetch.post(`/matchmaking/${matchId}/join`);
-			toast.success(`Joined match #${matchId}`);
-			// You might want to redirect or update state here
-		} catch (err) {
-			let msg = `Failed to join match #${matchId}`;
-			if (err instanceof AxiosError && err.message) msg = err.message;
-			toast.error(msg);
-		}
-	};
+	// const handleJoin = async (matchId: number) => {
+	// 	try {
+	// 		// Optionally show loading or disable button here
+	// 		await customFetch.post(`/matchmaking/${matchId}/join`);
+	// 		toast.success(`Joined match #${matchId}`);
+	// 		// You might want to redirect or update state here
+	// 	} catch (err) {
+	// 		let msg = `Failed to join match #${matchId}`;
+	// 		if (err instanceof AxiosError && err.message) msg = err.message;
+	// 		toast.error(msg);
+	// 	}
+	// };
 
 	if (loading) return <Loading>Loading matches...</Loading>;
 
 	return (
 		<Container>
-			<Title>Open Matches</Title>
+			<Title>Tournament lobby</Title>
+			<Title1>Waiting list</Title1>
 			<MatchList>
 				{matches.length === 0 ? (
 					<NoMatches>No matches found</NoMatches>
 				) : (
 					matches.map((match) => (
 						<MatchItem key={match.id}>
-							Match #{match.id} — Players: {match.player_count}
-							<JoinButton onClick={() => handleJoin(match.id)}>Join</JoinButton>
+							Player Id: {match.user_id}
+							{/* <JoinButton onClick={() => handleJoin(match.id)}>Join</JoinButton> */}
 						</MatchItem>
 					))
 				)}
