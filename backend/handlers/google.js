@@ -4,9 +4,9 @@ const googleOAuthHandler = async function(request, reply) {
   // In test environment, use mock behavior
   if (process.env.NODE_ENV === 'test') {
     // Create a mock JWT token for testing
-    const jwtToken = await reply.jwtSign({ 
-      id: 1, 
-      email: 'test@example.com' 
+    const jwtToken = await reply.jwtSign({
+      id: 1,
+      email: 'test@example.com'
     });
     return reply.redirect(`/?access_token=${jwtToken}`);
   }
@@ -19,12 +19,13 @@ const googleOAuthHandler = async function(request, reply) {
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${token.access_token}` }
     });
-    
+
     if (!userInfoResponse.ok) {
       throw new Error('Failed to fetch user info from Google');
     }
 
     const googleUser = await userInfoResponse.json();
+
 
 	if (!googleUser.email) {
 		request.log.error('Google account does not have an email');
