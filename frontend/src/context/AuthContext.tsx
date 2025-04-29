@@ -1,4 +1,5 @@
 // context/AuthContext.tsx
+import { jwtDecode } from 'jwt-decode';
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export interface User {
@@ -10,7 +11,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (userData: { username: string; authToken: string }) => void;
   logout: () => void;
 }
 
@@ -19,6 +20,13 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
 });
+
+interface DecodedToken {
+  id: string;
+  username: string;
+  exp: number;
+  iat: number;
+}
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -30,9 +38,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const login = (user: User) => {
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
+  const login = (userData: { username: string; authToken: string }) => {
+    try {
+      // Decode the token to get the user ID
+      const decodedToken = jwtDecode<DecodedToken>(userData.authToken);
+
+      // Create the user object with ID from token
+      const user = {
+        id: decodedToken.id,
+        username: userData.username,
+        authToken: userData.authToken,
+      };
+
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+    } catch (error) {
+      console.error('Error decoding token:', error);
+    }
   };
 
   const logout = () => {

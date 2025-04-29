@@ -31,7 +31,7 @@ const googleOAuthHandler = async function(request, reply) {
 		request.log.error('Google account does not have an email');
 		return reply.redirect('/?error=missing_email');
 	}
-    
+
     // Check if user exists with the email
     const existingUser = await new Promise((resolve, reject) => {
 		db.get('SELECT id, username FROM users WHERE email = ?', [googleUser.email], (err, row) => {
@@ -39,16 +39,16 @@ const googleOAuthHandler = async function(request, reply) {
 		  resolve(row);
 		});
 	  });
-    
+
     let userId;
 	let username;
-    
+
     if (existingUser) {
 		request.log.info(`Linked Google account already registered with same email`);
 		// User exists with this email, update google_id if not set
 		userId = existingUser.id;
 		username = existingUser.username;
-		
+
 		// If user exists but doesn't have a google_id, link the accounts
 		if (!existingUser.google_id) {
 		  await new Promise((resolve, reject) => {
@@ -68,7 +68,7 @@ const googleOAuthHandler = async function(request, reply) {
       // Generate a unique username based on Google profile
       const baseUsername = googleUser.name;
       username = baseUsername;
-      
+
       // Check if username exists and add a suffix if needed
       let usernameTaken = true;
       let counter = 1;
@@ -81,7 +81,7 @@ const googleOAuthHandler = async function(request, reply) {
             resolve(row);
           });
         });
-        
+
         if (!existingUsername) {
           usernameTaken = false;
         } else {
@@ -93,7 +93,7 @@ const googleOAuthHandler = async function(request, reply) {
       if (usernameTaken) {
         throw new Error('Failed to generate a unique username after maximum attempts');
       }
-    
+
     // Generate avatar for the new user
 	let fileName;
 	try {
@@ -109,7 +109,7 @@ const googleOAuthHandler = async function(request, reply) {
 	  request.log.error(`Avatar generation failed: ${avatarError.message}. Using fallback avatar.`)
 	  fileName = 'fallback.jpeg'
 	}
-	
+
 	// Insert the new user
 	userId = await new Promise((resolve, reject) => {
 	  db.run(
@@ -121,10 +121,10 @@ const googleOAuthHandler = async function(request, reply) {
 		}
 	  );
 	});
-	
+
 	request.log.info(`Created new user from Google account: ${username}`);
   }
-  
+
   // Update user's online status
   await new Promise((resolve, reject) => {
 	db.run(
@@ -136,17 +136,17 @@ const googleOAuthHandler = async function(request, reply) {
 	  }
 	);
   });
-  
+
   // Generate a JWT token
-  const jwtToken = await reply.jwtSign({ 
-	id: userId, 
+  const jwtToken = await reply.jwtSign({
+	id: userId,
 	username: username,
-	email: googleUser.email 
+	email: googleUser.email
   });
-  
+
   // Redirect to frontend with the token
-  return reply.redirect(`/?access_token=${jwtToken}`);
-  
+  return reply.redirect(`http://localhost:5173/login?access_token=${jwtToken}`);
+
   } catch (err) {
   request.log.error(`Google OAuth error: ${err.message}`);
   return reply.redirect('/?error=authentication_failed');

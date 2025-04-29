@@ -234,14 +234,26 @@ const UserProfile: React.FC = () => {
     if (!userProfile || !currentUser) return;
 
     try {
-      const response = await customFetch.post(`/add_friend`, {
-        user_id: id
-        friend_id: userProfile.id,
-      });
+      console.log('user id:', currentUser.id);
+      console.log('friend id:', userProfile.id);
 
+      const response = await customFetch.post(
+        `/add_friend`,
+        {
+          user_id: currentUser.id,
+          friend_id: userProfile.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${currentUser.authToken}`,
+          },
+        }
+      );
 
       // Refetch friends to update the list
-      const friendsResponse = await customFetch.get(`/user/${username}/friends`);
+      const friendsResponse = await customFetch.get(
+        `/user/${username}/friends`
+      );
       setFriends(friendsResponse.data);
       setIsFriend(true);
     } catch (error) {
@@ -290,6 +302,7 @@ const UserProfile: React.FC = () => {
   }
 
   const isCurrentUser = currentUser?.id === userProfile.id;
+  console.log(friends);
 
   return (
     <ProfileContainer>
@@ -297,17 +310,13 @@ const UserProfile: React.FC = () => {
         <UserCard
           id={userProfile.id}
           username={userProfile.username}
-          avatar={userProfile.avatar || 'https://i.pravatar.cc/150?img=0'}
+          avatar={`http://localhost:8888/user/${userProfile.username}/avatar`}
           online_status={userProfile.online_status || 'offline'}
         />
 
         <ProfileInfo>
           <h1>{userProfile.username}</h1>
           {userProfile.bio && <p>{userProfile.bio}</p>}
-          <p>
-            Joined:{' '}
-            {formatDate(userProfile.created_at || new Date().toISOString())}
-          </p>
         </ProfileInfo>
 
         {!isCurrentUser && (
@@ -326,7 +335,6 @@ const UserProfile: React.FC = () => {
             ) : (
               <Button onClick={handleAddFriend}>Add Friend</Button>
             )}
-            <Button>Challenge to Game</Button>
           </ButtonContainer>
         )}
       </ProfileHeader>
