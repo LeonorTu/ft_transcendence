@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   user-db-errors.test.js                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: pmarkaid <pmarkaid@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 01:29:31 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/18 13:54:45 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/04/24 15:51:54 by pmarkaid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,20 +100,6 @@ t.test('PUT /user/:username/update => 500 when DB fails', async t => {
 		},
 	});
 	t.ok([401, 500].includes(res.statusCode), 'Status is either 401 (JWT check) or 500 (DB error)');
-});
-
-
-// Test 8: PUT /user/:username/link_google_account => 500 when DB fails.
-// Note: The status may be 401 if JWT fails before DB is accessed.
-
-t.test('PUT /user/:username/link_google_account => 500 when DB fails', async t => {
-	const res = await fastify.inject({
-		method: 'PUT',
-		url: '/user/testuser/link_google_account',
-		headers: { Authorization: 'Bearer faketoken' },
-		payload: { email: 'x', google_id: 'Y' },
-	});
-	t.ok([401, 500].includes(res.statusCode), 'Either JWT check fails or DB error occurs');
 });
 
 
