@@ -302,7 +302,7 @@ const UserProfile: React.FC = () => {
   }
 
   const isCurrentUser = currentUser?.id === userProfile.id;
-  console.log(friends);
+  console.log(friends[0]);
 
   return (
     <ProfileContainer>
@@ -349,7 +349,7 @@ const UserProfile: React.FC = () => {
                 key={friend.id}
                 id={friend.id}
                 username={friend.username}
-                avatar={friend.avatar || 'https://i.pravatar.cc/150?img=0'}
+                avatar={`http://localhost:8888/user/${friend.username}/avatar`}
                 online_status={friend.online_status || 'offline'}
               />
             ))}

@@ -152,8 +152,10 @@ const getUserFriendsSchema = {
 					type: 'object',
 					properties: {
 						id: { type: 'integer' },
-						user_id: { type : 'integer' },
-						friend_id: { type: 'integer' },
+						username: { type: 'string' },
+						avatar: { type: 'string' },
+						online_status: { type: 'string' },
+						friendshipId: { type: 'integer' }
 					}
 				}
 			},
