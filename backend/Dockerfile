@@ -28,4 +28,4 @@ ENV SQLITE_DB_PATH=/data/database.sqlite
 
 EXPOSE 8888
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "dev"]
