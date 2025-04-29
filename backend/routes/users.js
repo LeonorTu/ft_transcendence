@@ -22,6 +22,7 @@ const User = {
 	properties: {
 		id: { type: 'integer' },
 		username: { type: 'string' },
+		email: { type: 'string' },
 		avatar: { type: 'string'},
 		online_status: {typ : 'string' },
 	}
@@ -203,27 +204,6 @@ function usersRoutes(fastify, options, done) {
 		handler: updateUser
 	};
 
-	const linkGoogleAccountSchema = {
-		onRequest: [fastify.authenticate],
-		schema: {
-			body: {
-				type: 'object',
-				properties: {
-					email: { type: 'string' },
-					google_id: { type: 'string' },
-				},
-				required: [ 'email', 'google_id' ],
-			},
-			response: {
-				200: successResponse,
-				400: errorResponse,
-				500: errorResponse,
-			},
-			security: [{ bearerAuth: [] }],
-		},
-		handler: linkGoogleAccount
-	}
-
 	const uploadAvatarSchema = {
 		onRequest: [fastify.authenticate],
 		schema: {
@@ -326,8 +306,6 @@ function usersRoutes(fastify, options, done) {
 	fastify.post('/user/logout', logoutUserSchema)
 
 	fastify.put('/user/:username/update', updateUserSchema)
-
-	fastify.put('/user/:username/link_google_account', linkGoogleAccountSchema)
 
 	fastify.get('/user/:username/avatar', getUserAvatarSchema)
 
