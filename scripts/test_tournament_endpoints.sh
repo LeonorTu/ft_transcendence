@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASE_URL="http://localhost:8888"
-USERS=(user1 user2 user3 user4)
+USERS=(user1 user2 user3 user4 user5)
 TOKENS=()
 
 for USER in "${USERS[@]}"; do

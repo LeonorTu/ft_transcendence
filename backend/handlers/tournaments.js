@@ -13,9 +13,9 @@
 const db = require('../db');
 const { game_server } = require('./game_server');
 
-function isPowerOfTwo(n) {
-	return (n > 0) && ((n & (n - 1)) === 0);
-}
+//function isPowerOfTwo(n) {
+//	return (n > 0) && ((n & (n - 1)) === 0);
+//}
 
 
 // Create a new tournament.
@@ -89,6 +89,18 @@ const joinTournament = async (request, reply) => {
 		if (tour.status !== 'pending') {
 			return reply.status(400).send({ error: 'Cannot join a tournament that has already started' });
 		}
+
+		const players = await new Promise((resolve, reject) => {
+			db.all('SELECT id, user_id FROM tournament_players WHERE tournament_id = ?', [tournamentId], (err, rows) => {
+				if (err) return reject(err);
+				resolve(rows);
+			});
+		});
+
+		if (players.length >= 4) {
+			return reply.status(400).send({ error: 'Cannot join tournament is already full' });
+		}
+
 		await new Promise((resolve, reject) => {
 			db.run(
 				'INSERT INTO tournament_players (tournament_id, user_id) VALUES (?, ?)',
@@ -153,9 +165,9 @@ const startTournament = async (request, reply) => {
 			return reply.status(400).send({ error: 'At least 4 players required to start' });
 		}
 
-		if (!isPowerOfTwo(players.length)) {
-			return reply.status(400).send({ error: 'Player count must be a power of two (4, 8, 16)' });
-		}
+		//if (!isPowerOfTwo(players.length)) {
+		//	return reply.status(400).send({ error: 'Player count must be a power of two (4, 8, 16)' });
+		//}
 		// Shuffle players
 		const shuffled = players.slice().sort(() => Math.random() - 0.5);
 		// Pair and create matches for round 1
