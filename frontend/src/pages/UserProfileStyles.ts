@@ -123,6 +123,19 @@ export const Button = styled.button`
   }
 `;
 
+export const Section = styled.div`
+  background: rgba(20, 20, 30, 0.7);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+`;
+
 export const SectionTitle = styled.h2`
   font-family: 'Press Start 2P', cursive;
   font-size: 1.5rem;
@@ -168,6 +181,15 @@ export const MatchAvatar = styled.img`
 
 export const MatchInfo = styled.div`
   flex: 1;
+`;
+
+export const MatchOpponent = styled.div`
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+
+  strong {
+    color: #fff;
+  }
 `;
 
 export const MatchResult = styled.span<{ result: 'win' | 'loss' }>`
