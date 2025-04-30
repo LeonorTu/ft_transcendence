@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import UserCard from './UserCard';
 import { useAuth } from '../context/AuthContext';
@@ -151,7 +151,7 @@ const UserProfile: React.FC = () => {
 
   // Determine which username to use for API calls
   const targetUsername = username || currentUser?.username;
-  console.log(username);
+
 
   // Fetch user profile
   useEffect(() => {
@@ -164,11 +164,10 @@ const UserProfile: React.FC = () => {
         const response = await customFetch.get(`/user/${targetUsername}`);
         setUserProfile(response.data);
 
-        // Check if this is the current user's profile
-        setIsFriend(
-          currentUser?.username !== response.data.username &&
-            friends.some((friend) => friend.username === response.data.username)
-        );
+        // setIsFriend(
+        //   currentUser?.id !== response.data.id &&
+        //     friends.some((friend) => friend.id === response.data.id)
+        // );
       } catch (error) {
         console.error('Error fetching user profile:', error);
       } finally {
@@ -189,6 +188,8 @@ const UserProfile: React.FC = () => {
           `/user/${targetUsername}/friends`
         );
         setFriends(response.data);
+        console.log("1",friends);
+
       } catch (error) {
         console.error('Error fetching friends:', error);
       }
@@ -196,6 +197,36 @@ const UserProfile: React.FC = () => {
 
     fetchFriends();
   }, [targetUsername]);
+
+  // Fetch current user's friends (not the profile's friends)
+  useEffect(() => {
+    if (!currentUser?.username) return;
+
+    const fetchMyFriends = async () => {
+      try {
+        const response = await customFetch.get(
+          `/user/${currentUser.username}/friends`,
+          {
+            headers: {
+              Authorization: `Bearer ${currentUser.authToken}`,
+            },
+          }
+        );
+
+        // Set isFriend if the profile user is in the current user's friends
+        if (userProfile) {
+          const isFriendWithUser = response.data.some(
+            (friend: Friend) => friend.id === userProfile.id
+          );
+          setIsFriend(isFriendWithUser);
+        }
+      } catch (error) {
+        console.error('Error fetching my friends:', error);
+      }
+    };
+
+    fetchMyFriends();
+  }, [currentUser, userProfile]);
 
   // Mock match history data (replace with real API call when available)
   useEffect(() => {
@@ -234,9 +265,6 @@ const UserProfile: React.FC = () => {
     if (!userProfile || !currentUser) return;
 
     try {
-      console.log('user id:', currentUser.id);
-      console.log('friend id:', userProfile.id);
-
       const response = await customFetch.post(
         `/add_friend`,
         {
@@ -302,7 +330,7 @@ const UserProfile: React.FC = () => {
   }
 
   const isCurrentUser = currentUser?.id === userProfile.id;
-  console.log(friends[0]);
+  console.log("2",friends);
 
   return (
     <ProfileContainer>
@@ -345,13 +373,19 @@ const UserProfile: React.FC = () => {
         {friends.length > 0 ? (
           <FriendsList>
             {friends.map((friend) => (
-              <UserCard
+              <Link
                 key={friend.id}
-                id={friend.id}
-                username={friend.username}
-                avatar={`http://localhost:8888/user/${friend.username}/avatar`}
-                online_status={friend.online_status || 'offline'}
-              />
+                to={`/profile/${friend.username}`} // Link to the friend's profile
+                style={{ textDecoration: 'none', color: 'inherit' }} // Optional: Remove link styling
+              >
+                <UserCard
+                  key={friend.id}
+                  id={friend.id}
+                  username={friend.username}
+                  avatar={`http://localhost:8888/user/${friend.username}/avatar`}
+                  online_status={friend.online_status || 'offline'}
+                />
+              </Link>
             ))}
           </FriendsList>
         ) : (
