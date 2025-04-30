@@ -145,7 +145,8 @@ const googleOAuthHandler = async function(request, reply) {
   });
 
   // Redirect to frontend with the token
-  return reply.redirect(`http://localhost:5173/login?access_token=${jwtToken}`);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  return reply.redirect(`${frontendUrl}/login?access_token=${jwtToken}`);
 
   } catch (err) {
   request.log.error(`Google OAuth error: ${err.message}`);

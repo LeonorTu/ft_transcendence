@@ -338,7 +338,9 @@ const UserProfile: React.FC = () => {
         <UserCard
           id={userProfile.id}
           username={userProfile.username}
-          avatar={`http://localhost:8888/user/${userProfile.username}/avatar`}
+          avatar={`${
+            import.meta.env.VITE_API_URL || 'http://localhost:8888'
+          }/user/${userProfile.username}/avatar`}
           online_status={userProfile.online_status || 'offline'}
         />
 
@@ -382,7 +384,9 @@ const UserProfile: React.FC = () => {
                   key={friend.id}
                   id={friend.id}
                   username={friend.username}
-                  avatar={`http://localhost:8888/user/${friend.username}/avatar`}
+                  avatar={`${
+                    import.meta.env.VITE_API_URL || 'http://localhost:8888'
+                  }/user/${friend.username}/avatar`}
                   online_status={friend.online_status || 'offline'}
                 />
               </Link>

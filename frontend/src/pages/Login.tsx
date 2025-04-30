@@ -260,7 +260,9 @@ const Login: React.FC = () => {
         <GoogleButton
           type='button'
           onClick={() => {
-            window.location.href = 'http://localhost:8888/oauth2/google/';
+            const apiUrl =
+              import.meta.env.VITE_API_URL || 'http://localhost:8888';
+            window.location.href = `${apiUrl}/oauth2/google/`;
           }}
         >
           <svg
