@@ -1,4 +1,4 @@
-import { GameRenderer } from '../../../Game/render.js';
+import { GameRenderer } from '../../Game/render.js';
 
 // Define MessageType enum if you can't import it
 enum MessageType {
