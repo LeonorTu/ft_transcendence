@@ -69,6 +69,29 @@ export const ProfileAvatar = styled.img`
   box-shadow: 0 0 20px rgba(0, 255, 170, 0.4);
 `;
 
+export const AvatarEditOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  font-size: 0.85rem;
+  font-weight: bold;
+
+  ${AvatarContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
 export const StatusIndicator = styled.div<{ online: boolean }>`
   position: absolute;
   bottom: 5px;

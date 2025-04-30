@@ -155,7 +155,7 @@ const Layout: React.FC = () => {
                     <NavLink to='/tournament'>Tournament</NavLink>
                   </NavItem>
                   <NavItem>
-                    <NavLink to='/profile'>Profile</NavLink>
+                    <NavLink to='/profile'>My Profile</NavLink>
                   </NavItem>
                 </NavList>
               </NavContainer>

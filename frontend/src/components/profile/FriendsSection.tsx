@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import UserCard from '../../pages/UserCard';
+import UserCard from './UserCard';
 import {
   Section,
   SectionTitle,
