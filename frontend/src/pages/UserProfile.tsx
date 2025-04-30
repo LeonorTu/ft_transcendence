@@ -1,9 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import styled from 'styled-components';
 import UserCard from './UserCard';
 import { useAuth } from '../context/AuthContext';
 import { customFetch } from '../utils';
+import {
+  ProfileContainer,
+  ProfileHeader,
+  AvatarContainer,
+  ProfileAvatar,
+  StatusIndicator,
+  ProfileInfo,
+  Username,
+  ButtonContainer,
+  Button,
+  SectionTitle,
+  FriendsList,
+  MatchHistory,
+  MatchCard,
+  MatchAvatar,
+  MatchInfo,
+  MatchResult,
+  MatchScore,
+  MatchDate,
+  EmptyState
+} from './UserProfileStyles';
 
 // Types
 interface Friend {
@@ -23,123 +43,6 @@ interface Match {
   date: string;
 }
 
-// Styled Components
-const ProfileContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  color: white;
-`;
-
-const ProfileHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-`;
-
-const ProfileInfo = styled.div`
-  flex: 1;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-`;
-
-const Button = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #333;
-  color: white;
-  border: 2px solid #555;
-  font-family: 'Press Start 2P', cursive;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: #444;
-    border-color: #00ffaa;
-  }
-`;
-
-const SectionTitle = styled.h2`
-  font-family: 'Press Start 2P', cursive;
-  font-size: 1.5rem;
-  color: #fff;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #333;
-  padding-bottom: 0.5rem;
-`;
-
-const FriendsList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-
-const MatchHistory = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-
-const MatchCard = styled.div<{ result: 'win' | 'loss' }>`
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background-color: ${({ result }) =>
-    result === 'win' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)'};
-  border: 1px solid
-    ${({ result }) => (result === 'win' ? '#4caf50' : '#f44336')};
-  border-radius: 8px;
-`;
-
-const MatchAvatar = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 1rem;
-`;
-
-const MatchInfo = styled.div`
-  flex: 1;
-`;
-
-const MatchResult = styled.span<{ result: 'win' | 'loss' }>`
-  color: ${({ result }) => (result === 'win' ? '#4caf50' : '#f44336')};
-  font-weight: bold;
-  text-transform: uppercase;
-`;
-
-const MatchScore = styled.div`
-  font-family: 'Press Start 2P', cursive;
-  font-size: 1rem;
-`;
-
-const MatchDate = styled.div`
-  color: #999;
-  font-size: 0.8rem;
-`;
-
-const EmptyState = styled.div`
-  padding: 2rem;
-  text-align: center;
-  color: #777;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-`;
-
 const UserProfile: React.FC = () => {
   const { username } = useParams<{ username?: string }>();
   const { user: currentUser } = useAuth();
@@ -152,7 +55,6 @@ const UserProfile: React.FC = () => {
 
   // Determine which username to use for API calls
   const targetUsername = username || currentUser?.username;
-
 
   // Fetch user profile
   useEffect(() => {
@@ -334,22 +236,22 @@ const UserProfile: React.FC = () => {
   }
 
   const isCurrentUser = currentUser?.id === userProfile.id;
-  console.log("2",friends);
-
+  const isOnline = userProfile.online_status === 'online';
   return (
     <ProfileContainer>
       <ProfileHeader>
-        <UserCard
-          id={userProfile.id}
-          username={userProfile.username}
-          avatar={`${
-            import.meta.env.VITE_API_URL || 'http://localhost:8888'
-          }/user/${userProfile.username}/avatar`}
-          online_status={userProfile.online_status || 'offline'}
-        />
+        <AvatarContainer>
+          <ProfileAvatar
+            src={`${
+              import.meta.env.VITE_API_URL || 'http://localhost:8888'
+            }/user/${userProfile.username}/avatar`}
+            alt={`${userProfile.username}'s avatar`}
+          />
+          <StatusIndicator online={isOnline} />
+        </AvatarContainer>
 
         <ProfileInfo>
-          <h1>{userProfile.username}</h1>
+          <Username>{userProfile.username}</Username>
           {userProfile.bio && <p>{userProfile.bio}</p>}
         </ProfileInfo>
 
@@ -358,7 +260,8 @@ const UserProfile: React.FC = () => {
             {isFriend ? (
               <Button
                 onClick={() => {
-                  const friendship = friends.find(
+                  if (!currentUser) return;
+                  const friendship = myFriends.find(
                     (f) => f.id === userProfile.id
                   );
                   if (friendship) handleRemoveFriend(friendship.friendshipId);
