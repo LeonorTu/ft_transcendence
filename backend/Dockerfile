@@ -18,7 +18,7 @@ COPY . .
 RUN npm install
 
 # Unit test dependencies
-RUN npm install --save-dev tap 
+RUN npm install --save-dev tap
 RUN npm install --save-dev proxyquire
 RUN npm install --save-dev form-data
 
