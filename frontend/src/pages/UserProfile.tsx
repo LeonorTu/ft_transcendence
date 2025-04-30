@@ -145,6 +145,7 @@ const UserProfile: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [myFriends, setMyFriends] = useState<Friend[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFriend, setIsFriend] = useState(false);
@@ -188,8 +189,7 @@ const UserProfile: React.FC = () => {
           `/user/${targetUsername}/friends`
         );
         setFriends(response.data);
-        console.log("1",friends);
-
+        console.log('1', friends);
       } catch (error) {
         console.error('Error fetching friends:', error);
       }
@@ -212,7 +212,7 @@ const UserProfile: React.FC = () => {
             },
           }
         );
-
+        setMyFriends(response.data);
         // Set isFriend if the profile user is in the current user's friends
         if (userProfile) {
           const isFriendWithUser = response.data.some(
@@ -291,12 +291,16 @@ const UserProfile: React.FC = () => {
 
   // Remove friend functionality
   const handleRemoveFriend = async (friendshipId: number) => {
+    if (!currentUser) return;
     try {
-      const response = await fetch(`/remove_friend/${friendshipId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to remove friend');
+      const response = await customFetch.delete(
+        `/remove_friend/${friendshipId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${currentUser.authToken}`,
+          },
+        }
+      );
 
       // Update the friends list by filtering out the removed friend
       setFriends(
