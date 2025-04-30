@@ -1,16 +1,17 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   tournaments.js                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/22 16:59:55 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/24 17:01:53 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   tournaments.js                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/22 16:59:55 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/29 15:00:09 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const auth = require('../routes/auth')
+const db = require('../db');
 
 const {
 	createTournament,
@@ -19,6 +20,7 @@ const {
 	listTournaments,
 	getBracket,
 	reportMatchResult,
+	infoTournament,
 } = require('../handlers/tournaments')
 
 const errorResponse = {
@@ -60,6 +62,15 @@ const TournamentMatch = {
 	},
 };
 
+const TournamentPlayers = {
+	type: 'object',
+	properties: {
+		id: { type: 'integer' },
+		tournament_id: { type: 'integer' },
+		user_id: { type: 'integer' },
+		// seed: { type: 'integer' },
+	}
+}
 
 function tournamentRoutes(fastify, options, done) {
 
@@ -154,7 +165,20 @@ function tournamentRoutes(fastify, options, done) {
 		handler: reportMatchResult,
 	}
 
+	const infoTournamentsSchema = {
+		// onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: { type: 'array', items: TournamentPlayers },
+				400: errorResponse,
+				500: errorResponse,
+			},
+		},
+		handler: infoTournament,
+	}
+
 	fastify.get('/tournament/list', listTournamentsSchema)
+	fastify.get('/tournament/:id/info', infoTournamentsSchema)
 	fastify.post('/tournament/new', createTournamentSchema)
 	fastify.post('/tournament/:id/join', joinTournamentSchema)
 	fastify.post('/tournament/:id/start', startTournamentSchema)

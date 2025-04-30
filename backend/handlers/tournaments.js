@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   tournaments.js                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/22 16:51:28 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/25 16:20:18 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   tournaments.js                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/22 16:51:28 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/04/29 14:59:58 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const db = require('../db');
 const { game_server } = require('./game_server');
@@ -41,6 +41,16 @@ const createTournament = async (request, reply) => {
 				function (err) {
 					if (err) return reject(err);
 					resolve(this.lastID);
+				}
+			);
+		});
+		await new Promise((resolve, reject) => {
+			db.run(
+				'INSERT INTO tournament_players (tournament_id, user_id) VALUES (?, ?)',
+				[tournamentId, ownerId],
+				function (err) {
+					if (err) return reject(err);
+					resolve();
 				}
 			);
 		});
@@ -266,6 +276,25 @@ const listTournaments = async (request, reply) => {
 	}
 };
 
+const infoTournament = async (request, reply) => {
+	const tournamentId = Number(request.params.id);
+	try {
+		const users = await new Promise((resolve, reject) => {
+			db.all('SELECT id, tournament_id, user_id, seed FROM tournament_players WHERE tournament_id = ?', [tournamentId], (err, rows) => {
+				if (err) return reject(err);
+				resolve(rows);
+			});
+		});
+		if (!users) {
+			request.log.info('no users in tournament')
+			return reply.status(400).send({ error: "no user found in tournament"})
+		}
+		return reply.send(users);
+	} catch (err) {
+		request.log.error(`Error listing tournaments: ${err.message}`);
+		return reply.status(500).send({ error: 'Internal server error' });
+	}
+};
 
 // Fetch the full bracket for a tournament.
 // 
@@ -452,4 +481,5 @@ module.exports = {
 	listTournaments,
 	getBracket,
 	reportMatchResult,
+	infoTournament,
 };
