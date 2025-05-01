@@ -1,4 +1,4 @@
-const { runServer, createNewMultiplayerGame, createNewSinglePlayerGame, listGames, getGame, createNewSinglePlayerGame} = require('../handlers/game_server')
+const { runServer, createNewMultiplayerGame, createNewSinglePlayerGame, listGames, getGame} = require('../handlers/game_server')
 
 const errorResponse = {
 	type: 'object',

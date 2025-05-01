@@ -20,11 +20,11 @@ do
 done
 
 if [[ $P1_ID == "" ]]; then
-	 P1_ID=$(./create_user.sh "foo" "foo" | jq '.id')
+	 P1_ID=$(./create_user.sh "foo" "foo" "foo@foo.com"| jq '.id')
 fi
 
 if [[ $P2_ID == "" ]]; then
-	 P2_ID=$(./create_user.sh "bar" "bar" | jq '.id')
+	 P2_ID=$(./create_user.sh "bar" "bar" "bar@bar.com"| jq '.id')
 fi
 
 P1_TOKEN=$(./login_user.sh "foo" "foo" | jq '.token' | tr -d '"')
