@@ -201,7 +201,8 @@ const Home: React.FC = () => {
   const handlePlay = () => {
     if (user) {
       // If logged in, go to game menu
-      navigate('/game');
+      //navigate('/game');
+      navigate('/matchmaking');
     } else {
       // If not logged in, go to login
       navigate('/login');

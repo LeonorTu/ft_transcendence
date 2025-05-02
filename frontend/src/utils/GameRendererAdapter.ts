@@ -39,7 +39,7 @@ export function createGameRendererAdapter(
   gameId: number,
   authToken: string,
   canvasElement: HTMLCanvasElement
-): GameRendererType {
+): GameRendererType & { onGameOver?: (winner: any) => void } {
   // Create an instance of the original GameRenderer
   const renderer = new GameRenderer(
     'localhost',
@@ -58,5 +58,18 @@ export function createGameRendererAdapter(
   }
   renderer.ctx = ctx;
 
-  return renderer;
+  //try out to detect match ending.
+  let _overCalled = false;
+  const _origRenderGame = renderer.renderGame.bind(renderer);
+  renderer.renderGame = function() {
+    _origRenderGame();
+    if (this.state?.game_state === 'finished' && !_overCalled) {
+      _overCalled = true;
+      if ((renderer as any).onGameOver) {
+        (renderer as any).onGameOver(this.state.winner);
+      }
+    }
+  };
+
+  return renderer as any; 
 }
