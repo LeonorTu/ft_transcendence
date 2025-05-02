@@ -15,6 +15,7 @@ import { action as signupAction } from './pages/Signup';
 import { action as loginAction } from './pages/Login';
 import { action as verify2FAAction } from './pages/Verify2FA';
 import { AuthProvider } from './context/AuthContext';
+import Dashboard from './pages/DashBoard';
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Home />,
+      },
+      {
+        path: '/dashboard',
+        element: <Dashboard />, 
       },
       {
         path: 'game',

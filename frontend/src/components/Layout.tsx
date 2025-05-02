@@ -146,7 +146,7 @@ const Layout: React.FC = () => {
               <NavContainer>
                 <NavList>
                   <NavItem>
-                    <NavLink to='/'>Home</NavLink>
+                    <NavLink to='/dashboard'>Dashboard</NavLink>
                   </NavItem>
                   <NavItem>
                     <NavLink to='/lobby'>Game Lobby</NavLink>
