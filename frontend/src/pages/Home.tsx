@@ -196,7 +196,6 @@ const DottedLine = styled.div`
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [hovered, setHovered] = useState(false);
 
   const handlePlay = () => {
     if (user) {
@@ -207,13 +206,6 @@ const Home: React.FC = () => {
       navigate('/login');
     }
   };
-
-  useEffect(() => {
-    // Optional: Add sound effect for hover
-    if (hovered) {
-      // Play hover sound
-    }
-  }, [hovered]);
 
   return (
     <>
