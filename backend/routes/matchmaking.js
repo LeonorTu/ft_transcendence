@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/23 14:47:13 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/30 15:29:00 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/04/30 16:05:09 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -41,7 +41,7 @@ function matchmakingRoutes(fastify, options, done) {
     handler: matchmaking
   };
 
-  fastify.post('/matchmaking/matchmaking', matchmakingSchema);
+  fastify.post('/matchmaking', matchmakingSchema);
 
   done();
 }
