@@ -49,7 +49,7 @@ TOKEN2=$(register_and_login "$JOINER"  "$JOINER_PW")
 
 # 1) First user hits the single “auto” endpoint
 >&2 echo "$CREATOR matchmaking..."
-AUTO1=$(curl -s -X POST "$API_URL/matchmaking/matchmaking" \
+AUTO1=$(curl -s -X POST "$API_URL/matchmaking" \
              -H "Authorization: Bearer $TOKEN1")
 PENDING_ID=$(echo "$AUTO1" | jq -r '.pending_id // empty')
 MATCH_ID1=$(echo "$AUTO1" | jq -r '.match_id   // empty')
@@ -67,7 +67,7 @@ fi
 
 # 2) Second user calls the same endpoint and should get a match_id
 >&2 echo "$JOINER matchmaking..."
-AUTO2=$(curl -s -X POST "$API_URL/matchmaking/matchmaking" \
+AUTO2=$(curl -s -X POST "$API_URL/matchmaking" \
              -H "Authorization: Bearer $TOKEN2")
 MATCH_ID=$(echo "$AUTO2" | jq -r '.match_id   // empty')
 PENDING_ID2=$(echo "$AUTO2" | jq -r '.pending_id // empty')
