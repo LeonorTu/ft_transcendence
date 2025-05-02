@@ -1,5 +1,6 @@
 const MessageType = {
-	JOIN: "join",
+	JOIN_MULTI: "join_multi",
+	JOIN_SINGLE: "join_single",
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
 	STATE: "state",
@@ -120,10 +121,19 @@ export class GameRenderer {
 		}
 
 		this.socket.addEventListener('open', () => {
-			this.socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
-				'token': this.user_token,
-				'game_id': this.game_id,
-			}}));
+			if (this.game_type === GameType.MULTI_PLAYER) {
+
+				this.socket.send(JSON.stringify({ type: MessageType.JOIN_MULTI , payload: {
+					'token': this.user_token,
+					'game_id': this.game_id,
+				}}));
+			}
+			else if (this.game_type === GameType.SINGLE_PLAYER) {
+				console.log("Sending single player token");
+				this.socket.send(JSON.stringify({ type: MessageType.JOIN_SINGLE , payload: {
+					'token': this.user_token
+				}}));
+			}
 			this.connected = true;
 		});
 

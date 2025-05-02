@@ -10,6 +10,6 @@ fi
 curl -s -X POST http://localhost:8888/game/new-singleplayer \
 	 -H "Content-Type: application/json" \
 	 -d "{
-			\"player_id\": \"$ID_1\",
+			\"player_id\": \"$ID_1\"
 		 }"
 

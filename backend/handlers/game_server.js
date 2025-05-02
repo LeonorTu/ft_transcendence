@@ -25,6 +25,7 @@ const runServer = (ws, req) => {
 	ws.on('message', (msg) => {
 		try {
 			const {type, payload} = JSON.parse(msg);
+			//console.log(`Received ${type}: ${payload}`);
 			if (type === MessageType.JOIN_MULTI) {
 				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
 				game_server.joinGame(Number(user.id), Number(payload.game_id));
@@ -128,6 +129,7 @@ const createNewMultiplayerGame = async (request, reply) => {
 
 
 const createNewSinglePlayerGame = async (request, reply) => {
+	console.log("Creating new single player game");
 	const { player_id } = request.body;
 	try {
 		const p1_exists = await new Promise((resolve, reject) => {
