@@ -92,14 +92,14 @@ export const AvatarEditOverlay = styled.div`
   }
 `;
 
-export const StatusIndicator = styled.div<{ online: boolean }>`
+export const StatusIndicator = styled.div<{ $online: boolean }>`
   position: absolute;
   bottom: 5px;
   right: 5px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background-color: ${({ online }) => (online ? '#4caf50' : '#999')};
+  background-color: ${({ $online }) => ($online ? '#4caf50' : '#999')};
   border: 3px solid #1e1e28;
 `;
 

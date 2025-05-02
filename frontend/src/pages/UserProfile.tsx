@@ -17,8 +17,13 @@ const UserProfile: React.FC = () => {
   // Use custom hooks for data fetching and logic
   const { userProfile, loading } = useUserProfile(targetUsername);
 
-  const { friends, myFriends, isFriend, handleAddFriend, handleRemoveFriend } =
-    useFriends(targetUsername, userProfile, currentUser);
+  const {
+    friends,
+    isFriend,
+    handleAddFriend,
+    handleRemoveFriend,
+    getFriendshipId,
+  } = useFriends(targetUsername, userProfile, currentUser);
 
   const { matches, formatDate } = useMatches(userProfile?.id);
 
@@ -42,13 +47,13 @@ const UserProfile: React.FC = () => {
         userProfile={userProfile}
         isCurrentUser={isCurrentUser}
         isFriend={isFriend}
-        myFriends={myFriends}
         onAddFriend={handleAddFriend}
         onRemoveFriend={handleRemoveFriend}
+        getFriendshipId={getFriendshipId}
       />
 
       {/* Friends list section */}
-      <FriendsSection friends={friends} />
+      {isCurrentUser && <FriendsSection friends={friends} />}
 
       {/* Match history section */}
       <MatchHistorySection matches={matches} formatDate={formatDate} />

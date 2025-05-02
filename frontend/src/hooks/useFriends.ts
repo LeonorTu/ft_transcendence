@@ -15,8 +15,8 @@ export const useFriends = (
   currentUser: any
 ) => {
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [myFriends, setMyFriends] = useState<Friend[]>([]);
   const [isFriend, setIsFriend] = useState(false);
+  const isCurrentUser = currentUser?.id === userProfile?.id;
 
   // Fetch profile user's friends
   useEffect(() => {
@@ -25,45 +25,37 @@ export const useFriends = (
     const fetchFriends = async () => {
       try {
         const response = await customFetch.get(
-          `/user/${targetUsername}/friends`
+          `/user/${targetUsername}/friends`,
+          currentUser?.authToken
+            ? {
+                headers: {
+                  Authorization: `Bearer ${currentUser.authToken}`,
+                },
+              }
+            : {}
         );
         setFriends(response.data);
+        if (!isCurrentUser && userProfile && currentUser?.authToken) {
+          const myFriendsResponse = await customFetch.get(
+            `/user/${currentUser.username}/friends`,
+            {
+              headers: {
+                Authorization: `Bearer ${currentUser.authToken}`,
+              },
+            }
+          );
+          const isFriendWithUser = myFriendsResponse.data.some(
+            (friend: Friend) => friend.id === userProfile.id
+          );
+          setIsFriend(isFriendWithUser);
+        }
       } catch (error) {
         console.error('Error fetching friends:', error);
       }
     };
 
     fetchFriends();
-  }, [targetUsername]);
-
-  // Fetch current user's friends
-  useEffect(() => {
-    if (!currentUser?.username || !userProfile) return;
-
-    const fetchMyFriends = async () => {
-      try {
-        const response = await customFetch.get(
-          `/user/${currentUser.username}/friends`,
-          {
-            headers: {
-              Authorization: `Bearer ${currentUser.authToken}`,
-            },
-          }
-        );
-        setMyFriends(response.data);
-
-        // Set isFriend if the profile user is in the current user's friends
-        const isFriendWithUser = response.data.some(
-          (friend: Friend) => friend.id === userProfile.id
-        );
-        setIsFriend(isFriendWithUser);
-      } catch (error) {
-        console.error('Error fetching my friends:', error);
-      }
-    };
-
-    fetchMyFriends();
-  }, [currentUser, userProfile]);
+  }, [targetUsername, currentUser, userProfile, isCurrentUser]);
 
   // Add friend functionality
   const handleAddFriend = async () => {
@@ -83,11 +75,19 @@ export const useFriends = (
         }
       );
 
-      // Refetch friends to update the list
-      const friendsResponse = await customFetch.get(
-        `/user/${targetUsername}/friends`
+      const myFriendsResponse = await customFetch.get(
+        `/user/${currentUser.username}/friends`,
+        {
+          headers: {
+            Authorization: `Bearer ${currentUser.authToken}`,
+          },
+        }
       );
-      setFriends(friendsResponse.data);
+
+      if (isCurrentUser) {
+        setFriends(myFriendsResponse.data);
+      }
+
       setIsFriend(true);
     } catch (error) {
       console.error('Error adding friend:', error);
@@ -104,12 +104,13 @@ export const useFriends = (
         },
       });
 
-      // Update the friends list
-      setMyFriends(
-        myFriends.filter((friend) => friend.friendshipId !== friendshipId)
-      );
+      if (isCurrentUser) {
+        setFriends(
+          friends.filter((friend) => friend.friendshipId !== friendshipId)
+        );
+      }
 
-      if (userProfile && userProfile.id) {
+      if (!isCurrentUser && userProfile && userProfile.id) {
         setIsFriend(false);
       }
     } catch (error) {
@@ -117,11 +118,34 @@ export const useFriends = (
     }
   };
 
+    const getFriendshipId = async () => {
+      if (isCurrentUser || !currentUser || !userProfile) return null;
+
+      try {
+        const response = await customFetch.get(
+          `/user/${currentUser.username}/friends`,
+          {
+            headers: {
+              Authorization: `Bearer ${currentUser.authToken}`,
+            },
+          }
+        );
+
+        const friendship = response.data.find(
+          (f: Friend) => f.id === userProfile.id
+        );
+        return friendship?.friendshipId;
+      } catch (error) {
+        console.error('Error finding friendship ID:', error);
+        return null;
+      }
+    };
+
   return {
     friends,
-    myFriends,
     isFriend,
     handleAddFriend,
     handleRemoveFriend,
+    getFriendshipId
   };
 };

@@ -17,18 +17,18 @@ interface ProfileHeaderProps {
   userProfile: any;
   isCurrentUser: boolean;
   isFriend: boolean;
-  myFriends: any[];
   onAddFriend: () => void;
   onRemoveFriend: (friendshipId: number) => void;
+  getFriendshipId: () => Promise<number | null>;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   userProfile,
   isCurrentUser,
   isFriend,
-  myFriends,
   onAddFriend,
   onRemoveFriend,
+  getFriendshipId,
 }) => {
   const { user: currentUser } = useAuth();
   const isOnline = userProfile.online_status === 'online';
@@ -76,6 +76,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     }
   };
 
+  const handleRemoveFriendClick = async () => {
+    if (!currentUser) return;
+    const friendshipId = await getFriendshipId();
+    if (friendshipId) onRemoveFriend(friendshipId);
+  };
+
   return (
     <Header>
       <AvatarContainer>
@@ -86,7 +92,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           style={{ cursor: isCurrentUser ? 'pointer' : 'default' }}
         />
         {isCurrentUser && <AvatarEditOverlay>Edit</AvatarEditOverlay>}
-        <StatusIndicator online={isOnline} />
+        <StatusIndicator $online={isOnline} />
 
 
         <input
@@ -106,17 +112,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       {!isCurrentUser && (
         <ButtonContainer>
           {isFriend ? (
-            <Button
-              onClick={() => {
-                if (!currentUser) return;
-                const friendship = myFriends.find(
-                  (f) => f.id === userProfile.id
-                );
-                if (friendship) onRemoveFriend(friendship.friendshipId);
-              }}
-            >
-              Remove Friend
-            </Button>
+            <Button onClick={handleRemoveFriendClick}>Remove Friend</Button>
           ) : (
             <Button onClick={onAddFriend}>Add Friend</Button>
           )}
