@@ -6,7 +6,7 @@
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/04/30 15:36:28 by jmakkone         ###   ########.fr       //
+//   Updated: 2025/05/03 00:04:51 by jmakkone         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -14,34 +14,47 @@ const db = require('../db');
 const { game_server } = require('./game_server');
 
 
-// Atomically find-or-create a matchmaking lobby:
+// Single-endpoint “one-button” matchmaking:
 // 
-// 1. Look for an open lobby with exactly one other player (not you).
-//    • If found: join it, promote to a real match, spin up the GameServer,
-//      and return { match_id }.
-// 2. Otherwise: create a new lobby, auto-join you, and return { pending_id }.
+// URL: POST /matchmaking
+// Auth: required (JWT)
 // 
-// Route: POST /matchmaking/matchmaking
-// Auth:   required (JWT)
+// If there's another user's open lobby (exactly one other player):
+//   • join it,
+//   • create a real match,
+//   • spin up GameServer,
+//   • return { match_id }.
+// Else if user have just been promoted into an active match:
+//   • return { match_id }.
+// Else if user already have an open lobby:
+//   • return { pending_id }.
+// Otherwise:
+//      • create a new lobby (auto-join user),
+//      • return { pending_id }.
 // 
 // Front-end usage:
-//   const res = await fetch('/matchmaking/matchmaking', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+//   const res = await fetch('/matchmaking', {
+//     method: 'POST',
+//     headers: { Authorization: `Bearer ${token}` }
+//   });
 //   const body = await res.json();
 //   if (body.match_id) {
-//     // go play
-//     window.location = `/game.html?game_id=${body.match_id}&token=${token}`;
+//     // redirect to /game?game_id=body.match_id&token=...
 //   } else {
-//     // waiting for opponent in lobby body.pending_id
-//     showWaitingScreen(body.pending_id);
+//     // show “Waiting for players…” with body.pending_id
 //   }
-
 
 const matchmaking = async (request, reply) => {
   const userId = request.user.id;
 
   try {
-    // Try to find a lobby with exactly 1 other player
-    const row = await new Promise((res, rej) => {
+    // BEGIN TRANSACTION to serialize concurrent callers
+    await new Promise((res, rej) =>
+      db.run('BEGIN IMMEDIATE', err => err ? rej(err) : res())
+    );
+
+    // Join somebody else's open lobby (exactly 1 other player)
+    const joinRow = await new Promise((res, rej) =>
       db.get(
         `
           SELECT pm.id AS pending_id
@@ -49,20 +62,25 @@ const matchmaking = async (request, reply) => {
             JOIN pending_match_players pmp
               ON pmp.pending_id = pm.id
            WHERE pm.status = 'open'
-             AND pmp.user_id != ?
+             AND pm.id NOT IN (
+               SELECT pending_id
+                 FROM pending_match_players
+                WHERE user_id = ?
+             )
            GROUP BY pm.id
-           HAVING COUNT(*) = 1
-           ORDER BY pm.created_at ASC
-           LIMIT 1
+          HAVING COUNT(*) = 1
+          ORDER BY pm.created_at ASC
+          LIMIT 1
         `,
         [userId],
         (err, row) => err ? rej(err) : res(row)
-      );
-    });
+      )
+    );
 
-    if (row) {
-      // Join that lobby
-      const pendingId = row.pending_id;
+    if (joinRow) {
+      const pendingId = joinRow.pending_id;
+
+      // add the second player
       await new Promise((res, rej) =>
         db.run(
           'INSERT INTO pending_match_players (pending_id, user_id) VALUES (?, ?)',
@@ -71,16 +89,16 @@ const matchmaking = async (request, reply) => {
         )
       );
 
-      // Fetch both players
+      // fetch both participants
       const players = await new Promise((res, rej) =>
         db.all(
           'SELECT user_id FROM pending_match_players WHERE pending_id = ?',
           [pendingId],
-          (e, rows) => e ? rej(e) : res(rows.map(r => r.user_id)))
+          (err, rows) => err ? rej(err) : res(rows.map(r => r.user_id)))
       );
       const [p1, p2] = players;
 
-      // Create the real match row
+      // create the real match
       const matchId = await new Promise((res, rej) =>
         db.run(
           'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
@@ -89,7 +107,7 @@ const matchmaking = async (request, reply) => {
         )
       );
 
-      // Mark the lobby full & attach match_id
+      // mark lobby full + attach match_id
       await new Promise((res, rej) =>
         db.run(
           'UPDATE pending_matches SET status = ?, match_id = ? WHERE id = ?',
@@ -98,14 +116,65 @@ const matchmaking = async (request, reply) => {
         )
       );
 
-      // Spin up the in-memory game
+      // spin up the in-memory game
       game_server.createGame(matchId, p1, p2);
 
-      // Tell the client to go play
+      await new Promise((res, rej) =>
+        db.run('COMMIT', err => err ? rej(err) : res())
+      );
       return reply.send({ match_id: matchId });
     }
 
-    // No suitable lobby found → create one and auto-join
+    // Did user just get promoted by someone else
+    const doneRow = await new Promise((res, rej) =>
+      db.get(
+        `
+          SELECT pm.match_id
+            FROM pending_matches pm
+            JOIN pending_match_players pmp
+              ON pmp.pending_id = pm.id
+            JOIN matches m
+              ON m.id = pm.match_id
+           WHERE pmp.user_id = ?
+             AND pm.match_id IS NOT NULL
+             AND m.status    != 'finished'
+           LIMIT 1
+        `,
+        [userId],
+        (err, row) => err ? rej(err) : res(row)
+      )
+    );
+    if (doneRow) {
+      await new Promise((res, rej) =>
+        db.run('COMMIT', err => err ? rej(err) : res())
+      );
+      return reply.send({ match_id: doneRow.match_id });
+    }
+
+    // Does user already have an open lobby
+    const openRow = await new Promise((res, rej) =>
+      db.get(
+        `
+          SELECT pm.id AS pending_id
+            FROM pending_matches pm
+            JOIN pending_match_players pmp
+              ON pmp.pending_id = pm.id
+           WHERE pmp.user_id = ?
+             AND pm.status   = 'open'
+           LIMIT 1
+        `,
+        [userId],
+        (err, row) => err ? rej(err) : res(row)
+      )
+    );
+    if (openRow) {
+      await new Promise((res, rej) =>
+        db.run('COMMIT', err => err ? rej(err) : res())
+      );
+      return reply.send({ pending_id: openRow.pending_id });
+    }
+
+    // If no lobby create one & auto-join user
     const pendingId = await new Promise((res, rej) =>
       db.run(
         'INSERT INTO pending_matches (creator_id) VALUES (?)',
@@ -113,8 +182,6 @@ const matchmaking = async (request, reply) => {
         function(err) { err ? rej(err) : res(this.lastID) }
       )
     );
-
-    // auto-join the creator
     await new Promise((res, rej) =>
       db.run(
         'INSERT INTO pending_match_players (pending_id, user_id) VALUES (?, ?)',
@@ -123,14 +190,19 @@ const matchmaking = async (request, reply) => {
       )
     );
 
-    return reply.send({ pending_id: pendingId });
-  } catch (err) {
-    request.log.error(`Error in autoMatchmaking: ${err.message}`);
-    if (err.message.includes('UNIQUE constraint failed')) {
-      return reply.status(409).send({ error: 'Already joined this lobby' });
-    }
+    await new Promise((res, rej) =>
+      db.run('COMMIT', err => err ? rej(err) : res())
+    );
+    return reply.send({ pending_id });
+  }
+  catch (err) {
+    // ROLLBACK on any error
+    await new Promise((res, rej) =>
+      db.run('ROLLBACK', err => err ? rej(err) : res())
+    );
+    request.log.error(`Error in matchmaking: ${err.message}`);
     return reply.status(500).send({ error: 'Internal server error' });
   }
-}
+};
 
 module.exports = { matchmaking };
