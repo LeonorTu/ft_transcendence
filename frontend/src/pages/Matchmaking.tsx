@@ -50,8 +50,8 @@ const Matchmaking = () => {
 		}
 
 		const renderer = createGameRendererAdapter(gameId, user.authToken, canvas);
-		
-		
+
+
 		const keyDown = (e: KeyboardEvent) => {
 			if (!renderer) return;
 			if (e.key === 'ArrowUp') renderer.controls.up = 1;
@@ -141,28 +141,28 @@ const Matchmaking = () => {
 		height={1}
 		/>
 		<h1>Pong Game</h1>
-		
-		{winnerName && (
-			<Status>🎉 {winnerName} wins! Well done, gg… 🎉</Status>
-		)}
-		{/* waiting for the second player */}
+
 		{!gameId && pendingId && (
 			<Status>Waiting for another player to join…</Status>
 		)}
 
-	{/* once match is ready */}
-	{gameId && (
-		<>
-		<Status>Game ID: {gameId}</Status>
-		<GameCanvas
-		ref={canvasRef}
-		width={DEFAULT_WIDTH}
-		height={DEFAULT_HEIGHT}
-		/>
-		</>
-	)}
-	</GameContainer>
-	);
+		{winnerName && (
+			<Status>🎉 {winnerName} wins! Well done, gg… 🎉</Status>
+		)}
+	
+		{/* once match is ready */}
+		{gameId && (
+			<>
+			<Status>Game ID: {gameId}</Status>
+			<GameCanvas
+			ref={canvasRef}
+			width={DEFAULT_WIDTH}
+			height={DEFAULT_HEIGHT}
+			/>
+			</>
+		)}
+		</GameContainer>
+		);
 }
 
 export default Matchmaking;
