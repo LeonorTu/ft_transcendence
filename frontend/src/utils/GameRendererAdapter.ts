@@ -1,4 +1,4 @@
-import { GameRenderer } from '../../../Game/render.js';
+import { GameRenderer } from '../../Game/render.js';
 
 export interface GameRendererType {
   server_uri: string;
