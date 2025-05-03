@@ -7,8 +7,8 @@ const MessageType = {
 };
 
 export const GameType = {
-	SINGLE_PLAYER: 1,
-	MULTI_PLAYER: 2
+	SINGLE_PLAYER: "single",
+	MULTI_PLAYER: "multi"
 };
 
 // colors
@@ -31,14 +31,17 @@ export class GameRenderer {
 		// game
 		this.game_type = game_type;
 		this.state = null;
-		if (game_type == GameType.MULTI_PLAYER) {
+		if (game_type === GameType.MULTI_PLAYER) {
 			this.controls = {up: 0, down: 0};
 		}
-		else if (game_type == GameType.SINGLE_PLAYER) {
+		else if (game_type === GameType.SINGLE_PLAYER) {
 			this.controls = {
 				player1: {up: 0, down: 0},
 				player2: {up: 0, down: 0}
 			};
+		}
+		else {
+			throw `No such game type: ${game_type}`;
 		}
 
 		// window
@@ -84,39 +87,39 @@ export class GameRenderer {
 	singleplayerKeyListener() {
 		this.document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowUp') {
-				this.controls.player1.up = 1;
-			}
-			else if (e.key === 'w')  {
 				this.controls.player2.up = 1;
 			}
+			else if (e.key === 'w')  {
+				this.controls.player1.up = 1;
+			}
 			else if (e.key === 'ArrowDown') {
-				this.controls.player1.down = 1;
+				this.controls.player2.down = 1;
 			}
 			else if (e.key == 's') {
-				this.controls.player2.down = 1;
+				this.controls.player1.down = 1;
 			}
 		});
 
 		this.document.addEventListener('keyup', (e) => {
 			if (e.key === 'ArrowUp') {
-				this.controls.player1.up = 0;
-			}
-			else if (e.key === 'w')  {
 				this.controls.player2.up = 0;
 			}
+			else if (e.key === 'w')  {
+				this.controls.player1.up = 0;
+			}
 			else if (e.key === 'ArrowDown') {
-				this.controls.player1.down = 0;
+				this.controls.player2.down = 0;
 			}
 			else if (e.key == 's') {
-				this.controls.player2.down = 0;
+				this.controls.player1.down = 0;
 			}
 		});
 	}
 	start() {
-		if (this.game_type == GameType.MULTI_PLAYER) {
+		if (this.game_type === GameType.MULTI_PLAYER) {
 			this.multiplayerKeyListener();
 		}
-		else if (this.game_type == GameType.SINGLE_PLAYER) {
+		else if (this.game_type === GameType.SINGLE_PLAYER) {
 			this.singleplayerKeyListener();
 		}
 
@@ -129,7 +132,6 @@ export class GameRenderer {
 				}}));
 			}
 			else if (this.game_type === GameType.SINGLE_PLAYER) {
-				console.log("Sending single player token");
 				this.socket.send(JSON.stringify({ type: MessageType.JOIN_SINGLE , payload: {
 					'token': this.user_token
 				}}));
@@ -235,7 +237,14 @@ export class GameRenderer {
 			text = "The game is tie"
 		}
 		else {
-			text = `Player ${winner.id} won the game`;
+			if (this.game_type === "multi") {
+				// Todo: Display nickname instead of id
+				text = `Player ${winner.id} won the game`;
+			}
+			if (this.game_type === "single") {
+				// Hacky, single player ids are -1 and -2, i.e. somthing that's not a real id
+				text = `Player ${winner.id * -1} won the game`;
+			}
 		}
 		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);
 	}
@@ -285,13 +294,42 @@ export class GameRenderer {
 			this.renderGame();
 		}
 	}
-
 	updatePaddles() {
-		if (this.controls.up == 1 && this.controls.down == 0) {
-			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
+		if (this.game_type === GameType.MULTI_PLAYER) {
+			if (this.controls.up == 1 && this.controls.down == 0) {
+				this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
+			}
+			else if (this.controls.up == 0 && this.controls.down == 1) {
+				this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
+			}
 		}
-		else if (this.controls.up == 0 && this.controls.down == 1) {
-			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
+		else if (this.game_type === GameType.SINGLE_PLAYER) {
+			let p1_input = "none";
+			let p2_input = "none";
+			if (this.controls.player1.up == 1 && this.controls.player1.down == 0) {
+				p1_input = "up";
+			}
+			if (this.controls.player1.up == 0 && this.controls.player1.down == 1) {
+				p1_input = "down";
+			}
+			if (this.controls.player2.up == 1 && this.controls.player2.down == 0) {
+				p2_input = "up";
+			}
+			if (this.controls.player2.up == 0 && this.controls.player2.down == 1) {
+				p2_input = "down";
+			}
+			// skip paddle update if nothing has changed
+			if (p1_input === "none" && p2_input === "none") {
+				return;
+			}
+			const msg = {
+				type: MessageType.CONTROL_INPUT,
+				payload: {
+					'input_player1': p1_input,
+					'input_player2': p2_input,
+				}
+			}
+			this.socket.send(JSON.stringify(msg));
 		}
 	}
 

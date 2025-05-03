@@ -181,6 +181,9 @@ class Game {
 		else if (input === "down") {
 			player.inputs.push(Input.DOWN);
 		}
+		else if (input === "none") {
+			return true;
+		}
 		else {
 			console.log(`Error: unkown input ${input}`)
 			return false;

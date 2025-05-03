@@ -24,4 +24,4 @@ P1_TOKEN=$(./login_user.sh "foo" "foo" | jq '.token' | tr -d '"')
 GAME_ID=$(./create_local_game.sh "$P1_ID" | jq '.id')
 
 echo "Join link:"
-echo "http://localhost:$PORT/game.html?token=$P1_TOKEN"
+echo "http://localhost:$PORT/game.html?token=$P1_TOKEN&type=single"

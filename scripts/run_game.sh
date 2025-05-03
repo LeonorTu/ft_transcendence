@@ -32,7 +32,7 @@ P2_TOKEN=$(./login_user.sh "bar" "bar" | jq '.token' | tr -d '"')
 GAME_ID=$(./create_game.sh "$P1_ID" "$P2_ID" | jq '.id')
 
 echo "Player 1 join link:"
-echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P1_TOKEN"
+echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P1_TOKEN&type=multi"
 echo ""
 echo "Player 2 join link:"
-echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P2_TOKEN"
+echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P2_TOKEN&type=multi"

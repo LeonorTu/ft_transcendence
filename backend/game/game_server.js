@@ -18,7 +18,8 @@ const ErrorType = {
 	GAME_ID_ALREADY_EXISTS: 1,
 	GAME_DOES_NOT_EXIST: 2,
 	PLAYER_NOT_IN_GAME: 3,
-	TOO_MANY_SINGLEPLAYER_GAMES: 4
+	TOO_MANY_SINGLEPLAYER_GAMES: 4,
+	UNKNOWN_ARGUMENT: 5,
 };
 
 const MessageType = {
@@ -92,15 +93,26 @@ class GameServer {
 	broadcastStates() {
 		if (this.sockets) {
 			this.sockets.forEach( (sock) => {
-				if (!this.multiplayerGames.has(Number(sock.game_id))) {
-					console.warn("Game id does not exist");
+				let game;
+				if (sock.game_type === GameType.MULTI_PLAYER) {
+					if (!this.multiplayerGames.has(Number(sock.game_id))) {
+						console.warn("Game id does not exist");
+					}
+					game = this.multiplayerGames.get(Number(sock.game_id));
 				}
-				const game = this.multiplayerGames.get(Number(sock.game_id));
+				else if (sock.game_type === GameType.SINGLE_PLAYER) {
+					game = this.singleplayerGames.get(sock.user_id);
+
+				}
+				else {
+					throw new Error(ErrorType.UNKNOWN_ARGUMENT, `Game type ${sock.game_type} does not exist`);
+				}
 				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
 				if (sock.readyState === WebSocket.OPEN) {
 					sock.send(msg);
 				}
 			});
+
 		}
 	}
 
@@ -113,7 +125,16 @@ class GameServer {
 		});
 		this.singleplayerGames.forEach((game, player_id) => {
 			game.refreshGame();
+			// Single player game ending here.. yeah not pretty
 			if (game.gameState === GameState.FINSIHED) {
+				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
+				this.sockets.forEach((socket) => {
+					if (socket.user_id === player_id) {
+						socket.send(msg);
+						socket.close(1000, "Game has finished");
+						this.sockets.delete(socket);
+					}
+				});
 				this.singleplayerGames.delete(player_id);
 			}
 		});

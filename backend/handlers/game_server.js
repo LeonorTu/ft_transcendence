@@ -25,20 +25,20 @@ const runServer = (ws, req) => {
 	ws.on('message', (msg) => {
 		try {
 			const {type, payload} = JSON.parse(msg);
-			//console.log(`Received ${type}: ${payload}`);
 			if (type === MessageType.JOIN_MULTI) {
+				console.log(payload);
 				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
 				game_server.joinGame(Number(user.id), Number(payload.game_id));
 				ws.game_id = payload.game_id;
 				ws.user_id = user.id;
 				ws.game_type = GameType.MULTI_PLAYER;
 				game_server.sockets.add(ws);
-				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game_server.games.get(Number(payload.game_id)).getSettings()}));
+				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game_server.multiplayerGames.get(Number(payload.game_id)).getSettings()}));
 				//console.log(`Player with id ${Number(payload.player_id)} joined game ${payload.game_id}`);
 			}
 			else if (type === MessageType.JOIN_SINGLE) {
 				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
-				const game = game_server.singleplayerGames(user.id);
+				const game = game_server.singleplayerGames.get(Number(user.id));
 				game.players[0].joined = true;
 				game.players[1].joined = true;
 				ws.user_id = user.id;
@@ -60,10 +60,10 @@ const runServer = (ws, req) => {
 					game.acceptPlayerInput(ws.user_id, payload.input);
 				}
 				else if (ws.game_type === GameType.SINGLE_PLAYER) {
-					if (!game_server.singleplayerGames(Number(ws.user_id))) {
+					if (!game_server.singleplayerGames.get(Number(ws.user_id))) {
 						throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
 					}
-					const game = game_server.singleplayerGames(Number(ws.user_id));
+					const game = game_server.singleplayerGames.get(Number(ws.user_id));
 					game.acceptPlayerInput(SinglePlayerIds.PLAYER_1, payload.input_player1);
 					game.acceptPlayerInput(SinglePlayerIds.PLAYER_2, payload.input_player2);
 				}
@@ -129,7 +129,6 @@ const createNewMultiplayerGame = async (request, reply) => {
 
 
 const createNewSinglePlayerGame = async (request, reply) => {
-	console.log("Creating new single player game");
 	const { player_id } = request.body;
 	try {
 		const p1_exists = await new Promise((resolve, reject) => {
