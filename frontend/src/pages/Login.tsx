@@ -151,11 +151,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (response.data.token) {
       if (skipTwoFactor) {
         toast.success('Logged in without 2FA successfully');
-        return { initialAuth: false, token: response.data.token };
+        return { initialAuth: false, token: response.data.token, username };
       }
     }
-    if (response.data.message)
-      return { initialAuth: true, username };
+
+    if (response.data.message) return { initialAuth: true, username };
 
     return null;
   } catch (error) {
@@ -203,23 +203,39 @@ const Login: React.FC = () => {
 
     // Handle Google OAuth success
     if (accessToken && !loginProcessed.current) {
-      const user = {
-        authToken: accessToken,
-      };
-      login(user);
       loginProcessed.current = true;
 
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
+      customFetch
+        .get('/user/me', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((response) => {
+          // Extract the username from the response
+          const username = response.data.username;
 
-      toast.success('Logged in with Google successfully');
-      navigate('/game');
+          // Login with real username
+          login({ username, authToken: accessToken });
+
+          // Clear the URL parameters
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+          );
+
+          toast.success('Logged in with Google successfully');
+          navigate('/game');
+        })
+        .catch((error) => {
+          console.error('Failed to get user data:', error);
+          toast.error('Unable to retrieve user information');
+          loginProcessed.current = false;
+        });
     } // Handle normal login without 2FA
     else if (actionData?.token && !loginProcessed.current) {
-      const user = {
-        authToken: actionData.token,
-      };
-      login(user);
+      login({ username: actionData.username, authToken: actionData.token });
       loginProcessed.current = true;
       navigate('/game');
     }
@@ -244,7 +260,9 @@ const Login: React.FC = () => {
         <GoogleButton
           type='button'
           onClick={() => {
-            window.location.href = 'http://localhost:8888/oauth2/google/';
+            const apiUrl =
+              import.meta.env.VITE_API_URL || 'http://localhost:8888';
+            window.location.href = `${apiUrl}/oauth2/google/`;
           }}
         >
           <svg

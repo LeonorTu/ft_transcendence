@@ -4,6 +4,7 @@ const {
 	getUsers,
 	registerUser,
 	getUser,
+	getCurrentUser,
 	updateUser,
 	loginUser,
 	logoutUser,
@@ -151,8 +152,10 @@ const getUserFriendsSchema = {
 					type: 'object',
 					properties: {
 						id: { type: 'integer' },
-						user_id: { type : 'integer' },
-						friend_id: { type: 'integer' },
+						username: { type: 'string' },
+						avatar: { type: 'string' },
+						online_status: { type: 'string' },
+						friendshipId: { type: 'integer' }
 					}
 				}
 			},
@@ -288,12 +291,25 @@ function usersRoutes(fastify, options, done) {
 			response: {
 				200: successResponse,
 				400: errorResponse,
-				500: errorResponse
+				500: errorResponse,
 			},
 			security: [{ bearerAuth: [] }],
 		},
-		handler: updateOnlineStatus
-	}
+		handler: updateOnlineStatus,
+	};
+
+	const getCurrentUserSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: User,
+				404: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: getCurrentUser,
+	};
 
 	fastify.get('/users', getUsersSchema)
 
@@ -320,6 +336,8 @@ function usersRoutes(fastify, options, done) {
 	fastify.delete('/remove_friend/:friendshipId', removeFriendSchema)
 
 	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
+
+	fastify.get('/user/me', getCurrentUserSchema);
 
 	done()
 }

@@ -15,11 +15,21 @@ const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
 export class GameRenderer {
-	constructor(server_uri, server_port, game_id, user_token, document) {
+	constructor(
+		server_uri,
+		server_port,
+		game_id,
+		user_token,
+		document,
+		wsUrl = null
+	) {
 		this.server_uri = server_uri;
 		this.game_id = game_id;
 		this.user_token = user_token;
-		this.socket = new WebSocket(`ws://${server_uri}:${server_port}/${GAME_ENDPOINT}`);
+		const websocketUrl =
+			wsUrl ||
+			`ws://${server_uri}:${server_port}/ws/game/${game_id}?token=${authToken}`;
+		this.socket = new WebSocket(websocketUrl);
 		this.connected = false;
 
 		// game
