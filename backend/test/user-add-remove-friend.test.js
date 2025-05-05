@@ -78,15 +78,16 @@ t.test('add/remove friends tests', async t => {
 		payload: { user_id: userAId, friend_id: userCId },
 	});
 	t.equal(friend2.statusCode, 200, 'friend added succesfully')
-
 	let users = await fastify.inject({
 		method: 'GET',
 		url: `/user/${userAUsername}/friends`
 	})
-	t.equal(JSON.parse(users.payload)[0].user_id, userAId, 'checking friend list')
-	t.equal(JSON.parse(users.payload)[0].friend_id, userBId, 'checking friend list')
-	t.equal(JSON.parse(users.payload)[1].user_id, userAId, 'checking friend list')
-	t.equal(JSON.parse(users.payload)[1].friend_id, userCId, 'checking friend list')
+	let friends = JSON.parse(users.payload)
+	t.equal(friends.length, 2, 'userA should have 2 friends')
+	let friendIds = friends.map(f => f.id).sort()
+	t.same(friendIds, [userBId, userCId].sort(), 'Friend IDs should match B and C')
+	t.ok(friends[0].friendshipId, 'friendshipId should be included')
+	t.ok(friends[1].friendshipId, 'friendshipId should be included')
 
 	// adding a non existing friend
 	const nonExistingFriend = await fastify.inject({
@@ -98,18 +99,21 @@ t.test('add/remove friends tests', async t => {
 	t.equal(nonExistingFriend.statusCode, 400, 'not able to add a non existing user')
 
 	// removing userB from friend list of userA
-	friendshipId = JSON.parse(users.payload)[0].id
+	let friendsBefore = JSON.parse(users.payload)
+	let friendshipId = friendsBefore[0].friendshipId
 	let removedFriend = await fastify.inject({
 		method: 'DELETE',
 		url: `/remove_friend/${friendshipId}`,
 		headers: { Authorization: `Bearer ${tokenA}` },
 	})
-	users = await fastify.inject({
+	let usersAfter = await fastify.inject({
 		method: 'GET',
 		url: `/user/${userAUsername}/friends`
 	})
-	t.equal(removedFriend.statusCode, 200, 'friend removed succesfully')
-	t.notSame(JSON.parse(users.payload)[0].id, friendshipId, 'removed friend is not in friend list anymore')
+	let friendsAfter = JSON.parse(usersAfter.payload)
+	t.equal(removedFriend.statusCode, 200, 'friend removed successfully')
+	let remainingIds = friendsAfter.map(f => f.friendshipId)
+	t.notOk(remainingIds.includes(friendshipId), 'removed friend is not in friend list anymore')
 
 	// login userB
 	const loginB = await fastify.inject({
