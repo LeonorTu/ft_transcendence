@@ -4,7 +4,8 @@ export class GameRenderer {
     server_port: number,
     game_id: number,
     user_token: string,
-    document: Document
+    document: Document,
+    game_type: string,
   );
 
   server_uri: string;
