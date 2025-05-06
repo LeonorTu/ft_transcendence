@@ -7,14 +7,14 @@ const errorResponse = {
 	  error: { type: 'string' },
 	}
   }
-
+  
   const messageResponse = {
 	type: 'object',
 	properties: {
 	  message: { type: 'string' },
 	}
   }
-
+  
   const messageErrorResponse = {
 	type: 'object',
 	properties: {
@@ -22,7 +22,7 @@ const errorResponse = {
 	  error: { type: 'string' }
 	}
   }
-
+  
   const googleCallbackSchema = {
 	schema: {
 	  response: {
@@ -47,20 +47,18 @@ function googleRoutes(fastify, options, done) {
       credentials: {
         client: {
           id: process.env.GOOGLE_CLIENT_ID,
-          secret: process.env.GOOGLE_CLIENT_SECRET,
+          secret: process.env.GOOGLE_CLIENT_SECRET
         },
         auth: {
           authorizeHost: 'https://accounts.google.com',
           authorizePath: '/o/oauth2/v2/auth',
           tokenHost: 'https://www.googleapis.com',
-          tokenPath: '/oauth2/v4/token',
-        },
+          tokenPath: '/oauth2/v4/token'
+        }
       },
       scope: ['profile', 'email'],
       startRedirectPath: '/oauth2/google/',
-      callbackUri:
-        process.env.CALLBACK_URL ||
-        'http://localhost:8888/oauth2/google/callback',
+      callbackUri: 'http://localhost:8888/oauth2/google/callback'
     });
   }
 
@@ -83,19 +81,19 @@ function googleRoutes(fastify, options, done) {
     },
     handler: async (request, reply) => {
       const { access_token, error } = request.query;
-
+      
       if (error) {
         // Handle authentication errors
-        return reply.status(400).send({
-          message: 'Authentication failed',
-          error: error
+        return reply.status(400).send({ 
+          message: 'Authentication failed', 
+          error: error 
         });
       }
-
+      
       if (access_token) {
         try {
           const decoded = fastify.jwt.verify(access_token);
-
+          
           // Fetch user details from database
           const user = await new Promise((resolve, reject) => {
             db.get('SELECT * FROM users WHERE id = ?', [decoded.id], (err, row) => {
@@ -103,29 +101,29 @@ function googleRoutes(fastify, options, done) {
               resolve(row);
             });
           });
-
+          
           if (!user) {
             return reply.status(404).send({
               message: 'User not found in database',
               error: 'User record missing'
             });
           }
-
+          
           // Return welcome message with username
-          return reply.send({
+          return reply.send({ 
             message: `Welcome to the homepage, ${user.username}!`
           });
         } catch (err) {
           request.log.error(`Error processing homepage with token: ${err.message}`);
-          return reply.status(401).send({
-            message: 'Invalid token or database error',
-            error: err.message
+          return reply.status(401).send({ 
+            message: 'Invalid token or database error', 
+            error: err.message 
           });
         }
       }
-
+      
       // Regular homepage (no token in URL)
-      return reply.send({
+      return reply.send({ 
         message: 'Welcome to the homepage, Guest!'
       });
     }

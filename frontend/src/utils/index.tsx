@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiUrl = 'http://localhost:8888';
+
 export const customFetch = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8888',
+  baseURL: apiUrl,
   headers: {
     'Content-Type': 'application/json',
   },

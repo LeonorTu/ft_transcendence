@@ -84,12 +84,11 @@ const Verify2FA: React.FC = () => {
       navigate('/login');
       return;
     }
-
     if (actionData?.token && !hasNavigated.current) {
-      login({
-        username: username,
+      const user = {
         authToken: actionData.token,
-      });
+      };
+      login(user);
       hasNavigated.current = true;
       navigate('/game');
     }
