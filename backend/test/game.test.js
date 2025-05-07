@@ -56,11 +56,11 @@ t.before(async () => {
 	userBId = JSON.parse(regB.payload).id;
 });
 
-t.test('Test 1: POST /game/new - creates a new game', async t => {
+t.test('Test 1: POST /game/new-multiplayer - creates a new multiplayer game', async t => {
 	const payload = {player1_id: userAId, player2_id: userBId};
 	const res = await fastify.inject({
 		method: 'POST',
-		url: '/game/new',
+		url: '/game/new-multiplayer',
 		payload,
 	});
 
@@ -70,36 +70,36 @@ t.test('Test 1: POST /game/new - creates a new game', async t => {
 	gameId = body.id;
 });
 
-t.test('Test 2: POST /game/new - creates a new game fails - same player id)', async t => {
+t.test('Test 2: POST /game/new-multiplayer - creates a new multiplayer game fails - same player id)', async t => {
 	const payload = {player1_id: userAId, player2_id: userAId};
 
 	const res = await fastify.inject({
 		method: 'POST',
-		url: '/game/new',
+		url: '/game/new-multiplayer',
 		payload,
 	});
 
 	t.equal(res.statusCode, 400, 'Should return 400 when player ids are equal');
 });
 
-t.test('Test 3: POST /game/new - creates a new game fails - non existing player id)', async t => {
+t.test('Test 3: POST /game/new-multiplayer - creates a new multiplayer game fails - non existing player id)', async t => {
 	const payload = {player1_id: 42, player2_id: userBId};
 
 	const res = await fastify.inject({
 		method: 'POST',
-		url: '/game/new',
+		url: '/game/new-multiplayer',
 		payload,
 	});
 
 	t.equal(res.statusCode, 400, 'Should return 400 when player id does not exist');
 });
 
-t.test('Test 4: POST /game/new - creates a new game fails - non existing player id)', async t => {
+t.test('Test 4: POST /game/new-multiplayer - creates a new multiplayer game fails - non existing player id)', async t => {
 	const payload = {player1_id: userAId, player2_id: 42};
 
 	const res = await fastify.inject({
 		method: 'POST',
-		url: '/game/new',
+		url: '/game/new-multiplayer',
 		payload,
 	});
 
@@ -107,12 +107,12 @@ t.test('Test 4: POST /game/new - creates a new game fails - non existing player 
 });
 
 
-t.test('Test 5: POST /game/new - creates a new game fails - non existing player id)', async t => {
+t.test('Test 5: POST /game/new-multiplayer - creates a new multiplayer game fails - non existing player id)', async t => {
 	const payload = {player1_id: 84, player2_id: 42};
 
 	const res = await fastify.inject({
 		method: 'POST',
-		url: '/game/new',
+		url: '/game/new-multiplayer',
 		payload,
 	});
 
@@ -149,6 +149,28 @@ t.test('Test 8: GET /game/list:id - Fail to list non existing game', async t => 
 	});
 	t.equal(res.statusCode, 404, 'Should return 404 for non existing game');
 	t.end();
+});
+
+t.test('Test 9: POST /game/new-singleplayer - creates a new singleplayer game', async t => {
+	const payload = {player_id: userAId};
+	const res = await fastify.inject({
+		method: 'POST',
+		url: '/game/new-singleplayer',
+		payload,
+	});
+
+	t.equal(res.statusCode, 200, 'Should return 200 on successful game creation');
+});
+
+t.test('Test 10: POST /game/new-singleplayer - fails when game id does not exist', async t => {
+	const payload = {player_id: 42};
+	const res = await fastify.inject({
+		method: 'POST',
+		url: '/game/new-singleplayer',
+		payload,
+	});
+
+	t.equal(res.statusCode, 400, 'Should return 400 if player_id does not exist');
 });
 
 t.teardown(async () => {

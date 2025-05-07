@@ -38,7 +38,8 @@ export interface GameRendererType {
 export function createGameRendererAdapter(
   gameId: number,
   authToken: string,
-  canvasElement: HTMLCanvasElement
+  canvasElement: HTMLCanvasElement,
+  game_type: string,
 ): GameRendererType {
   // Create an instance of the original GameRenderer
   const renderer = new GameRenderer(
@@ -46,7 +47,8 @@ export function createGameRendererAdapter(
     8888,
     gameId,
     authToken,
-    document
+    document,
+    game_type
   );
 
   // Set the canvas element

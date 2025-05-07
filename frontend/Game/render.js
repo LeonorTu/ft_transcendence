@@ -1,8 +1,14 @@
 const MessageType = {
-	JOIN: "join",
+	JOIN_MULTI: "join_multi",
+	JOIN_SINGLE: "join_single",
 	CONTROL_INPUT: "input",
 	SETTINGS: "settings",
 	STATE: "state",
+};
+
+export const GameType = {
+	SINGLE_PLAYER: "single",
+	MULTI_PLAYER: "multi"
 };
 
 // colors
@@ -15,7 +21,7 @@ const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
 export class GameRenderer {
-	constructor(server_uri, server_port, game_id, user_token, document) {
+	constructor(server_uri, server_port, game_id, user_token, document, game_type) {
 		this.server_uri = server_uri;
 		this.game_id = game_id;
 		this.user_token = user_token;
@@ -23,8 +29,20 @@ export class GameRenderer {
 		this.connected = false;
 
 		// game
+		this.game_type = game_type;
 		this.state = null;
-		this.controls = {up: 0, down: 0};
+		if (game_type === GameType.MULTI_PLAYER) {
+			this.controls = {up: 0, down: 0};
+		}
+		else if (game_type === GameType.SINGLE_PLAYER) {
+			this.controls = {
+				player1: {up: 0, down: 0},
+				player2: {up: 0, down: 0}
+			};
+		}
+		else {
+			throw `No such game type: ${game_type}`;
+		}
 
 		// window
 		this.document = document;
@@ -46,7 +64,7 @@ export class GameRenderer {
 		this.canvas.setAttribute("width", this.board_width);
 	}
 
-	start() {
+	multiplayerKeyListener() {
 		this.document.addEventListener('keydown', (e) => {
 			if (e.key === 'ArrowUp') {
 				this.controls.up = 1;
@@ -64,12 +82,60 @@ export class GameRenderer {
 				this.controls.down = 0;
 			}
 		});
+	}
+
+	singleplayerKeyListener() {
+		this.document.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.player2.up = 1;
+			}
+			else if (e.key === 'w')  {
+				this.controls.player1.up = 1;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.player2.down = 1;
+			}
+			else if (e.key == 's') {
+				this.controls.player1.down = 1;
+			}
+		});
+
+		this.document.addEventListener('keyup', (e) => {
+			if (e.key === 'ArrowUp') {
+				this.controls.player2.up = 0;
+			}
+			else if (e.key === 'w')  {
+				this.controls.player1.up = 0;
+			}
+			else if (e.key === 'ArrowDown') {
+				this.controls.player2.down = 0;
+			}
+			else if (e.key == 's') {
+				this.controls.player1.down = 0;
+			}
+		});
+	}
+	start() {
+		if (this.game_type === GameType.MULTI_PLAYER) {
+			this.multiplayerKeyListener();
+		}
+		else if (this.game_type === GameType.SINGLE_PLAYER) {
+			this.singleplayerKeyListener();
+		}
 
 		this.socket.addEventListener('open', () => {
-			this.socket.send(JSON.stringify({ type: MessageType.JOIN , payload: {
-				'token': this.user_token,
-				'game_id': this.game_id,
-			}}));
+			if (this.game_type === GameType.MULTI_PLAYER) {
+
+				this.socket.send(JSON.stringify({ type: MessageType.JOIN_MULTI , payload: {
+					'token': this.user_token,
+					'game_id': this.game_id,
+				}}));
+			}
+			else if (this.game_type === GameType.SINGLE_PLAYER) {
+				this.socket.send(JSON.stringify({ type: MessageType.JOIN_SINGLE , payload: {
+					'token': this.user_token
+				}}));
+			}
 			this.connected = true;
 		});
 
@@ -171,7 +237,14 @@ export class GameRenderer {
 			text = "The game is tie"
 		}
 		else {
-			text = `Player ${winner.id} won the game`;
+			if (this.game_type === "multi") {
+				// Todo: Display nickname instead of id
+				text = `Player ${winner.id} won the game`;
+			}
+			if (this.game_type === "single") {
+				// Hacky, single player ids are -1 and -2, i.e. somthing that's not a real id
+				text = `Player ${winner.id * -1} won the game`;
+			}
 		}
 		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);
 	}
@@ -221,13 +294,42 @@ export class GameRenderer {
 			this.renderGame();
 		}
 	}
-
 	updatePaddles() {
-		if (this.controls.up == 1 && this.controls.down == 0) {
-			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
+		if (this.game_type === GameType.MULTI_PLAYER) {
+			if (this.controls.up == 1 && this.controls.down == 0) {
+				this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'up'}}));
+			}
+			else if (this.controls.up == 0 && this.controls.down == 1) {
+				this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
+			}
 		}
-		else if (this.controls.up == 0 && this.controls.down == 1) {
-			this.socket.send(JSON.stringify({type: MessageType.CONTROL_INPUT, payload: {'input': 'down'}}));
+		else if (this.game_type === GameType.SINGLE_PLAYER) {
+			let p1_input = "none";
+			let p2_input = "none";
+			if (this.controls.player1.up == 1 && this.controls.player1.down == 0) {
+				p1_input = "up";
+			}
+			if (this.controls.player1.up == 0 && this.controls.player1.down == 1) {
+				p1_input = "down";
+			}
+			if (this.controls.player2.up == 1 && this.controls.player2.down == 0) {
+				p2_input = "up";
+			}
+			if (this.controls.player2.up == 0 && this.controls.player2.down == 1) {
+				p2_input = "down";
+			}
+			// skip paddle update if nothing has changed
+			if (p1_input === "none" && p2_input === "none") {
+				return;
+			}
+			const msg = {
+				type: MessageType.CONTROL_INPUT,
+				payload: {
+					'input_player1': p1_input,
+					'input_player2': p2_input,
+				}
+			}
+			this.socket.send(JSON.stringify(msg));
 		}
 	}
 
