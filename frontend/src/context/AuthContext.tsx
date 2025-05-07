@@ -1,51 +1,51 @@
-// context/AuthContext.tsx
-import React, { createContext, useState, useEffect, useContext } from 'react';
+// src/context/AuthContext.tsx
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  PropsWithChildren,
+} from 'react'
 
 export interface User {
-  // id: string;
-  // name: string;
-  // email: string;
-  authToken: string;
+  //id: number
+  //username: string
+  authToken: string
 }
 
-interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+interface AuthContextShape {
+  user:   User | null
+  login:  (u: User) => void
+  logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: () => {},
+const AuthContext = createContext<AuthContextShape>({
+  user:   null,
+  login:  () => {},
   logout: () => {},
-});
+})
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(() => {
+    const raw = sessionStorage.getItem('authUser')
+    return raw ? (JSON.parse(raw) as User) : null
+  })
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-  }, []);
+    if (user)
+      sessionStorage.setItem('authUser', JSON.stringify(user))
+    else
+      sessionStorage.removeItem('authUser')
+  }, [user])
 
-  const login = (user: User) => {
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+  const login  = (u: User) => setUser(u)
+  const logout = ()         => setUser(null)
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
-
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
