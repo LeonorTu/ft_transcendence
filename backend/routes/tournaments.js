@@ -11,12 +11,10 @@
 /* ************************************************************************** */
 
 const auth = require('../routes/auth')
-const db = require('../db');
+const db   = require('../db')
 
 const {
-	createTournament,
-	joinTournament,
-	startTournament,
+	tournament,
 	listTournaments,
 	getBracket,
 	reportMatchResult,
@@ -25,12 +23,16 @@ const {
 
 const errorResponse = {
 	type: 'object',
-	properties: { error: { type: 'string' } },
+	properties: {
+		error: { type: 'string' }
+	}
 }
 
 const successResponse = {
 	type: 'object',
-	properties: { message: { type: 'string' } },
+	properties: {
+		message: { type: 'string' }
+	}
 }
 
 const Tournament = {
@@ -44,146 +46,179 @@ const Tournament = {
 		started_at:  { type: 'string'  },
 		finished_at: { type: 'string'  },
 		winner_id:   { type: 'integer', nullable: true },
-	},
+	}
 }
 
 const TournamentMatch = {
 	type: 'object',
 	properties: {
 		tm_id:         { type: 'integer' },
-		game_id:       { type:'integer', nullable:true },
+		game_id:       { type: 'integer', nullable: true },
 		round:         { type: 'integer' },
 		tm_status:     { type: 'string'  },
 		player1_id:    { type: 'integer', nullable: true },
+		player1_username: { type: 'string',  nullable: true },
 		player2_id:    { type: 'integer', nullable: true },
+		player2_username: { type: 'string',  nullable: true },
 		player1_score: { type: 'integer', nullable: true },
 		player2_score: { type: 'integer', nullable: true },
 		winner_id:     { type: 'integer', nullable: true },
-	},
-};
+	}
+}
 
 const TournamentPlayers = {
 	type: 'object',
 	properties: {
-		id: { type: 'integer' },
+		id:            { type: 'integer' },
 		tournament_id: { type: 'integer' },
-		user_id: { type: 'integer' },
-		// seed: { type: 'integer' },
+		user_id:       { type: 'integer' },
+	}
+}
+
+// shape returned by POST /tournament/auto
+const TournamentResponse = {
+	type: 'object',
+	properties: {
+		tournament_id: { type: 'integer' },
+		player_count:  { type: 'integer' },
+		players: {
+			type: 'array',
+			items: {
+				type: 'object',
+				properties: {
+					id:       { type: 'integer' },
+					username: { type: 'string'  },
+				}
+			}
+		},
+		started: { type: 'boolean' },
+		bracket: {
+			anyOf: [
+				{ type: 'null' },
+				{
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							tm_id:             { type: 'integer' },
+							game_id:           { type: 'integer', nullable: true },
+							tm_status:         { type: 'string'  },
+							player1_id:        { type: 'integer', nullable: true },
+							player1_username:  { type: 'string',  nullable: true },
+							player2_id:        { type: 'integer', nullable: true },
+							player2_username:  { type: 'string',  nullable: true },
+						}
+					}
+				}
+			]
+		},
+		user_id: { type: 'integer' }
 	}
 }
 
 function tournamentRoutes(fastify, options, done) {
 
+	// List all tournaments
 	const listTournamentsSchema = {
-		onRequest: [fastify.authenticate],
+		onRequest: [ fastify.authenticate ],
 		schema: {
 			response: {
 				200: { type: 'array', items: Tournament },
 				500: errorResponse,
-			},
+			}
 		},
 		handler: listTournaments,
 	}
 
-	const createTournamentSchema = {
-		onRequest: [fastify.authenticate],
+	// Auto‐join or create lobby, await 4 players, then start & return lobby+bracket
+	const tournamentSchema = {
+		onRequest: [ fastify.authenticate ],
 		schema: {
-			body: {
-				type: 'object',
-				properties: { name: { type: 'string' } },
-				required: ['name'],
-			},
 			response: {
-				200: { type: 'object', properties: { tournament_id: { type: 'integer' } } },
-				400: errorResponse,
+				200: TournamentResponse,
 				500: errorResponse,
-			},
+			}
 		},
-		handler: createTournament,
+		handler: tournament,
 	}
 
-	const joinTournamentSchema = {
-		onRequest: [fastify.authenticate],
-		schema: {
-			response: {
-				200: successResponse,
-				400: errorResponse,
-				404: errorResponse,
-				409: errorResponse,
-			},
-		},
-		handler: joinTournament,
-	}
-
-	const startTournamentSchema = {
-		onRequest: [fastify.authenticate],
-		schema: {
-			response: {
-				200: successResponse,
-				400: errorResponse,
-				403: errorResponse,
-				404: errorResponse,
-				500: errorResponse,
-			},
-		},
-		handler: startTournament,
-	}
-
+	// Fetch full bracket for any round
 	const getBracketSchema = {
-		onRequest: [fastify.authenticate],
+		onRequest: [ fastify.authenticate ],
 		schema: {
+			params: {
+				type: 'object',
+				properties: { id: { type: 'integer' } },
+				required: ['id'],
+			},
 			response: {
 				200: {
 					type: 'object',
 					properties: {
 						tournament: Tournament,
 						matches:    { type: 'array', items: TournamentMatch },
-					},
+					}
 				},
 				404: errorResponse,
 				500: errorResponse,
-			},
+			}
 		},
 		handler: getBracket,
 	}
 
+	// Report result of one tournament match and advance bracket
 	const reportMatchResultSchema = {
-		onRequest: [fastify.authenticate],
+		onRequest: [ fastify.authenticate ],
 		schema: {
+			params: {
+				type: 'object',
+				properties: {
+					id:    { type: 'integer' },
+					tm_id: { type: 'integer' }
+				},
+				required: ['id','tm_id']
+			},
 			body: {
 				type: 'object',
-				properties: { winner_slot: { type: 'integer', enum: [1, 2] } },
-				required: ['winner_slot'],
+				properties: {
+					winner_slot: { type: 'integer', enum: [1,2] }
+				},
+				required: ['winner_slot']
 			},
 			response: {
 				200: successResponse,
 				400: errorResponse,
 				404: errorResponse,
 				500: errorResponse,
-			},
+			}
 		},
 		handler: reportMatchResult,
 	}
 
+	// List players in a tournament
 	const infoTournamentsSchema = {
-		// onRequest: [fastify.authenticate],
+		onRequest: [ fastify.authenticate ],
 		schema: {
+			params: {
+				type: 'object',
+				properties: { id: { type: 'integer' } },
+				required: ['id'],
+			},
 			response: {
 				200: { type: 'array', items: TournamentPlayers },
 				400: errorResponse,
 				500: errorResponse,
-			},
+			}
 		},
 		handler: infoTournament,
 	}
 
-	fastify.get('/tournament/list', listTournamentsSchema)
-	fastify.get('/tournament/:id/info', infoTournamentsSchema)
-	fastify.post('/tournament/new', createTournamentSchema)
-	fastify.post('/tournament/:id/join', joinTournamentSchema)
-	fastify.post('/tournament/:id/start', startTournamentSchema)
-	fastify.get('/tournament/:id/bracket', getBracketSchema)
-	fastify.post('/tournament/:id/match/:tm_id/result', reportMatchResultSchema)
+	fastify.get(  '/tournament/list',               listTournamentsSchema )
+	fastify.post( '/tournament/auto',               tournamentSchema )
+	fastify.get(  '/tournament/:id/info',           infoTournamentsSchema )
+	fastify.get(  '/tournament/:id/bracket',        getBracketSchema )
+	fastify.post( '/tournament/:id/match/:tm_id/result', reportMatchResultSchema )
+
 	done()
 }
 
