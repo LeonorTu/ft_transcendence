@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   game.js                                            :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/04 09:54:11 by pleander          #+#    #+#             //
-//   Updated: 2025/04/04 10:59:40 by pleander         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   game.js                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/04 09:54:11 by pleander          #+#    #+#             */
+/*   Updated: 2025/05/08 14:40:41 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const PI = 3.14;
 
@@ -260,6 +260,7 @@ class Game {
 				const angle = -dy / (PADDLE_HEIGHT / 2) * max_bounce_angle;
 				ball.vx = Math.cos(angle + PI) * this.objects.ball.speed;
 				ball.vy = Math.sin(angle + PI) * this.objects.ball.speed;
+				this.objects.ball.speed = this.objects.ball.speed * 1.1
 			}
 		}
 
@@ -271,6 +272,7 @@ class Game {
 				const angle = dy / (PADDLE_HEIGHT / 2) * max_bounce_angle;
 				ball.vx = Math.cos(angle) * this.objects.ball.speed;
 				ball.vy = Math.sin(angle) * this.objects.ball.speed;
+				this.objects.ball.speed = this.objects.ball.speed * 1.1
 			}
 		}
 
