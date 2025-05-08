@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   game_server.js                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/16 10:03:53 by pleander          #+#    #+#             //
-//   Updated: 2025/04/16 10:50:40 by pleander         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   game_server.js                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/16 10:03:53 by pleander          #+#    #+#             */
+/*   Updated: 2025/05/08 10:24:20 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const { GameServer, MessageType, Error, ErrorType, SinglePlayerIds, GameType} = require('../game/game_server');
 const db = require('../db');
@@ -38,13 +38,15 @@ const runServer = (ws, req) => {
 			}
 			else if (type === MessageType.JOIN_SINGLE) {
 				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
-				const game = game_server.singleplayerGames.get(Number(user.id));
+				// const game = game_server.singleplayerGames.get(Number(user.id));
+				const game = game_server.singleplayerGames.get(Number(payload.game_id));
 				game.players[0].joined = true;
 				game.players[1].joined = true;
+				ws.game_id = payload.game_id;
 				ws.user_id = user.id;
 				ws.game_type = GameType.SINGLE_PLAYER;
 				game_server.sockets.add(ws);
-				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game.getSettings()}));
+				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game.getSettings()})); // MARCO i think this can stay the same
 			}
 
 			else if (type === MessageType.CONTROL_INPUT) {
@@ -60,12 +62,18 @@ const runServer = (ws, req) => {
 					game.acceptPlayerInput(ws.user_id, payload.input);
 				}
 				else if (ws.game_type === GameType.SINGLE_PLAYER) {
-					if (!game_server.singleplayerGames.get(Number(ws.user_id))) {
+					// if (!game_server.singleplayerGames.get(Number(ws.user_id))) {
+					if (!game_server.singleplayerGames.get(Number(ws.game_id))) {
 						throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
 					}
-					const game = game_server.singleplayerGames.get(Number(ws.user_id));
-					game.acceptPlayerInput(SinglePlayerIds.PLAYER_1, payload.input_player1);
-					game.acceptPlayerInput(SinglePlayerIds.PLAYER_2, payload.input_player2);
+					// const game = game_server.singleplayerGames.get(Number(ws.user_id));
+					const game = game_server.singleplayerGames.get(Number(ws.game_id));
+					const player1_id = game.players[0].id;
+					const player2_id = game.players[1].id;
+					// game.acceptPlayerInput(SinglePlayerIds.PLAYER_1, payload.input_player1);
+					// game.acceptPlayerInput(SinglePlayerIds.PLAYER_2, payload.input_player2);
+					game.acceptPlayerInput(player1_id, payload.input_player1);
+					game.acceptPlayerInput(player2_id, payload.input_player2);
 				}
 			}
 		}
@@ -129,19 +137,45 @@ const createNewMultiplayerGame = async (request, reply) => {
 
 
 const createNewSinglePlayerGame = async (request, reply) => {
-	const { player_id } = request.body;
+	// const { player_id } = request.body;
+	const { player1_id, player2_id } = request.body;
 	try {
 		const p1_exists = await new Promise((resolve, reject) => {
-			db.get('SELECT * FROM users WHERE id = ?', [player_id], (err, row) => {
+			// db.get('SELECT * FROM users WHERE id = ?', [player_id], (err, row) => {
+			db.get('SELECT * FROM users WHERE id = ?', [player1_id], (err, row) => {
 				if (err) return (reject(err));
 					resolve(row);
 			});
 		});
 		if (!p1_exists) {
-			reply.status(400).send({ error: `player_id ${player_id} does not exist`});
+			// reply.status(400).send({ error: `player_id ${player_id} does not exist`});
+			reply.status(400).send({ error: `player_id ${player1_id} does not exist`});
 		}
-		game_server.createSingleplayerGame(player_id);
-		reply.status(200);
+		const p2_exists = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE id = ?', [player2_id], (err, row) => {
+				if (err) return (reject(err));
+					resolve(row);
+			});
+		});
+		if (!p2_exists) {
+			reply.status(400).send({ error: `player2_id ${player2_id} does not exist`});
+		}
+		// game_server.createSingleplayerGame(player_id);
+		const gameId = await new Promise((resolve, reject) => {
+			db.run(
+				'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
+				[player1_id, player2_id],
+				function(err) {
+					if (err) return (reject(err));
+					resolve(this.lastID);
+				}
+			);
+		});
+		game_server.createSingleplayerGame(gameId, player1_id, player2_id);
+		// reply.status(200);
+		reply.status(200).send({
+			"id": gameId
+		});
 	}
 	catch (e) {
 		request.log.error(e);

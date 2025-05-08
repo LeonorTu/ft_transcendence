@@ -133,7 +133,8 @@ export class GameRenderer {
 			}
 			else if (this.game_type === GameType.SINGLE_PLAYER) {
 				this.socket.send(JSON.stringify({ type: MessageType.JOIN_SINGLE , payload: {
-					'token': this.user_token
+					'token': this.user_token,
+					'game_id': this.game_id,
 				}}));
 			}
 			this.connected = true;
@@ -243,7 +244,8 @@ export class GameRenderer {
 			}
 			if (this.game_type === "single") {
 				// Hacky, single player ids are -1 and -2, i.e. somthing that's not a real id
-				text = `Player ${winner.id * -1} won the game`;
+				// text = `Player ${winner.id * -1} won the game`;
+				text = `Player ${winner.id} won the game`;
 			}
 		}
 		this.ctx.fillText(text, this.board_width / 2, this.board_height / 2);

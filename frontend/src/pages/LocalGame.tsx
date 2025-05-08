@@ -181,6 +181,7 @@ const LocalGame = () => {
   const { user } = useAuth();
   const [readyToRender, setReadyToRender] = useState(false)
   const navigate = useNavigate();
+  const [gameId, setGameId] = useState<number | null>(null);
 
   useEffect(() => {
 	if (!user)
@@ -248,10 +249,10 @@ const LocalGame = () => {
 	useEffect(() => {
 		if (addedPlayers.length !== 2 || creatorId === null || !lastAdded)
 			return
-		// console.log(creatorId)
-		// console.log(addedPlayers)
 		const createLocalMatch = async () => {
 			try {
+				const res = await customFetch.get(`/user/${lastAdded}`)
+				const secondUserId = res.data.id
 				const response = await fetch('http://localhost:8888/game/new-singleplayer', {
 					method: 'POST',
 					headers: {
@@ -259,17 +260,22 @@ const LocalGame = () => {
 						Authorization: `Bearer ${user.authToken}`,
 					},
 					body: JSON.stringify({
-						player_id: parseInt(creatorId),
+						// player_id: parseInt(creatorId),
+						player1_id: parseInt(creatorId),
+						player2_id: parseInt(secondUserId),
 					}),
 				});
-				// console.log('Tournament created:', response);
-				setReadyToRender(true)
-				} catch (err) {
-					console.error('Failed to create tournament:', err);
+				const data = await response.json()
+				if (data.id) {
+					setGameId(data.id)
+					setReadyToRender(true)
 				}
-			};
+			} catch (err) {
+				console.error('Failed to create tournament:', err);
+			}
+		};
 		createLocalMatch();
-		}, [addedPlayers, creatorId, lastAdded]);
+	}, [addedPlayers, creatorId, lastAdded]);
 
 /* ********************************************************************* */
 
@@ -304,7 +310,8 @@ const LocalGame = () => {
 		// Create the renderer using the adapter
 		// console.log('creator id used for createGameRendererAdapter:', creatorId)
 		const renderer = createGameRendererAdapter(
-			creatorId,
+			// creatorId,
+			gameId,
 			user.authToken,
 			canvasRef.current,
 			"single"
