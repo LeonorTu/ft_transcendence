@@ -138,10 +138,12 @@ const Dashboard: React.FC = () => {
 
       <MenuContainer>
         <MenuItem onClick={() => navigate('/game/local')}>LOCAL GAME</MenuItem>
-        <MenuItem onClick={() => navigate('/game/remote')}>
-          REMOTE GAME
+        <MenuItem onClick={() => navigate('/game/remote')}>REMOTE GAME
         </MenuItem>
-        <MenuItem onClick={() => navigate('/tournament')}>TOURNAMENT</MenuItem>
+        <MenuItem onClick={() => navigate('/tournament/local')}>LOCAL TOURNAMENT
+        </MenuItem>
+        <MenuItem onClick={() => navigate('/tournament/remote')}>REMOTE TOURNAMENT
+        </MenuItem>
       </MenuContainer>
     </DashboardContainer>
   );

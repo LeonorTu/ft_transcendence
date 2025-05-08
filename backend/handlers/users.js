@@ -28,20 +28,24 @@ const getUsers = (request, reply) => {
 }
 
 const getUser = (request, reply) => {
-	const { username } = request.params
-	db.get('SELECT * from users WHERE username = ?', [username], (err, row) => {
-		if (err) {
-			request.log.error(`Error fetching user: ${err.message}`);
-			return reply.status(500).send({ error: 'Database error: ' + err.message });
-		}
-		if (!row) {
-			request.log.warn(`User ${username} not found`)
-			return reply.status(404).send({error: `User ${username} not found`})
-		}
-		// row.avatar = `http://localhost:8888/user/${row.username}/avatar`
-		return reply.send(row)
-	})
-}
+	const identifier = request.params.username 
+	const isId = /^\d+$/.test(identifier)
+  
+	const sql = isId ? 'SELECT * FROM users WHERE id = ?' : 'SELECT * FROM users WHERE username = ?'
+	const value = isId ? Number(identifier) : identifier
+	  db.get(sql, [value], (err, row) => {
+		  if (err) {
+			  request.log.error(`Error fetching user: ${err.message}`);
+			  return reply.status(500).send({ error: 'Database error: ' + err.message });
+		  }
+		  if (!row) {
+			  request.log.warn(`User ${identifier} not found`)
+			  return reply.status(404).send({error: `User ${identifier} not found`})
+		  }
+		  // row.avatar = `http://localhost:8888/user/${row.username}/avatar`
+		  return reply.send(row)
+	  })
+  }
 
 const registerUser = async (request, reply) => {
 	const { username, email, password } = request.body;
