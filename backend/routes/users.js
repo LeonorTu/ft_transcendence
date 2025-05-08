@@ -1,6 +1,3 @@
-const db = require('../db')
-const bcrypt = require('bcryptjs')
-
 const {
 	getUsers,
 	registerUser,
@@ -17,6 +14,7 @@ const {
 	updateOnlineStatus,
 	getUserFriends,
 	removeFriend,
+	checkPassword,
 } = require('../handlers/users')
 
 const User = {
@@ -164,6 +162,32 @@ const getUserFriendsSchema = {
 	},
 	handler: getUserFriends
 }
+
+const checkPasswordSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				selected: { type: 'string' },
+				password: { type: 'string' },
+			},
+			required: [ 'selected', 'password' ],
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					ok: { type: 'boolean' },
+				},
+				required: ['ok'],
+			},
+			404: errorResponse,
+			500: errorResponse,
+		},
+		security: [{ bearerAuth: [] }],
+	},
+	handler: checkPassword,
+};
 
 function usersRoutes(fastify, options, done) {
 
@@ -338,36 +362,7 @@ function usersRoutes(fastify, options, done) {
 
 	fastify.get('/user/me', getCurrentUserSchema);
 
-	fastify.post('/check_password', async(request, reply) => {
-		const username = request.body.selected
-		const inPwd = request.body.password
-		console.log(username)
-		console.log(inPwd)
-		try {
-			const storedPwd = await new Promise((resolve, reject) => {
-				db.get('SELECT password FROM users WHERE username = ?', [username], (err, row) => {
-					if (err)
-						return reject(err)
-					if (!row)
-						return resolve(null)
-					resolve(row.password)
-				})
-			})
-			if (storedPwd === null) {
-				return reply.status(404).send({ error: 'User not found' });
-			}
-			// Use bcrypt to compare the plain‑text input to the stored hash
-			const passwordsMatch = await bcrypt.compare(inPwd, storedPwd);
-			if (!passwordsMatch) {
-				return reply.status(401).send({ error: 'Invalid password' });
-			}
-			// If we get here, the password is correct:
-			return reply.send({ ok: true });
-		} catch (err) {
-			request.log.error(`Error checking password for ${username}: ${err.message}`);
-			return reply.status(500).send({ error: 'Internal server error' });
-		}
-	})
+	fastify.post('/check_password', checkPasswordSchema)
 
 	done()
 }
