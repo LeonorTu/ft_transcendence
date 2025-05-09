@@ -1,4 +1,4 @@
-const { runServer, createNewGame, listGames, getGame} = require('../handlers/game_server')
+const { runServer, createNewMultiplayerGame, createNewSinglePlayerGame, listGames, getGame} = require('../handlers/game_server')
 
 const errorResponse = {
 	type: 'object',
@@ -33,7 +33,7 @@ const Game = {
 	}
 }
 
-const createGameSchema = {
+const createMultiplayerGameSchema = {
 	schema: {
 		body: {
 			type: 'object',
@@ -54,16 +54,36 @@ const createGameSchema = {
 			500: errorResponse,
 		},
 	},
-	handler: createNewGame
+	handler: createNewMultiplayerGame
 }
 
+
+const createSingleplayerGameSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				player_id: {type: 'integer'},
+			},
+			required: ['player_id'],
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					id: {type: 'integer'}
+				}
+			},
+			400: errorResponse,
+			500: errorResponse,
+		},
+	},
+	handler: createNewSinglePlayerGame
+}
 const listGamesSchema = {
 	schema: {
 		response: {
-			200: {
-				type: 'array',
-				items: GameListElement
-			},
+			200: {},
 			400: errorResponse,
 			500: errorResponse,
 		},
@@ -85,7 +105,9 @@ const getGameSchema = {
 function gameRoutes(fastify, options, done) {
 	
 
-	fastify.post('/game/new', createGameSchema);
+	fastify.post('/game/new-multiplayer', createMultiplayerGameSchema);
+
+	fastify.post('/game/new-singleplayer', createSingleplayerGameSchema);
 
 	fastify.get('/game/list', listGamesSchema);
 	

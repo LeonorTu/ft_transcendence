@@ -20,11 +20,11 @@ do
 done
 
 if [[ $P1_ID == "" ]]; then
-	 P1_ID=$(./create_user.sh "foo" "foo" | jq '.id')
+	 P1_ID=$(./create_user.sh "foo" "foo" "foo@foo.com"| jq '.id')
 fi
 
 if [[ $P2_ID == "" ]]; then
-	 P2_ID=$(./create_user.sh "bar" "bar" | jq '.id')
+	 P2_ID=$(./create_user.sh "bar" "bar" "bar@bar.com"| jq '.id')
 fi
 
 P1_TOKEN=$(./login_user.sh "foo" "foo" | jq '.token' | tr -d '"')
@@ -32,7 +32,7 @@ P2_TOKEN=$(./login_user.sh "bar" "bar" | jq '.token' | tr -d '"')
 GAME_ID=$(./create_game.sh "$P1_ID" "$P2_ID" | jq '.id')
 
 echo "Player 1 join link:"
-echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P1_TOKEN"
+echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P1_TOKEN&type=multi"
 echo ""
 echo "Player 2 join link:"
-echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P2_TOKEN"
+echo "http://localhost:$PORT/game.html?game_id=$GAME_ID&token=$P2_TOKEN&type=multi"
