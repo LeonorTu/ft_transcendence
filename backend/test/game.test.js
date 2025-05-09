@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   game.test.js                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 20:49:42 by pleander          #+#    #+#             */
-/*   Updated: 2025/04/22 10:55:37 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/08 15:26:15 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,14 +152,18 @@ t.test('Test 8: GET /game/list:id - Fail to list non existing game', async t => 
 });
 
 t.test('Test 9: POST /game/new-singleplayer - creates a new singleplayer game', async t => {
-	const payload = {player_id: userAId};
+	// const payload = {player_id: userAId};
+	const payload = {player1_id: userAId, player2_id: userBId};
 	const res = await fastify.inject({
 		method: 'POST',
 		url: '/game/new-singleplayer',
 		payload,
 	});
 
+	// t.equal(res.statusCode, 200, 'Should return 200 on successful game creation');
 	t.equal(res.statusCode, 200, 'Should return 200 on successful game creation');
+	const body = JSON.parse(res.payload);
+	t.ok(typeof body.id == 'number', 'Response includes a game id');
 });
 
 t.test('Test 10: POST /game/new-singleplayer - fails when game id does not exist', async t => {

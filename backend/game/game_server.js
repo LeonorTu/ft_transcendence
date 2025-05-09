@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   game_server.js                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: pleander <pleander@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             //
-//   Updated: 2025/04/16 10:43:59 by pleander         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   game_server.js                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             */
+/*   Updated: 2025/05/09 17:58:35 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const { Game, GameState } = require('./game.js');
 const db = require('../db');
@@ -70,13 +70,20 @@ class GameServer {
 		this.multiplayerGames.set(game_id, game);
 	}
 
-	createSingleplayerGame(player_id) {
-		if (this.singleplayerGames.has(player_id)) {
+	// createSingleplayerGame(player_id) {
+	createSingleplayerGame(game_id, player1_id, player2_id) { //for local game if user refresh the page before finishing or starting the game also not started/not finished games are stored...should not be a problem for local games
+		// if (this.singleplayerGames.has(player_id)) {
+/* 		if (this.singleplayerGames.has(game_id)) { don't think it is needed for local game
 			throw new Error(ErrorType.TOO_MANY_SINGLEPLAYER_GAMES, "Error: player can only run one singleplayer game at a time");
+		} */
+		if (player1_id === player2_id) {
+			throw new Error(ErrorType.BAD_PLAYER_ID, "Error: bad player id")
 		}
-		const game = new Game(SinglePlayerIds.PLAYER_1, SinglePlayerIds.PLAYER_2);
+		// const game = new Game(SinglePlayerIds.PLAYER_1, SinglePlayerIds.PLAYER_2);
+		const game = new Game(player1_id, player2_id);
 		game.type = GameType.SINGLE_PLAYER;
-		this.singleplayerGames.set(player_id, game);
+		// this.singleplayerGames.set(player_id, game);
+		this.singleplayerGames.set(game_id, game);
 	}
 
 	joinGame(player_id, game_id) {
@@ -101,7 +108,8 @@ class GameServer {
 					game = this.multiplayerGames.get(Number(sock.game_id));
 				}
 				else if (sock.game_type === GameType.SINGLE_PLAYER) {
-					game = this.singleplayerGames.get(sock.user_id);
+					// game = this.singleplayerGames.get(sock.user_id);
+					game = this.singleplayerGames.get(sock.game_id);
 
 				}
 				else {
@@ -123,27 +131,69 @@ class GameServer {
 				this.finishGame(game, game_id);
 			}
 		});
-		this.singleplayerGames.forEach((game, player_id) => {
+		// this.singleplayerGames.forEach((game, player_id) => {
+		this.singleplayerGames.forEach((game, game_id) => {
 			game.refreshGame();
 			// Single player game ending here.. yeah not pretty
 			if (game.gameState === GameState.FINSIHED) {
+				new Promise((resolve, reject) => { //last point was not stored indatabase
+					db.run('UPDATE matches SET winner_id = ?, loser_id = ?, \
+							status = ?, player1_score = ?, player2_score = ?, \
+							finished_rounds = ? WHERE id = ?', 
+					[
+						game.winner.id,
+						game.loser.id,
+						game.gameState,
+						game.players[0].score,
+						game.players[1].score,
+						game.finished_rounds,
+						game_id
+					],
+						(err, game) => {
+							if (err)
+								return reject(err);
+							resolve(game);
+						});
+				});
 				const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
 				this.sockets.forEach((socket) => {
-					if (socket.user_id === player_id) {
+					// if (socket.user_id === player_id) {
+					if (socket.game_id == game_id) {
 						socket.send(msg);
 						socket.close(1000, "Game has finished");
 						this.sockets.delete(socket);
 					}
 				});
-				this.singleplayerGames.delete(player_id);
+				// this.singleplayerGames.delete(player_id);
+				this.singleplayerGames.delete(game_id)
+				
+				// const msg = JSON.stringify({type: MessageType.STATE, payload: game.state});
+				// this.sockets.forEach( (sock) => {
+				// 	if (sock.game_id == game_id) {
+				// 		sock.send(msg);
+				// 		sock.close(1000, "Game has finished");
+				// 		this.sockets.delete(sock);
+				// 	}
+				// });
+				// this.singleplayerGames.delete(game_id); // Stop actively refreshing finished games
 			}
 		});
 	}
 
 	finishGame(game, id) {
-		new Promise((resolve, reject) => {
-			db.run('UPDATE matches SET winner_id = ?, loser_id = ?, status = ? WHERE id = ?', 
-			[game.winner.id, game.loser.id, game.gameState, id],
+		new Promise((resolve, reject) => { //last point was not stored in database
+			db.run('UPDATE matches SET winner_id = ?, loser_id = ?, \
+					status = ?, player1_score = ?, player2_score = ?, \
+					finished_rounds = ? WHERE id = ?', 
+			[
+				game.winner.id,
+				game.loser.id,
+				game.gameState,
+				game.players[0].score,
+				game.players[1].score,
+				game.finished_rounds,
+				id
+			],
 				(err, game) => {
 					if (err)
 						return reject(err);
@@ -164,6 +214,23 @@ class GameServer {
 	/** Updates game information in the database */
 	async updateDatabase() {
 		this.multiplayerGames.forEach( (value, key) => {
+			new Promise ((resolve, reject) => {
+				db.run(`UPDATE matches SET status = ?, finished_rounds = ?, player1_score = ?, player2_score = ? WHERE id = ?`, 
+					[
+						value.gameState,
+						value.finished_rounds, 
+						value.players[0].score,
+						value.players[1].score,
+						key
+					], 
+					(err, game) => {
+					if (err)
+						return reject(err);
+					resolve(game);
+				});
+			});
+		});
+		this.singleplayerGames.forEach( (value, key) => {
 			new Promise ((resolve, reject) => {
 				db.run(`UPDATE matches SET status = ?, finished_rounds = ?, player1_score = ?, player2_score = ? WHERE id = ?`, 
 					[

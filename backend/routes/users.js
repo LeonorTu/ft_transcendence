@@ -1,9 +1,8 @@
-const db = require('../db')
-
 const {
 	getUsers,
 	registerUser,
 	getUser,
+	getCurrentUser,
 	updateUser,
 	loginUser,
 	logoutUser,
@@ -15,6 +14,7 @@ const {
 	updateOnlineStatus,
 	getUserFriends,
 	removeFriend,
+	checkPassword,
 } = require('../handlers/users')
 
 const User = {
@@ -163,6 +163,32 @@ const getUserFriendsSchema = {
 	handler: getUserFriends
 }
 
+const checkPasswordSchema = {
+	schema: {
+		body: {
+			type: 'object',
+			properties: {
+				selected: { type: 'string' },
+				password: { type: 'string' },
+			},
+			required: [ 'selected', 'password' ],
+		},
+		response: {
+			200: {
+				type: 'object',
+				properties: {
+					ok: { type: 'boolean' },
+				},
+				required: ['ok'],
+			},
+			404: errorResponse,
+			500: errorResponse,
+		},
+		security: [{ bearerAuth: [] }],
+	},
+	handler: checkPassword,
+};
+
 function usersRoutes(fastify, options, done) {
 
 	const logoutUserSchema = {
@@ -295,6 +321,19 @@ function usersRoutes(fastify, options, done) {
 		handler: updateOnlineStatus
 	}
 
+	const getCurrentUserSchema = {
+		onRequest: [fastify.authenticate],
+		schema: {
+			response: {
+				200: User,
+				404: errorResponse,
+				500: errorResponse,
+			},
+			security: [{ bearerAuth: [] }],
+		},
+		handler: getCurrentUser,
+	};
+
 	fastify.get('/users', getUsersSchema)
 
 	fastify.get('/user/:username', getUserSchema)
@@ -320,6 +359,10 @@ function usersRoutes(fastify, options, done) {
 	fastify.delete('/remove_friend/:friendshipId', removeFriendSchema)
 
 	fastify.put('/update_online_status/:username', updateOnlineStatusSchema)
+
+	fastify.get('/user/me', getCurrentUserSchema);
+
+	fastify.post('/check_password', checkPasswordSchema)
 
 	done()
 }
