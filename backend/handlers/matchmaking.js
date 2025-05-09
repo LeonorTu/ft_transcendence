@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   matchmaking.js                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             //
-//   Updated: 2025/05/03 00:04:51 by jmakkone         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   matchmaking.js                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             */
+/*   Updated: 2025/05/09 16:05:22 by mpellegr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 const db = require('../db');
 const { game_server } = require('./game_server');
@@ -117,7 +117,7 @@ const matchmaking = async (request, reply) => {
       );
 
       // spin up the in-memory game
-      game_server.createGame(matchId, p1, p2);
+      game_server.createMultiplayerGame(matchId, p1, p2);
 
       await new Promise((res, rej) =>
         db.run('COMMIT', err => err ? rej(err) : res())

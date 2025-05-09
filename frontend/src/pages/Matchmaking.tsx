@@ -49,7 +49,7 @@ const Matchmaking = () => {
 			return;
 		}
 
-		const renderer = createGameRendererAdapter(gameId, user.authToken, canvas);
+		const renderer = createGameRendererAdapter(gameId, user.authToken, canvas, 'multi');
 
 
 		const keyDown = (e: KeyboardEvent) => {
