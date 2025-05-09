@@ -10,12 +10,15 @@ import {
   Error,
   Verify2FA,
   GameLobby,
+  LocalGame,
+  LocalTournament,
 } from './pages';
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
 import { action as loginAction } from './pages/Login';
 import { action as verify2FAAction } from './pages/Verify2FA';
 import { AuthProvider } from './context/AuthContext';
+import Dashboard from './pages/DashBoard';
 
 const router = createBrowserRouter([
   {
@@ -28,11 +31,15 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
+        path: '/dashboard',
+        element: <Dashboard />, 
+      },
+      {
         path: 'game',
         element: <Game />,
       },
       {
-        path: 'matchmaking',
+        path: '/game/remote',
         element: <Matchmaking />,
       },
       {
@@ -60,12 +67,20 @@ const router = createBrowserRouter([
         action: signupAction,
       },
       {
-        path: 'tournament',
-        element: <Tournament />,
+        path: 'tournament/local',
+        element: <LocalTournament />,
       },
       {
         path: 'profile',
         element: <UserProfile />,
+      },
+      {
+        path: '/game/local',
+        element: <LocalGame />,
+      },
+      {
+        path: 'tournament/remote',
+        element: <Tournament />,
       },
     ],
   },

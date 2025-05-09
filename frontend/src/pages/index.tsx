@@ -8,3 +8,5 @@ export { default as UserProfile } from './UserProfile'
 export { default as Error } from './Error'
 export { default as Verify2FA } from './Verify2FA';
 export { default as GameLobby } from './GameLobby';
+export { default as LocalGame } from './LocalGame';
+export { default as LocalTournament } from './LocalTournament';

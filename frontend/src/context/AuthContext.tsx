@@ -1,22 +1,18 @@
-// src/context/AuthContext.tsx
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  PropsWithChildren,
-} from 'react'
+// context/AuthContext.tsx
+import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export interface User {
-  //id: number
-  //username: string
-  authToken: string
+  id: string;
+  username: string;
+  // email: string;
+  authToken: string;
 }
 
-interface AuthContextShape {
-  user:   User | null
-  login:  (u: User) => void
-  logout: () => void
+interface AuthContextType {
+  user: User | null;
+  login: (userData: { username: string; authToken: string }) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextShape>({
@@ -25,11 +21,15 @@ const AuthContext = createContext<AuthContextShape>({
   logout: () => {},
 })
 
-export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const raw = sessionStorage.getItem('authUser')
-    return raw ? (JSON.parse(raw) as User) : null
-  })
+interface DecodedToken {
+  id: string;
+  username: string;
+  exp: number;
+  iat: number;
+}
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (user)
@@ -38,8 +38,29 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
       sessionStorage.removeItem('authUser')
   }, [user])
 
-  const login  = (u: User) => setUser(u)
-  const logout = ()         => setUser(null)
+  const login = (userData: { username: string; authToken: string }) => {
+    try {
+      // Decode the token to get the user ID
+      const decodedToken = jwtDecode<DecodedToken>(userData.authToken);
+
+      // Create the user object with ID from token
+      const user = {
+        id: decodedToken.id,
+        username: userData.username,
+        authToken: userData.authToken,
+      };
+
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+    } catch (error) {
+      console.error('Error decoding token:', error);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

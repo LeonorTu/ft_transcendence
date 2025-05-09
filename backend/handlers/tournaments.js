@@ -1,19 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   tournaments.js                                     :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/04/22 16:51:28 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/29 14:59:58 by mpellegr         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 const db = require('../db');
 const { game_server } = require('./game_server');
 
-const startTournament = async (tournamentId) => {
+const startTournament = async (tournamentId, gameType) => {
 	await new Promise((resolve, reject) => {
 		db.serialize(async () => {
 			db.run('BEGIN TRANSACTION');
@@ -60,8 +48,10 @@ const startTournament = async (tournamentId) => {
 							err => err ? rej(err) : res()
 						);
 					});
-
-					game_server.createGame(matchId, p1.user_id, p2.user_id);
+					if (gameType === 'local')
+						game_server.createSingleplayerGame(matchId, p1.user_id, p2.user_id);
+					else
+						game_server.createMultiplayerGame(matchId, p1.user_id, p2.user_id);
 				}
 
 				const rounds = Math.log2(shuffled.length);
@@ -131,7 +121,8 @@ const startTournament = async (tournamentId) => {
 // Combine the logic of creating, joining and starting the tournament under one endpoint
 //
 const tournament = async (request, reply) => {
-	const userId = request.user.id;
+	const gameType = request.body.game_type
+	const userId = gameType === 'local' ? request.body.player_id : request.user.id;
 
 	try {
 		// Check does the user already belong to a pending/active tournament
@@ -227,7 +218,7 @@ const tournament = async (request, reply) => {
 		// If we just hit 4 *and* it was still pending, start it
 		if (tourStatus === 'pending' && count >= 4) {
 			try {
-				await startTournament(tournamentId);
+				await startTournament(tournamentId, gameType);
 				tourStatus = 'active';
 			} catch (err) {
 				if (err.message.includes('SQLITE_CONSTRAINT')) {
@@ -435,6 +426,7 @@ const reportMatchResult = async (request, reply) => {
 	const tournamentId = Number(request.params.id);
 	const tmId = Number(request.params.tm_id);
 	const { winner_slot } = request.body; // 1 or 2
+	const gameType = request.body.game_type
 	try {
 		// Mark this tournament match as finished
 		const { changes } = await new Promise((resolve, reject) => {
@@ -522,7 +514,10 @@ const reportMatchResult = async (request, reply) => {
 						}
 					);
 				});
-				game_server.createGame(newMatchId, p1, p2);
+				if (gameType === 'local')
+					game_server.createSingleplayerGame(newMatchId, p1, p2);
+				else
+					game_server.createMultiplayerGame(newMatchId, p1, p2);
 			}
 		} else {
 			// Final match -> complete tournament

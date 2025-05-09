@@ -63,9 +63,12 @@ const createSingleplayerGameSchema = {
 		body: {
 			type: 'object',
 			properties: {
-				player_id: {type: 'integer'},
+				// player_id: {type: 'integer'},
+				player1_id: {type: 'integer'},
+				player2_id: {type: 'integer'}
 			},
-			required: ['player_id'],
+			// required: ['player_id'],
+			required: ['player1_id', 'player2_id']
 		},
 		response: {
 			200: {

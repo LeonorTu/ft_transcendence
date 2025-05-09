@@ -11,22 +11,11 @@ export const customFetch = axios.create({
 
 customFetch.interceptors.request.use(
   (config) => {
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      try {
-        const user = JSON.parse(userJson) as { authToken?: string };
-        if (user.authToken) {
-          config.headers = {
-            ...config.headers,
-            Authorization: `Bearer ${user.authToken}`,
-          };
-        }
-      } catch {
-        console.warn('Could not parse user from localStorage');
-      }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
-

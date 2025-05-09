@@ -105,7 +105,14 @@ export default function Tournament() {
   const fetchTournamentAuto = async () => {
     const res  = await fetch('http://localhost:8888/tournament/auto', {
       method:  'POST',
-      headers: { Authorization: `Bearer ${user!.authToken}` },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${user!.authToken}`
+      },
+      body: JSON.stringify({
+        player_id: -1,
+        game_type: 'remote',
+      }),
     })
     const body = await res.json()
     if (!res.ok) throw new Error(body.error || 'Unknown error')
@@ -185,7 +192,8 @@ export default function Tournament() {
     const renderer = createGameRendererAdapter(
       gameId,
       user!.authToken,
-      canvasRef.current
+      canvasRef.current,
+      'multi'
     )
     rendererRef.current = renderer
     renderer.start()
@@ -217,7 +225,10 @@ export default function Tournament() {
               'Content-Type': 'application/json',
               Authorization:  `Bearer ${user!.authToken}`,
             },
-            body: JSON.stringify({ winner_slot: winnerSlot }),
+            body: JSON.stringify({
+              winner_slot: winnerSlot,
+              game_type: 'remote',
+            }),
           }
         )
 
@@ -269,7 +280,7 @@ export default function Tournament() {
             padding:   '1rem 2.5rem',
             cursor:    'pointer',
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         >
           Back Home
         </button>
@@ -278,6 +289,9 @@ export default function Tournament() {
   }
 
   if (gameId) {
+/*     let currentGameId = bracket[0].tm_status === 'scheduled' ? 1 : 2 // TODO
+    if (bracket.length === 3 && bracket[1].tm_status !== 'scheduled')
+      currentGameId = 3 */
     return (
       <Container>
         <canvas id="game-canvas" style={{ display: 'none' }} width={1} height={1} />

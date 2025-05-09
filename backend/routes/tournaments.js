@@ -1,16 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   tournaments.js                                     :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/04/22 16:59:55 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/04/29 15:00:09 by mpellegr         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-const auth = require('../routes/auth')
+const auth = require('./auth')
 const db   = require('../db')
 
 const {
@@ -134,6 +122,14 @@ function tournamentRoutes(fastify, options, done) {
 	const tournamentSchema = {
 		onRequest: [ fastify.authenticate ],
 		schema: {
+			body: {
+				type: 'object',
+				properties: {
+					player_id: { type: 'integer' },
+					game_type: { type: 'string' },
+				},
+				required: ['player_id', 'game_type'],
+			},
 			response: {
 				200: TournamentResponse,
 				500: errorResponse,
@@ -181,9 +177,10 @@ function tournamentRoutes(fastify, options, done) {
 			body: {
 				type: 'object',
 				properties: {
-					winner_slot: { type: 'integer', enum: [1,2] }
+					winner_slot: { type: 'integer', enum: [1,2] },
+					game_type: { type: 'string' },
 				},
-				required: ['winner_slot']
+				required: ['winner_slot', 'game_type']
 			},
 			response: {
 				200: successResponse,
