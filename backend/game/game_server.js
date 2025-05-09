@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   game_server.js                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpellegr <mpellegr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 09:40:51 by pleander          #+#    #+#             */
-/*   Updated: 2025/05/08 10:26:48 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/09 17:58:35 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,7 +192,7 @@ class GameServer {
 				game.players[0].score,
 				game.players[1].score,
 				game.finished_rounds,
-				game_id
+				id
 			],
 				(err, game) => {
 					if (err)
