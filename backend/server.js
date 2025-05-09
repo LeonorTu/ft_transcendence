@@ -85,6 +85,8 @@ fastify.register(require('./routes/google'))
 
 fastify.register(require('./routes/game'))
 
+fastify.register(require('./routes/tournaments'))
+
 module.exports = fastify
 
 const PORT = 8888

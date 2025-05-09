@@ -10,6 +10,7 @@ import {
   Verify2FA,
   GameLobby,
   LocalGame,
+  LocalTournament,
 } from './pages';
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
@@ -61,8 +62,8 @@ const router = createBrowserRouter([
         action: signupAction,
       },
       {
-        path: 'tournament',
-        element: <Tournament />,
+        path: 'tournament/local',
+        element: <LocalTournament />,
       },
       {
         path: 'profile',
