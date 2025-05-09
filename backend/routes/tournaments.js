@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/07 01:41:19 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/05/08 17:59:41 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/09 11:56:42 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,8 +136,11 @@ function tournamentRoutes(fastify, options, done) {
 		schema: {
 			body: {
 				type: 'object',
-				properties: { player_id: { type: 'integer' } },
-				required: ['player_id'],
+				properties: {
+					player_id: { type: 'integer' },
+					game_type: { type: 'string' },
+				},
+				required: ['player_id', 'game_type'],
 			},
 			response: {
 				200: TournamentResponse,
@@ -186,9 +189,10 @@ function tournamentRoutes(fastify, options, done) {
 			body: {
 				type: 'object',
 				properties: {
-					winner_slot: { type: 'integer', enum: [1,2] }
+					winner_slot: { type: 'integer', enum: [1,2] },
+					game_type: { type: 'string' },
 				},
-				required: ['winner_slot']
+				required: ['winner_slot', 'game_type']
 			},
 			response: {
 				200: successResponse,
