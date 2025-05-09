@@ -10,7 +10,7 @@
 //                                                                            //
 // ************************************************************************** //
 
-const { GameServer, MessageType, Error, ErrorType } = require('../game/game_server');
+const { GameServer, MessageType, Error, ErrorType, SinglePlayerIds, GameType} = require('../game/game_server');
 const db = require('../db');
 const jwt = require("jsonwebtoken");
 
@@ -25,25 +25,48 @@ const runServer = (ws, req) => {
 	ws.on('message', (msg) => {
 		try {
 			const {type, payload} = JSON.parse(msg);
-			if (type === MessageType.JOIN) {
+			if (type === MessageType.JOIN_MULTI) {
+				console.log(payload);
 				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
 				game_server.joinGame(Number(user.id), Number(payload.game_id));
 				ws.game_id = payload.game_id;
 				ws.user_id = user.id;
+				ws.game_type = GameType.MULTI_PLAYER;
 				game_server.sockets.add(ws);
-				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game_server.games.get(Number(payload.game_id)).getSettings()}));
+				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game_server.multiplayerGames.get(Number(payload.game_id)).getSettings()}));
 				//console.log(`Player with id ${Number(payload.player_id)} joined game ${payload.game_id}`);
 			}
+			else if (type === MessageType.JOIN_SINGLE) {
+				const user = jwt.verify(payload.token, "supersecret"); // TODO: Replace with env variable
+				const game = game_server.singleplayerGames.get(Number(user.id));
+				game.players[0].joined = true;
+				game.players[1].joined = true;
+				ws.user_id = user.id;
+				ws.game_type = GameType.SINGLE_PLAYER;
+				game_server.sockets.add(ws);
+				ws.send(JSON.stringify({type: MessageType.SETTINGS, payload: game.getSettings()}));
+			}
+
 			else if (type === MessageType.CONTROL_INPUT) {
-				
-				if (!game_server.games.has(Number(ws.game_id))) {
-					throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
+				if (ws.game_type === GameType.MULTI_PLAYER)
+				{
+					if (!game_server.multiplayerGames.has(Number(ws.game_id))) {
+						throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
+					}
+					const game = game_server.multiplayerGames.get(Number(ws.game_id));
+					if (!game.getPlayer(ws.user_id).joined) {
+						console.warn(`Player with id ${ws.user_id} has not joined the game yet`)
+					}
+					game.acceptPlayerInput(ws.user_id, payload.input);
 				}
-				const game = game_server.games.get(Number(ws.game_id));
-				if (!game.getPlayer(ws.user_id).joined) {
-					console.warn(`Player with id ${ws.user_id} has not joined the game yet`)
+				else if (ws.game_type === GameType.SINGLE_PLAYER) {
+					if (!game_server.singleplayerGames.get(Number(ws.user_id))) {
+						throw new Error(ErrorType.GAME_DOES_NOT_EXIST, "The game does not exist");
+					}
+					const game = game_server.singleplayerGames.get(Number(ws.user_id));
+					game.acceptPlayerInput(SinglePlayerIds.PLAYER_1, payload.input_player1);
+					game.acceptPlayerInput(SinglePlayerIds.PLAYER_2, payload.input_player2);
 				}
-				game.acceptPlayerInput(ws.user_id, payload.input);
 			}
 		}
 		catch (e) {
@@ -57,7 +80,7 @@ const runServer = (ws, req) => {
 	});
 };
 
-const createNewGame = async (request, reply) => {
+const createNewMultiplayerGame = async (request, reply) => {
 	const { player1_id, player2_id } = request.body;
 	try {
 		const p1_exists = await new Promise((resolve, reject) => {
@@ -88,7 +111,7 @@ const createNewGame = async (request, reply) => {
 				}
 			);
 		});
-		game_server.createGame(gameId, player1_id, player2_id);
+		game_server.createMultiplayerGame(gameId, player1_id, player2_id);
 		reply.status(200).send({
 			"id": gameId
 		});
@@ -96,7 +119,34 @@ const createNewGame = async (request, reply) => {
 	catch (e) {
 		request.log.error(e);
 		if (e.error_type === ErrorType.BAD_PLAYER_ID || e.error_type === ErrorType.GAME_ID_ALREADY_EXISTS) {
-			reply.status(400).send({ error: e.msg});
+			reply.status(400).send({ error: e.msg });
+		}
+		else {
+			reply.status(500).send({ error: 'Internal Server Error' });
+		}
+	}
+};
+
+
+const createNewSinglePlayerGame = async (request, reply) => {
+	const { player_id } = request.body;
+	try {
+		const p1_exists = await new Promise((resolve, reject) => {
+			db.get('SELECT * FROM users WHERE id = ?', [player_id], (err, row) => {
+				if (err) return (reject(err));
+					resolve(row);
+			});
+		});
+		if (!p1_exists) {
+			reply.status(400).send({ error: `player_id ${player_id} does not exist`});
+		}
+		game_server.createSingleplayerGame(player_id);
+		reply.status(200);
+	}
+	catch (e) {
+		request.log.error(e);
+		if (e.error_type === ErrorType.BAD_PLAYER_ID || e.error_type === ErrorType.GAME_ID_ALREADY_EXISTS) {
+			reply.status(400).send({ error: e.msg });
 		}
 		else {
 			reply.status(500).send({ error: 'Internal Server Error' });
@@ -133,4 +183,4 @@ const getGame = (request, reply) => {
 	})
 };
 
-module.exports = { runServer, createNewGame, listGames, getGame, game_server }
+module.exports = { runServer, createNewMultiplayerGame, createNewSinglePlayerGame, listGames, getGame, game_server }

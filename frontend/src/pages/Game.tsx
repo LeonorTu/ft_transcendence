@@ -158,7 +158,8 @@ const Game = () => {
     const renderer = createGameRendererAdapter(
       gameId,
       user.authToken,
-      canvasRef.current
+      canvasRef.current,
+      "multi"
     );
 
     // Add event listeners
@@ -189,7 +190,7 @@ const Game = () => {
     if (!player1Id || !player2Id || !user?.authToken) return;
 
     try {
-      const response = await fetch('http://localhost:8888/game/new', {
+      const response = await fetch('http://localhost:8888/game/new-multiplayer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
