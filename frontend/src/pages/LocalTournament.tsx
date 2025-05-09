@@ -22,6 +22,15 @@ const Container = styled.section`
   padding-top: 5rem;
 `;
 
+const TournamentContainer = styled.div`
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  min-height:     100vh;
+  padding:        2rem;
+  color:          white;
+`
+
 const SearchWrapper = styled.div`
   width: 20rem;
   position: relative;
@@ -226,7 +235,7 @@ const LocalTournament = () => {
   const [addedPlayers, setAddedPlayers] = useState([]);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [password, setPassword] = useState('');
-  // const [lastAdded, setLastAdded] = useState(null);
+  const [lastAdded, setLastAdded] = useState(null);
   // const [creatorId, setCreatorId] = useState(null)
   const { user } = useAuth();
   const [readyToRender, setReadyToRender] = useState(false)
@@ -239,7 +248,7 @@ const LocalTournament = () => {
   const [loading,      setLoading]      = useState(true)
   const [championName, setChampionName] = useState<string | null>(null)
   const [winnerName,   setWinnerName]   = useState<string | null>(null)
-  const [myUserId,     setMyUserId]     = useState<number | null>(null)
+  // const [myUserId,     setMyUserId]     = useState<number | null>(null)
 
   const joinTournament = useCallback(async (playerId: number) => {
     try {
@@ -249,7 +258,10 @@ const LocalTournament = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user!.authToken}`
         },
-        body: JSON.stringify({ player_id: playerId }),
+        body: JSON.stringify({
+          player_id: playerId,
+          game_type: 'local',
+        }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || 'Unknown error')
@@ -257,7 +269,7 @@ const LocalTournament = () => {
       setTourneyId(body.tournament_id)
       setPlayers(body.players)
       setStarted(body.started)
-      setMyUserId(body.user_id)
+      // setMyUserId(body.user_id)
 
       if (body.bracket) {
         const withRoundOne: BrRow[] = body.bracket.map((m: any) => ({
@@ -322,12 +334,12 @@ const LocalTournament = () => {
       })
       // console.log('password check response:', response);
       if (response.data.ok) {
-        setAddedPlayers([...addedPlayers, selected]);
-        // setLastAdded(selected);
+        setLastAdded(selected);
         setShowPasswordPrompt(false);
         setQuery('');
         setSelected(null);
         setPassword('');
+        setAddedPlayers([...addedPlayers, selected]);
       } else {
         alert("Invalid password!");
       }
@@ -337,12 +349,12 @@ const LocalTournament = () => {
   };
 
   useEffect(() => {
-    if (!selected)
+    if (!lastAdded)
       return
-    console.log("selected player: ", selected)
+    // console.log("lastAdded player: ", lastAdded)
     const fetchAndJoin = async () => {
       try {
-        const res = await customFetch.get(`/user/${selected}`)
+        const res = await customFetch.get(`/user/${lastAdded}`)
         const nextUserId = res.data.id
         await joinTournament(nextUserId)
       } catch (err) {
@@ -350,40 +362,7 @@ const LocalTournament = () => {
       }
     }
     fetchAndJoin()
-  }, [selected])
-
-/*   useEffect(() => {
-    if (addedPlayers.length !== 4 || creatorId === null || !lastAdded)
-      return
-    const createLocalMatch = async () => {
-      console.log("added players: ", addedPlayers)
-      console.log('ready to create tournament')
-      try {
-        const res = await customFetch.get(`/user/${lastAdded}`)
-        const secondUserId = res.data.id
-        const response = await fetch('http://localhost:8888/game/new-singleplayer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.authToken}`,
-          },
-          body: JSON.stringify({
-            // player_id: parseInt(creatorId),
-            player1_id: parseInt(creatorId),
-            player2_id: parseInt(secondUserId),
-          }),
-        });
-        const data = await response.json()
-        if (data.id) {
-          setGameId(data.id)
-          setReadyToRender(true)
-        }
-      } catch (err) {
-        console.error('Failed to create tournament:', err);
-      }
-    };
-    createLocalMatch();
-  }, [addedPlayers, creatorId, lastAdded]); */
+  }, [lastAdded])
 
   // fetch full bracket
   const fetchFullBracket = async () => {
@@ -480,7 +459,10 @@ const LocalTournament = () => {
               'Content-Type': 'application/json',
               Authorization:  `Bearer ${user!.authToken}`,
             },
-            body: JSON.stringify({ winner_slot: winnerSlot }),
+            body: JSON.stringify({
+              winner_slot: winnerSlot,
+              game_type: 'local',
+            }),
           }
         )
 
@@ -504,6 +486,10 @@ const LocalTournament = () => {
     }
 	}, [addedPlayers, user?.authToken, gameId]);
 
+  const nextPlayableMatch = bracket.find(
+    m => m.tm_status === 'scheduled' && m.game_id
+  );
+
   if (championName) {
     return (
       <ChampionScreen>
@@ -517,7 +503,7 @@ const LocalTournament = () => {
             padding:   '1rem 2.5rem',
             cursor:    'pointer',
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         >
           Back Home
         </button>
@@ -526,92 +512,100 @@ const LocalTournament = () => {
   }
 
   if (gameId) {
+    let currentGameId = bracket[0].tm_status === 'scheduled' ? 1 : 2
+    if (bracket.length === 3 && bracket[1].tm_status !== 'scheduled')
+      currentGameId = 3
     return (
-      <Container>
+      <TournamentContainer>
         <canvas id="game-canvas" style={{ display: 'none' }} width={1} height={1} />
-        <h1>Game #{gameId}</h1>
+        <h1>Game #{currentGameId}</h1>
         <GameCanvas ref={canvasRef} width={DEFAULT_WIDTH} height={DEFAULT_HEIGHT} />
-      </Container>
+      </TournamentContainer>
     )
   }
 
   const rounds = Math.max(1, ...bracket.map(b => b.round))
 
-  return (
-    <Container>
-    {addedPlayers.length < 4 && (
-      <SearchWrapper>
-        <Input
-        type="text"
-        placeholder="Search player..."
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setSelected(null);
-        }}
-        />
-        {filtered.length > 0 && (
-        <Suggestions>
-          {filtered.map(user => (
-          <SuggestionItem key={user.id} onClick={() => handleSelect(user.username)}>
-            {user.username}
-          </SuggestionItem>
+  if (addedPlayers.length < 4) {
+    return (
+      <Container>
+        <SearchWrapper>
+          <Input
+          type="text"
+          placeholder="Search player..."
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelected(null);
+          }}
+          />
+          {filtered.length > 0 && (
+          <Suggestions>
+            {filtered.map(user => (
+            <SuggestionItem key={user.id} onClick={() => handleSelect(user.username)}>
+              {user.username}
+            </SuggestionItem>
+            ))}
+          </Suggestions>
+          )}
+    
+          <AddButton onClick={handleAddPlayer} disabled={!selected}>
+          Add Player
+          </AddButton>
+    
+          {addedPlayers.length > 0 && (
+          <PlayerList>
+          <h4>Added Players:</h4>
+          {addedPlayers.map((player, id) => (
+            <li key={id}>
+              {id === 0
+              ? `${player} (you)`
+              :player
+              }
+            </li>
           ))}
-        </Suggestions>
+          </PlayerList>
         )}
-  
-        <AddButton onClick={handleAddPlayer} disabled={!selected}>
-        Add Player
-        </AddButton>
-  
-        {addedPlayers.length > 0 && (
-        <PlayerList>
-        <h4>Added Players:</h4>
-        {addedPlayers.map((player, id) => (
-          <li key={id}>
-            {id === 0
-            ? `${player} (you)`
-            :player
-            }
-          </li>
-        ))}
-        </PlayerList>
+        </SearchWrapper>
+    
+      {showPasswordPrompt && (
+      <PasswordPrompt>
+        <div>
+        <CloseButton onClick={() => setShowPasswordPrompt(false)}>×</CloseButton>
+        <h4>Please enter the password to add {selected}</h4>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter password"
+        />
+        <button onClick={handlePasswordSubmit}>Submit</button>
+        </div>
+      </PasswordPrompt>
       )}
-      </SearchWrapper>
-    )}
-  
-    {showPasswordPrompt && (
-    <PasswordPrompt>
-      <div>
-      <CloseButton onClick={() => setShowPasswordPrompt(false)}>×</CloseButton>
-      <h4>Please enter the password to add {selected}</h4>
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Enter password"
-      />
-      <button onClick={handlePasswordSubmit}>Submit</button>
-      </div>
-    </PasswordPrompt>
-    )}
+       </Container>
+    )
+  }
 
+
+  if (addedPlayers.length === 4) {
+    return (
+      <TournamentContainer>
     <h1>Tournament #{tourneyId} Bracket</h1>
       {winnerName && <Status>🎉 {winnerName} wins! 🎉</Status>}
       <p>Select your match to ▶ Play:</p>
 
       <BracketGrid $rounds={rounds}>
         {bracket.map(m => {
-          const isMyMatch =
-            m.tm_status === 'scheduled' &&
-            (m.player1_id === myUserId || m.player2_id === myUserId)
+          const isNextMatch = m.tm_id === nextPlayableMatch?.tm_id;
 
           return (
             <MatchCard
               key={`${m.round}-${m.tm_id}`}
-              $clickable={!!(isMyMatch && m.game_id)}
+              $clickable={!!(isNextMatch && m.game_id)}
               onClick={() => {
-                if (isMyMatch && m.game_id) setGameId(m.game_id)
+                // if (isMyMatch && m.game_id) setGameId(m.game_id)
+                if (isNextMatch) setGameId(m.game_id);
               }}
             >
               <strong>{m.player1_username ?? 'TBD'}</strong> vs{' '}
@@ -619,7 +613,7 @@ const LocalTournament = () => {
               <br />
               Round {m.round} —{' '}
               {m.tm_status === 'scheduled'
-                ? isMyMatch && m.game_id
+                ? isNextMatch && m.game_id
                   ? '▶ Play'
                   : '⧗ Waiting'
                 : m.tm_status === 'finished'
@@ -629,17 +623,9 @@ const LocalTournament = () => {
           )
         })}
       </BracketGrid>
-  
-{/*     {addedPlayers.length === 4 && (
-      <GameCanvas
-      ref={canvasRef}
-      width={DEFAULT_WIDTH}
-      height={DEFAULT_HEIGHT}
-      />
-    )} */}
-    </Container>
-    );
-
+      </TournamentContainer>
+    )
+  }
 }
-
+  
 export default LocalTournament;
