@@ -87,18 +87,18 @@ CREATE TABLE IF NOT EXISTS pending_match_players (
 
 -- Matches table
 CREATE TABLE IF NOT EXISTS matches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player1_id INTEGER NOT NULL,
-    player2_id INTEGER NOT NULL,
-    player1_score INTEGER DEFAULT 0,
-    player2_score INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'not_started',
-    finished_rounds INTEGER DEFAULT 0,
-    winner_id INTEGER DEFAULT NULL,
-    loser_id INTEGER DEFAULT NULL,
-    match_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (player1_id) REFERENCES users(id),
-    FOREIGN KEY (player2_id) REFERENCES users(id),
-    FOREIGN KEY (winner_id) REFERENCES users(id),
-    FOREIGN KEY (loser_id) REFERENCES users(id)
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	player1_id INTEGER NOT NULL,
+	player2_id INTEGER NOT NULL,
+	player1_score INTEGER DEFAULT 0,
+	player2_score INTEGER DEFAULT 0,
+	status TEXT DEFAULT 'not_started',
+	finished_rounds INTEGER DEFAULT 0,
+	winner_id INTEGER DEFAULT NULL,
+	loser_id INTEGER DEFAULT NULL,
+	match_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (player1_id) REFERENCES users(id),
+	FOREIGN KEY (player2_id) REFERENCES users(id),
+	FOREIGN KEY (winner_id) REFERENCES users(id),
+	FOREIGN KEY (loser_id) REFERENCES users(id)
 );

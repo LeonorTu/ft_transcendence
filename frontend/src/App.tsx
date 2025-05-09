@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import {
   Game,
+  Matchmaking,
   Home,
   Login,
   Signup,
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
         element: <Game />,
       },
       {
+        path: '/game/remote',
+        element: <Matchmaking />,
+      },
+      {
         path: 'lobby',
         element: <GameLobby />,
       },
@@ -72,6 +77,10 @@ const router = createBrowserRouter([
       {
         path: '/game/local',
         element: <LocalGame />,
+      },
+      {
+        path: 'tournament/remote',
+        element: <Tournament />,
       },
     ],
   },

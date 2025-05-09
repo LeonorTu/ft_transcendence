@@ -60,8 +60,6 @@ export function createGameRendererAdapter(
   }
   renderer.ctx = ctx;
 
-  // return renderer;
-
   //try out to detect match ending.
   let _overCalled = false;
   const _origRenderGame = renderer.renderGame.bind(renderer);
@@ -75,5 +73,5 @@ export function createGameRendererAdapter(
     }
   };
 
-  return renderer as any;
+  return renderer as any; 
 }

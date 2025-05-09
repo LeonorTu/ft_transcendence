@@ -15,11 +15,11 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: () => {},
+const AuthContext = createContext<AuthContextShape>({
+  user:   null,
+  login:  () => {},
   logout: () => {},
-});
+})
 
 interface DecodedToken {
   id: string;
@@ -32,11 +32,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-  }, []);
+    if (user)
+      sessionStorage.setItem('authUser', JSON.stringify(user))
+    else
+      sessionStorage.removeItem('authUser')
+  }, [user])
 
   const login = (userData: { username: string; authToken: string }) => {
     try {
@@ -66,8 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
-
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
