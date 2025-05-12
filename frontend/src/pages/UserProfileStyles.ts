@@ -238,3 +238,32 @@ export const EmptyState = styled.div`
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 `;
+
+export const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+`;
+
+export const StatCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;  /* push label to top, value to bottom */
+  padding: 1rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+`;
+
+export const StatLabel = styled.div`
+  font-size: 0.6rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+`;
+
+export const StatValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #222;
+`;

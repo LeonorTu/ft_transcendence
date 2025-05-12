@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-// import { customFetch } from '../utils';
+import { customFetch } from '../utils';
 
 interface Match {
   id: number;
@@ -10,18 +10,17 @@ interface Match {
   date: string;
 }
 
-export const useMatches = (userId?: number) => {
+export const useMatches = (userName?: string) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    /*
     const fetchMatches = async () => {
-      if (!userId) return;
+      if (!userName) return;
 
       try {
         setLoading(true);
-        const response = await customFetch.get(`/user/${userId}/matches`);
+        const response = await customFetch.get(`/user/${userName}/matches`);
         setMatches(response.data);
       } catch (error) {
         console.error('Error fetching matches:', error);
@@ -31,9 +30,8 @@ export const useMatches = (userId?: number) => {
     };
 
     fetchMatches();
-    */
 
-    // mock data:
+/*     // mock data:
     const mockMatches: Match[] = [
       {
         id: 1,
@@ -60,8 +58,8 @@ export const useMatches = (userId?: number) => {
         date: '2023-04-05T12:15:00Z',
       },
     ];
-    setMatches(mockMatches);
-  }, [userId]);
+    setMatches(mockMatches); */
+  }, [userName]);
 
   // Format date for the match history
   const formatDate = (dateString: string) => {

@@ -5,9 +5,11 @@ import { ProfileContainer } from './UserProfileStyles';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { FriendsSection } from '../components/profile/FriendsSection';
 import { MatchHistorySection } from '../components/profile/MatchHistorySection';
+import { StatsSection } from '../components/profile/StatsSection';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useFriends } from '../hooks/useFriends';
 import { useMatches } from '../hooks/useMatches';
+import { useStats }   from '../hooks/useStats';
 
 const UserProfile: React.FC = () => {
   const { username } = useParams<{ username?: string }>();
@@ -25,7 +27,9 @@ const UserProfile: React.FC = () => {
     getFriendshipId,
   } = useFriends(targetUsername, userProfile, currentUser);
 
-  const { matches, formatDate } = useMatches(userProfile?.id);
+  // const { matches, formatDate } = useMatches(userProfile?.id);
+  const { matches, formatDate } = useMatches(targetUsername);
+  const { stats, loading: statsLoading, error: statsError } = useStats(targetUsername);
 
   // Render loading state
   if (loading) {
@@ -54,6 +58,11 @@ const UserProfile: React.FC = () => {
 
       {/* Friends list section */}
       {isCurrentUser && <FriendsSection friends={friends} />}
+
+      {/* only show stats once loaded */}
+      {!statsLoading && stats && <StatsSection stats={stats} />}
+      {statsLoading && <div>Loading stats…</div>}
+      {statsError   && <div className="error">Error loading stats</div>}
 
       {/* Match history section */}
       <MatchHistorySection matches={matches} formatDate={formatDate} />
