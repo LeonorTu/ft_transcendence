@@ -191,6 +191,8 @@ const Game = () => {
 
     try {
       const response = await fetch('http://localhost:8888/game/new-multiplayer', {
+      // const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+      // const response = await fetch(`${apiUrl}/game/new`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

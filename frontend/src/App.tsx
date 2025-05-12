@@ -82,6 +82,10 @@ const router = createBrowserRouter([
         path: 'tournament/remote',
         element: <Tournament />,
       },
+      {
+        path: 'profile/:username',
+        element: <UserProfile />,
+      },
     ],
   },
 ]);

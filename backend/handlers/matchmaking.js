@@ -6,13 +6,14 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:45:31 by jmakkone          #+#    #+#             */
-/*   Updated: 2025/05/09 16:05:22 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/12 12:37:01 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 const db = require('../db');
 const { game_server } = require('./game_server');
-
+const { Mutex } = require('async-mutex');
+const txMutex = new Mutex();
 
 // Single-endpoint “one-button” matchmaking:
 // 
@@ -45,42 +46,149 @@ const { game_server } = require('./game_server');
 //   }
 
 const matchmaking = async (request, reply) => {
-  const userId = request.user.id;
+  return txMutex.runExclusive(async () => {
+    const userId = request.user.id;
+    let inTransaction = false;
 
-  try {
-    // BEGIN TRANSACTION to serialize concurrent callers
-    await new Promise((res, rej) =>
-      db.run('BEGIN IMMEDIATE', err => err ? rej(err) : res())
-    );
+    try {
+      // BEGIN TRANSACTION to serialize concurrent callers
+      await new Promise((res, rej) =>
+        db.run('BEGIN IMMEDIATE', err => {
+          if (err) return rej(err)
+            inTransaction = true
+            res()
+        })
+      );
 
-    // Join somebody else's open lobby (exactly 1 other player)
-    const joinRow = await new Promise((res, rej) =>
-      db.get(
-        `
-          SELECT pm.id AS pending_id
-            FROM pending_matches pm
-            JOIN pending_match_players pmp
-              ON pmp.pending_id = pm.id
-           WHERE pm.status = 'open'
-             AND pm.id NOT IN (
-               SELECT pending_id
-                 FROM pending_match_players
-                WHERE user_id = ?
-             )
-           GROUP BY pm.id
-          HAVING COUNT(*) = 1
-          ORDER BY pm.created_at ASC
-          LIMIT 1
-        `,
-        [userId],
-        (err, row) => err ? rej(err) : res(row)
-      )
-    );
+      // Join somebody else's open lobby (exactly 1 other player)
+      const joinRow = await new Promise((res, rej) =>
+        db.get(
+          `
+            SELECT pm.id AS pending_id
+              FROM pending_matches pm
+              JOIN pending_match_players pmp
+                ON pmp.pending_id = pm.id
+            WHERE pm.status = 'open'
+              AND pm.id NOT IN (
+                SELECT pending_id
+                  FROM pending_match_players
+                  WHERE user_id = ?
+              )
+            GROUP BY pm.id
+            HAVING COUNT(*) = 1
+            ORDER BY pm.created_at ASC
+            LIMIT 1
+          `,
+          [userId],
+          (err, row) => err ? rej(err) : res(row)
+        )
+      );
 
-    if (joinRow) {
-      const pendingId = joinRow.pending_id;
+      if (joinRow) {
+        const pendingId = joinRow.pending_id;
 
-      // add the second player
+        // add the second player
+        await new Promise((res, rej) =>
+          db.run(
+            'INSERT INTO pending_match_players (pending_id, user_id) VALUES (?, ?)',
+            [pendingId, userId],
+            err => err ? rej(err) : res()
+          )
+        );
+
+        // fetch both participants
+        const players = await new Promise((res, rej) =>
+          db.all(
+            'SELECT user_id FROM pending_match_players WHERE pending_id = ?',
+            [pendingId],
+            (err, rows) => err ? rej(err) : res(rows.map(r => r.user_id)))
+        );
+        const [p1, p2] = players;
+
+        // create the real match
+        const matchId = await new Promise((res, rej) =>
+          db.run(
+            'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
+            [p1, p2],
+            function(err) { err ? rej(err) : res(this.lastID) }
+          )
+        );
+
+        // mark lobby full + attach match_id
+        await new Promise((res, rej) =>
+          db.run(
+            'UPDATE pending_matches SET status = ?, match_id = ? WHERE id = ?',
+            ['full', matchId, pendingId],
+            err => err ? rej(err) : res()
+          )
+        );
+
+        // spin up the in-memory game
+        game_server.createMultiplayerGame(matchId, p1, p2);
+
+        await new Promise((res, rej) =>
+          db.run('COMMIT', err => err ? rej(err) : res())
+        );
+        return reply.send({ match_id: matchId });
+      }
+
+      // Did user just get promoted by someone else
+      const doneRow = await new Promise((res, rej) =>
+        db.get(
+          `
+            SELECT pm.match_id
+              FROM pending_matches pm
+              JOIN pending_match_players pmp
+                ON pmp.pending_id = pm.id
+              JOIN matches m
+                ON m.id = pm.match_id
+            WHERE pmp.user_id = ?
+              AND pm.match_id IS NOT NULL
+              AND m.status    != 'finished'
+            LIMIT 1
+          `,
+          [userId],
+          (err, row) => err ? rej(err) : res(row)
+        )
+      );
+      if (doneRow) {
+        await new Promise((res, rej) =>
+          db.run('COMMIT', err => err ? rej(err) : res())
+        );
+        return reply.send({ match_id: doneRow.match_id });
+      }
+
+      // Does user already have an open lobby
+      const openRow = await new Promise((res, rej) =>
+        db.get(
+          `
+            SELECT pm.id AS pending_id
+              FROM pending_matches pm
+              JOIN pending_match_players pmp
+                ON pmp.pending_id = pm.id
+            WHERE pmp.user_id = ?
+              AND pm.status   = 'open'
+            LIMIT 1
+          `,
+          [userId],
+          (err, row) => err ? rej(err) : res(row)
+        )
+      );
+      if (openRow) {
+        await new Promise((res, rej) =>
+          db.run('COMMIT', err => err ? rej(err) : res())
+        );
+        return reply.send({ pending_id: openRow.pending_id });
+      }
+
+      // If no lobby create one & auto-join user
+      const pendingId = await new Promise((res, rej) =>
+        db.run(
+          'INSERT INTO pending_matches (creator_id) VALUES (?)',
+          [userId],
+          function(err) { err ? rej(err) : res(this.lastID) }
+        )
+      );
       await new Promise((res, rej) =>
         db.run(
           'INSERT INTO pending_match_players (pending_id, user_id) VALUES (?, ?)',
@@ -89,120 +197,26 @@ const matchmaking = async (request, reply) => {
         )
       );
 
-      // fetch both participants
-      const players = await new Promise((res, rej) =>
-        db.all(
-          'SELECT user_id FROM pending_match_players WHERE pending_id = ?',
-          [pendingId],
-          (err, rows) => err ? rej(err) : res(rows.map(r => r.user_id)))
-      );
-      const [p1, p2] = players;
-
-      // create the real match
-      const matchId = await new Promise((res, rej) =>
-        db.run(
-          'INSERT INTO matches (player1_id, player2_id) VALUES (?, ?)',
-          [p1, p2],
-          function(err) { err ? rej(err) : res(this.lastID) }
-        )
-      );
-
-      // mark lobby full + attach match_id
-      await new Promise((res, rej) =>
-        db.run(
-          'UPDATE pending_matches SET status = ?, match_id = ? WHERE id = ?',
-          ['full', matchId, pendingId],
-          err => err ? rej(err) : res()
-        )
-      );
-
-      // spin up the in-memory game
-      game_server.createMultiplayerGame(matchId, p1, p2);
-
       await new Promise((res, rej) =>
         db.run('COMMIT', err => err ? rej(err) : res())
       );
-      return reply.send({ match_id: matchId });
+      return reply.send({ pendingId });
     }
-
-    // Did user just get promoted by someone else
-    const doneRow = await new Promise((res, rej) =>
-      db.get(
-        `
-          SELECT pm.match_id
-            FROM pending_matches pm
-            JOIN pending_match_players pmp
-              ON pmp.pending_id = pm.id
-            JOIN matches m
-              ON m.id = pm.match_id
-           WHERE pmp.user_id = ?
-             AND pm.match_id IS NOT NULL
-             AND m.status    != 'finished'
-           LIMIT 1
-        `,
-        [userId],
-        (err, row) => err ? rej(err) : res(row)
-      )
-    );
-    if (doneRow) {
-      await new Promise((res, rej) =>
-        db.run('COMMIT', err => err ? rej(err) : res())
-      );
-      return reply.send({ match_id: doneRow.match_id });
+    catch (err) {
+      // ROLLBACK on any error
+      if (inTransaction) {
+        try {
+          await new Promise((res, rej) =>
+            db.run('ROLLBACK', err => err ? rej(err) : res())
+          );
+        } catch (rollbackErr) {
+          request.log.error(`Rollback failed: ${rollbackErr.message}`);
+        }
+      }
+      request.log.error(`Error in matchmaking: ${err.message}`);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-
-    // Does user already have an open lobby
-    const openRow = await new Promise((res, rej) =>
-      db.get(
-        `
-          SELECT pm.id AS pending_id
-            FROM pending_matches pm
-            JOIN pending_match_players pmp
-              ON pmp.pending_id = pm.id
-           WHERE pmp.user_id = ?
-             AND pm.status   = 'open'
-           LIMIT 1
-        `,
-        [userId],
-        (err, row) => err ? rej(err) : res(row)
-      )
-    );
-    if (openRow) {
-      await new Promise((res, rej) =>
-        db.run('COMMIT', err => err ? rej(err) : res())
-      );
-      return reply.send({ pending_id: openRow.pending_id });
-    }
-
-    // If no lobby create one & auto-join user
-    const pendingId = await new Promise((res, rej) =>
-      db.run(
-        'INSERT INTO pending_matches (creator_id) VALUES (?)',
-        [userId],
-        function(err) { err ? rej(err) : res(this.lastID) }
-      )
-    );
-    await new Promise((res, rej) =>
-      db.run(
-        'INSERT INTO pending_match_players (pending_id, user_id) VALUES (?, ?)',
-        [pendingId, userId],
-        err => err ? rej(err) : res()
-      )
-    );
-
-    await new Promise((res, rej) =>
-      db.run('COMMIT', err => err ? rej(err) : res())
-    );
-    return reply.send({ pending_id });
-  }
-  catch (err) {
-    // ROLLBACK on any error
-    await new Promise((res, rej) =>
-      db.run('ROLLBACK', err => err ? rej(err) : res())
-    );
-    request.log.error(`Error in matchmaking: ${err.message}`);
-    return reply.status(500).send({ error: 'Internal server error' });
-  }
+  })
 };
 
 module.exports = { matchmaking };
