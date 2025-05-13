@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { toast } from 'react-toastify';
@@ -63,14 +63,89 @@ const ButtonContainer = styled.div`
   margin-top: 1.5rem;
 `;
 
+const ToggleWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.75rem;
+  color: #fff;
+`;
+
+const ToggleLabel = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.2rem;
+`;
+
+const ToggleInput = styled.input.attrs({ type: 'checkbox' })`
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + span {
+    background-color: #00ffaa;
+  }
+  &:checked + span::before {
+    transform: translateX(1.3rem);
+  }
+`;
+
+const Slider = styled.span`
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #444;
+  border-radius: 1.2rem;
+  transition: 0.3s;
+
+  &::before {
+    content: '';
+    position: absolute;
+    height: 1rem;
+    width: 1rem;
+    left: 0.1rem;
+    bottom: 0.1rem;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+`;
+
+
 const UserSettings = () => {
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newUsername, setNewUsername] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const { user, logout } = useAuth();
-
 	const navigate = useNavigate();
+	const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+
+	useEffect(() => {
+		(async () => {
+		try {
+			const resp = await fetch('http://localhost:8888/user/me', {
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${user.authToken}`,
+				},
+			});
+			if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+			const data = await resp.json();
+			// console.log(data)
+			setTwoFAEnabled(Number(data.two_fa) === 1);
+		} catch (err) {
+			console.error('Failed to fetch 2FA status', err);
+			toast.error('Could not load 2FA status');
+		}
+		})();
+	}, [user.authToken]);
+	// console.log('twoFAEnabled: ', twoFAEnabled)
+	
+	const handleToggle2FA = () => {
+		setTwoFAEnabled(prev => !prev)
+	}
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -89,7 +164,6 @@ const UserSettings = () => {
 				return;
 			}
 		}
-
 		try {
 			const response = await fetch(`http://localhost:8888/user/${user.username}/update`, {
 				method: 'PUT',
@@ -100,7 +174,8 @@ const UserSettings = () => {
 				body: JSON.stringify({
 					currentPassword,
 					newPassword: newPassword || undefined,
-					newUsername: newUsername || undefined
+					newUsername: newUsername || undefined,
+					twoFA: twoFAEnabled ? 1 : 0,
 				}),
 			});
 			if (response.status === 200) {
@@ -108,7 +183,7 @@ const UserSettings = () => {
 				setTimeout(() => {
 					logout();
 					navigate('/login');
-				}, 1500);
+				}, 2000);
 			} else {
 				const body = await response.json();
 				toast.error(body.error || 'Update failed');
@@ -122,48 +197,60 @@ const UserSettings = () => {
 	}
 	
 	return (
-		<Container>
-			<FormContainer onSubmit={handleSubmit}>
-				<Title>Settings</Title>
+	<Container>
+		<FormContainer onSubmit={handleSubmit}>
+		<Title>Settings</Title>
 
-				<FormInput
-				type="password"
-				label="Current Password"
-				name="currentPassword"
-				value={currentPassword}
-				onChange={e => setCurrentPassword(e.target.value)}
-				required
+		{/* Two-Factor Auth Toggle */}
+		<ToggleWrapper>
+			<ToggleLabel>
+				<ToggleInput
+					checked={twoFAEnabled}
+					onChange={handleToggle2FA}
 				/>
+				<Slider />
+			</ToggleLabel>
+			<span>Two-Factor Authentication</span>
+		</ToggleWrapper>
 
-				<FormInput
-				type="text"
-				label="New Username (optional)"
-				name="newUsername"
-				value={newUsername}
-				onChange={e => setNewUsername(e.target.value)}
-				/>
+		<FormInput
+			type="password"
+			label="Current Password"
+			name="currentPassword"
+			value={currentPassword}
+			onChange={e => setCurrentPassword(e.target.value)}
+			required
+		/>
 
-				<FormInput
-				type="password"
-				label="New Password (optional)"
-				name="newPassword"
-				value={newPassword}
-				onChange={e => setNewPassword(e.target.value)}
-				/>
+		<FormInput
+			type="text"
+			label="New Username (optional)"
+			name="newUsername"
+			value={newUsername}
+			onChange={e => setNewUsername(e.target.value)}
+		/>
 
-				<FormInput
-				type="password"
-				label="Confirm New Password"
-				name="confirmPassword"
-				value={confirmPassword}
-				onChange={e => setConfirmPassword(e.target.value)}
-				/>
+		<FormInput
+			type="password"
+			label="New Password (optional)"
+			name="newPassword"
+			value={newPassword}
+			onChange={e => setNewPassword(e.target.value)}
+		/>
 
-				<ButtonContainer>
-				<SubmitBtn text="Update" />
-				</ButtonContainer>
-			</FormContainer>
-		</Container>
+		<FormInput
+			type="password"
+			label="Confirm New Password"
+			name="confirmPassword"
+			value={confirmPassword}
+			onChange={e => setConfirmPassword(e.target.value)}
+		/>
+
+		<ButtonContainer>
+			<SubmitBtn text="Update" />
+		</ButtonContainer>
+		</FormContainer>
+	</Container>
 	);
 };
 

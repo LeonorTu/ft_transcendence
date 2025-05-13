@@ -107,8 +107,8 @@ const registerUser = async (request, reply) => {
 
 		const userId = await new Promise((resolve, reject) => {
 			db.run(
-				'INSERT INTO users (username, email, password, avatar, online_status) VALUES (?, ?, ?, ?, ?)',
-				[newUser.username, newUser.email, newUser.password, newUser.avatar, 'offline'],
+				'INSERT INTO users (username, email, password, avatar, online_status, two_fa) VALUES (?, ?, ?, ?, ?, ?)',
+				[newUser.username, newUser.email, newUser.password, newUser.avatar, 'offline', false],
 				function (err) {
 					if (err) return reject(err);
 						resolve(this.lastID);
@@ -133,7 +133,7 @@ const loginUser = async (request, reply) => {
 	const { username, password } = request.body;
 	request.log.info(`Received login request from: ${username}`);
 
-	const skip2fa = process.env.NODE_ENV !== 'prod'
+	// const skip2fa = process.env.NODE_ENV !== 'prod'
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get('SELECT id, username, password, email FROM users WHERE username = ?', [username], (err, user) => {
@@ -154,8 +154,17 @@ const loginUser = async (request, reply) => {
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		}
 
+		const loginWith2FA = await new Promise ((resolve, reject) => {
+			db.get('SELECT two_fa FROM users WHERE username = ?', [username], (err, loginWith2FA) => {
+				if (err)
+					return reject(err)
+				resolve(loginWith2FA)
+			})
+		})
+
 		// in tests a token is generated at login without 2FA
-		if (skip2fa) {
+		// if (skip2fa) {
+		if (Number(loginWith2FA.two_fa) === 0) {
 			const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 			request.log.info(`Generated JWT token for user ${user.username}`);
 
@@ -241,7 +250,7 @@ const logoutUser = async(request, reply) => {
 }
 
 const updateUser = async (request, reply) => {
-	const { currentPassword, newPassword, newUsername } = request.body
+	const { currentPassword, newPassword, newUsername, twoFA } = request.body
 	const userId = request.user.id
 	request.log.info(`Received update credentials request from: ${request.user.username}`);
 	try {
@@ -273,6 +282,16 @@ const updateUser = async (request, reply) => {
 			const hashedPassword = await bcrypt.hash(newPassword, 10);
 			await new Promise((resolve, reject) => {
 				db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId], function (err) {
+					if (err)
+						return reject(err)
+					resolve(this.changes)
+				})
+			})
+		}
+
+		if (twoFA !== 'undefined') {
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET two_fa = ? WHERE id = ?', [twoFA, userId], function (err) {
 					if (err)
 						return reject(err)
 					resolve(this.changes)
@@ -554,7 +573,7 @@ const getCurrentUser = async (request, reply) => {
 	try {
 		const user = await new Promise((resolve, reject) => {
 			db.get(
-				'SELECT id, username, email, avatar, online_status FROM users WHERE id = ?',
+				'SELECT id, username, email, avatar, online_status, two_fa FROM users WHERE id = ?',
 				[userId],
 				(err, row) => {
 					if (err) return reject(err);
