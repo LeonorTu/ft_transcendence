@@ -12,6 +12,7 @@ import {
   GameLobby,
   LocalGame,
   LocalTournament,
+  UserSettings
 } from './pages';
 import Layout from './components/Layout';
 import { action as signupAction } from './pages/Signup';
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
       {
         path: 'profile/:username',
         element: <UserProfile />,
+      },
+      {
+        path: 'settings',
+        element: <UserSettings />,
       },
     ],
   },
