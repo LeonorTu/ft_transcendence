@@ -50,14 +50,14 @@ const FormContainer = styled(Form)`
   }
 `;
 
-const Title = styled.h4`
+/* const Title = styled.h4`
   text-align: center;
   font-size: 2.5rem;
   font-family: 'Press Start 2P', cursive;
   color: #fff;
   margin-bottom: 1.5rem;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-`;
+`; */
 
 const ButtonContainer = styled.div`
   margin-top: 1.5rem;
@@ -75,8 +75,8 @@ const ToggleWrapper = styled.div`
 const ToggleLabel = styled.label`
   position: relative;
   display: inline-block;
-  width: 2.5rem;
-  height: 1.2rem;
+  width: 5rem;
+  height: 2.4rem;
 `;
 
 const ToggleInput = styled.input.attrs({ type: 'checkbox' })`
@@ -88,7 +88,7 @@ const ToggleInput = styled.input.attrs({ type: 'checkbox' })`
     background-color: #00ffaa;
   }
   &:checked + span::before {
-    transform: translateX(1.3rem);
+    transform: translateX(2.8rem);
   }
 `;
 
@@ -96,19 +96,157 @@ const Slider = styled.span`
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-color: #444;
-  border-radius: 1.2rem;
+  border-radius: 2.4rem;
   transition: 0.3s;
 
   &::before {
     content: '';
     position: absolute;
-    height: 1rem;
-    width: 1rem;
+    height: 2rem;
+    width: 2rem;
     left: 0.1rem;
-    bottom: 0.1rem;
+    bottom: 0.2rem;
     background-color: #fff;
     border-radius: 50%;
     transition: 0.3s;
+  }
+`;
+
+// Add a container for full-page centering
+const DashboardContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-image: radial-gradient(
+      circle at 10% 20%,
+      rgba(0, 255, 170, 0.03) 0%,
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      rgba(0, 255, 170, 0.03) 0%,
+      transparent 20%
+    );
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 255, 170, 0.1) 30%,
+      rgba(0, 255, 170, 0.1) 70%,
+      transparent 100%
+    );
+    z-index: 0;
+  }
+`;
+
+// Add a glow animation
+const glow = keyframes`
+  0% { text-shadow: 0 0 10px rgba(0, 255, 170, 0.7); }
+  50% { text-shadow: 0 0 20px rgba(0, 255, 170, 0.9); }
+  100% { text-shadow: 0 0 10px rgba(0, 255, 170, 0.7); }
+`;
+
+const WelcomeSection = styled.div`
+  text-align: center;
+  margin-bottom: 5rem;
+`;
+
+const Title = styled.h1`
+  font-family: 'Press Start 2P', cursive;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 255, 170, 0.7);
+  animation: ${glow} 3s ease-in-out infinite;
+`;
+
+const MenuContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 1;
+`;
+
+const arrowShow = keyframes`
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+`;
+
+const MenuItem = styled.div`
+  font-family: 'Press Start 2P', cursive;
+  color: white;
+  font-size: 2rem;
+  padding: 1rem 1.5rem;
+  display: block;
+  text-align: center;
+  transition: all 0.3s ease-out;
+  position: relative;
+  cursor: pointer;
+  border-radius: 8px;
+
+  &:hover {
+    color: #00ffaa;
+    transform: scale(1.05);
+    background-color: rgba(0, 255, 170, 0.05);
+  }
+
+  &::before {
+    content: '▶';
+    position: absolute;
+    left: -2.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
+    animation: ${arrowShow} 0.3s ease-out forwards;
+  }
+`;
+
+const TwoFaMenuItem = styled.div`
+  font-family: 'Press Start 2P', cursive;
+  color: white;
+  font-size: 2rem;
+  padding: 1rem 1.5rem;
+  display: block;
+  text-align: center;
+  transition: all 0.3s ease-out;
+  position: relative;
+  cursor: pointer;
+  border-radius: 8px;
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  z-index: 100;
+
+  &:hover {
+    color: #00ffaa;
   }
 `;
 
@@ -121,6 +259,9 @@ const UserSettings = () => {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+	const [changingUsername, setChangingUsername] = useState(false)
+	const [changingPassword, setChangingPassword] = useState(false)
+	const [changingtwoFA, setChangingtwoFA] = useState(false)
 
 	useEffect(() => {
 		(async () => {
@@ -145,6 +286,17 @@ const UserSettings = () => {
 	
 	const handleToggle2FA = () => {
 		setTwoFAEnabled(prev => !prev)
+		setTimeout(() => {
+			setChangingtwoFA(true)
+		}, 500);
+	}
+
+	const handleChangeUsername = () => {
+		setChangingUsername(true)
+	}
+
+	const handleChangePassword = () => {
+		setChangingPassword(true)
 	}
 
 	const handleSubmit = async (e) => {
@@ -195,13 +347,113 @@ const UserSettings = () => {
 			toast.error(errorMessage);
 		}
 	}
-	
-	return (
-	<Container>
-		<FormContainer onSubmit={handleSubmit}>
-		<Title>Settings</Title>
 
-		{/* Two-Factor Auth Toggle */}
+	if (changingUsername === true) {
+		return (
+			<Container>
+				<FormContainer onSubmit={handleSubmit}>
+				<CloseButton type="button" onClick={() => setChangingUsername(false)}>&times;</CloseButton>
+				<Title>Change username</Title>
+				<FormInput
+					type="text"
+					label="New Username"
+					name="newUsername"
+					value={newUsername}
+					onChange={e => setNewUsername(e.target.value)}
+				/>
+				<FormInput
+					type="password"
+					label="Password"
+					name="currentPassword"
+					value={currentPassword}
+					onChange={e => setCurrentPassword(e.target.value)}
+					required
+				/>
+				<ButtonContainer>
+					<SubmitBtn text="Update" />
+				</ButtonContainer>
+				</FormContainer>
+			</Container>
+		)
+	}
+
+	else if (changingPassword === true) {
+		return (
+			<Container>
+				<FormContainer onSubmit={handleSubmit}>
+				<CloseButton type="button" onClick={() => setChangingPassword(false)}>&times;</CloseButton>
+				<Title>Change password</Title>
+					<FormInput
+						type="password"
+						label="Current Password"
+						name="currentPassword"
+						value={currentPassword}
+						onChange={e => setCurrentPassword(e.target.value)}
+						required
+					/>
+					<FormInput
+						type="password"
+						label="New Password"
+						name="newPassword"
+						value={newPassword}
+						onChange={e => setNewPassword(e.target.value)}
+					/>
+					<FormInput
+						type="password"
+						label="Confirm New Password"
+						name="confirmPassword"
+						value={confirmPassword}
+						onChange={e => setConfirmPassword(e.target.value)}
+					/>
+				<ButtonContainer>
+					<SubmitBtn text="Update" />
+				</ButtonContainer>
+				</FormContainer>
+			</Container>
+		)
+	}
+
+	if (changingtwoFA === true) {
+		return (
+			<Container>
+				<FormContainer onSubmit={handleSubmit}>
+				<CloseButton type="button" onClick={() => {
+					setChangingtwoFA(false);
+					setTwoFAEnabled(prev => !prev);
+				}}
+				>
+					&times;
+				</CloseButton>
+				<Title>Change 2FA</Title>
+				<FormInput
+					type="password"
+					label="Password"
+					name="currentPassword"
+					value={currentPassword}
+					onChange={e => setCurrentPassword(e.target.value)}
+					required
+				/>
+				<ButtonContainer>
+					<SubmitBtn text="Update" />
+				</ButtonContainer>
+				</FormContainer>
+			</Container>
+		)
+	}
+
+	return (
+	<DashboardContainer>
+		<WelcomeSection>
+		<Title>SETTINGS</Title>
+		{/* <Subtitle>Choose a game mode to start playing</Subtitle> */}
+		</WelcomeSection>
+
+		<MenuContainer>
+		<MenuItem onClick={handleChangeUsername}>CHANGE USERNAME</MenuItem>
+		<MenuItem onClick={handleChangePassword}>CHANGE PASSWORD
+		</MenuItem>
+		<MenuItem onClick={() => navigate('/tournament/local')}>CHANGE EMAIL
+		</MenuItem>
 		<ToggleWrapper>
 			<ToggleLabel>
 				<ToggleInput
@@ -210,47 +462,10 @@ const UserSettings = () => {
 				/>
 				<Slider />
 			</ToggleLabel>
-			<span>Two-Factor Authentication</span>
+			<TwoFaMenuItem>TWO-FACTOR AUTHENTICATION</TwoFaMenuItem>
 		</ToggleWrapper>
-
-		<FormInput
-			type="password"
-			label="Current Password"
-			name="currentPassword"
-			value={currentPassword}
-			onChange={e => setCurrentPassword(e.target.value)}
-			required
-		/>
-
-		<FormInput
-			type="text"
-			label="New Username (optional)"
-			name="newUsername"
-			value={newUsername}
-			onChange={e => setNewUsername(e.target.value)}
-		/>
-
-		<FormInput
-			type="password"
-			label="New Password (optional)"
-			name="newPassword"
-			value={newPassword}
-			onChange={e => setNewPassword(e.target.value)}
-		/>
-
-		<FormInput
-			type="password"
-			label="Confirm New Password"
-			name="confirmPassword"
-			value={confirmPassword}
-			onChange={e => setConfirmPassword(e.target.value)}
-		/>
-
-		<ButtonContainer>
-			<SubmitBtn text="Update" />
-		</ButtonContainer>
-		</FormContainer>
-	</Container>
+		</MenuContainer>
+	</DashboardContainer>
 	);
 };
 
