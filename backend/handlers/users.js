@@ -250,7 +250,7 @@ const logoutUser = async(request, reply) => {
 }
 
 const updateUser = async (request, reply) => {
-	const { currentPassword, newPassword, newUsername, twoFA } = request.body
+	const { currentPassword, newPassword, newUsername, twoFA, newEmail } = request.body
 	const userId = request.user.id
 	request.log.info(`Received update credentials request from: ${request.user.username}`);
 	try {
@@ -320,6 +320,29 @@ const updateUser = async (request, reply) => {
 				})
 			})
 		}
+
+		if (newEmail) {
+			const existingEmail = await new Promise((resolve, reject) => {
+				db.get('SELECT * FROM users WHERE email = ?', [newEmail], (err, row) => {
+					if (err) return reject(err);
+						resolve(row);
+				});
+			});
+
+			if (existingEmail) {
+				request.log.warn('User with this email already exists');
+				return reply.status(400).send({ error: "User with this email already exists" });
+			}
+
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET email = ? WHERE id = ?', [newEmail, userId], function (err) {
+					if (err)
+						return reject(err)
+					resolve(this.changes)
+				})
+			})
+		}
+
 		request.log.info(`User with ID ${userId} updated successfully`);
 		return reply.status(200).send({ message: 'User credentials updated successfully'})
 	} catch (err) {

@@ -262,6 +262,9 @@ const UserSettings = () => {
 	const [changingUsername, setChangingUsername] = useState(false)
 	const [changingPassword, setChangingPassword] = useState(false)
 	const [changingtwoFA, setChangingtwoFA] = useState(false)
+	const [changingEmail, setChangingEmail] = useState(false)
+	const [newEmail, setNewEmail] = useState("");
+	const [confirmEmail, setConfirmEmail] = useState("");
 
 	useEffect(() => {
 		(async () => {
@@ -299,11 +302,20 @@ const UserSettings = () => {
 		setChangingPassword(true)
 	}
 
+	const handleChangeEmail = () => {
+		setChangingEmail(true)
+	}
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
 		if (newPassword && newPassword !== confirmPassword) {
 			toast.error('Passwords do not match');
+			return null;
+		}
+
+		if (newEmail && newEmail !== confirmEmail) {
+			toast.error('Emails do not match');
 			return null;
 		}
 
@@ -328,6 +340,7 @@ const UserSettings = () => {
 					newPassword: newPassword || undefined,
 					newUsername: newUsername || undefined,
 					twoFA: twoFAEnabled ? 1 : 0,
+					newEmail: newEmail || undefined,
 				}),
 			});
 			if (response.status === 200) {
@@ -377,7 +390,7 @@ const UserSettings = () => {
 		)
 	}
 
-	else if (changingPassword === true) {
+	if (changingPassword === true) {
 		return (
 			<Container>
 				<FormContainer onSubmit={handleSubmit}>
@@ -441,6 +454,42 @@ const UserSettings = () => {
 		)
 	}
 
+	if (changingEmail === true) {
+		return (
+			<Container>
+				<FormContainer onSubmit={handleSubmit}>
+				<CloseButton type="button" onClick={() => setChangingPassword(false)}>&times;</CloseButton>
+				<Title>Change email</Title>
+					<FormInput
+						type="email"
+						label="New email"
+						name="newEmail"
+						value={newEmail}
+						onChange={e => setNewEmail(e.target.value)}
+					/>
+					<FormInput
+						type="email"
+						label="Confirm New email"
+						name="confirmemail"
+						value={confirmEmail}
+						onChange={e => setConfirmEmail(e.target.value)}
+					/>
+					<FormInput
+						type="password"
+						label="Current Password"
+						name="currentPassword"
+						value={currentPassword}
+						onChange={e => setCurrentPassword(e.target.value)}
+						required
+					/>
+				<ButtonContainer>
+					<SubmitBtn text="Update" />
+				</ButtonContainer>
+				</FormContainer>
+			</Container>
+		)
+	}
+
 	return (
 	<DashboardContainer>
 		<WelcomeSection>
@@ -450,10 +499,8 @@ const UserSettings = () => {
 
 		<MenuContainer>
 		<MenuItem onClick={handleChangeUsername}>CHANGE USERNAME</MenuItem>
-		<MenuItem onClick={handleChangePassword}>CHANGE PASSWORD
-		</MenuItem>
-		<MenuItem onClick={() => navigate('/tournament/local')}>CHANGE EMAIL
-		</MenuItem>
+		<MenuItem onClick={handleChangePassword}>CHANGE PASSWORD</MenuItem>
+		<MenuItem onClick={handleChangeEmail}>CHANGE EMAIL</MenuItem>
 		<ToggleWrapper>
 			<ToggleLabel>
 				<ToggleInput

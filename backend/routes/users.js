@@ -218,13 +218,15 @@ function usersRoutes(fastify, options, done) {
 					currentPassword: { type: 'string' },
 					newPassword: { type: 'string' },
 					newUsername: { type: 'string' },
-					twoFA: { type: 'integer'}
+					twoFA: { type: 'integer'},
+					newEmail: { type: 'string' },
 				},
 				required: ['currentPassword'],
 				anyOf: [
 					{ required: ['newPassword'] },
 					{ required: ['newUsername'] },
 					{ required: ['twoFA'] },
+					{ required: ['newEmail'] },
 				],
 			},
 			response: {
