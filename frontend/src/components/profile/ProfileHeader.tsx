@@ -12,6 +12,7 @@ import {
   AvatarEditOverlay,
   UsernameContainer,
   UsernameEditOverlay,
+  Email,
 } from '../../pages/UserProfileStyles';
 import { customFetch } from '../../utils';
 import { useNavigate } from 'react-router-dom';
@@ -113,6 +114,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <UsernameContainer onClick={() => navigate('/settings')} style={{ cursor: 'pointer' }}>
             <Username>{userProfile.username}</Username>
             <UsernameEditOverlay>Edit</UsernameEditOverlay>
+            <Email>{userProfile.email}</Email>
           </UsernameContainer>
         ) : (
           <Username>{userProfile.username}</Username>

@@ -279,7 +279,7 @@ export const UsernameEditOverlay = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.85); /* Darker background for stronger contrast */
+  background: rgba(0, 0, 0, 0.8); /* Darker background for stronger contrast */
   color: white;
   display: flex;
   justify-content: center;
@@ -289,13 +289,17 @@ export const UsernameEditOverlay = styled.div`
   pointer-events: none;
   font-size: 0.8rem;
   font-weight: bold;
-  border-top-left-radius: 1rem;
-  border-top-right-radius: 0;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 1rem;
+  border-radius: 1.5rem;
 
 
   ${UsernameContainer}:hover & {
     opacity: 1;
   }
+`;
+
+export const Email = styled.h5`
+  display: block;
+  margin: 0.8;      /* reset any default margin if you like */
+  font-size: 0.8rem;
+  color: #ccc;
 `;
