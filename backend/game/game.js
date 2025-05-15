@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 09:54:11 by pleander          #+#    #+#             */
-/*   Updated: 2025/05/08 14:40:41 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/15 17:27:45 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,9 @@ const Side = {
 }
 
 class Player {
-	constructor(id, side) {
+	constructor(id, username, side) {
 		this.id = id;
+		this.username = username
 		this.score = 0;
 		this.joined = false;
 		this.ready = false;
@@ -83,15 +84,15 @@ class Paddle {
 
 
 class Game {
-	constructor(player1_id, player2_id) {
+	constructor(player1_id, player1_username, player2_id, player2_username) {
 		this.finished_rounds = 0;
 		this.total_rounds = TOTAL_ROUNDS;
 		this.winner = null;
 		this.loser = null;
 		this.connected_players = 0;
 		this.players = [];
-		this.players.push(new Player(player1_id, Side.LEFT));
-		this.players.push(new Player(player2_id, Side.RIGHT));
+		this.players.push(new Player(player1_id, player1_username, Side.LEFT));
+		this.players.push(new Player(player2_id, player2_username, Side.RIGHT));
 		this.gameState = GameState.NOT_STARTED;
 		this.resetTimer = new Date();
 		this.remainingTimout = 0;

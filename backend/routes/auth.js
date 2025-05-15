@@ -63,6 +63,18 @@ module.exports = fp(async function(fastify, opts) {
 			if (blacklisted)
 				return reply.status(401).send({ error: 'Token has been revoked' })
 			
+			const now = Math.floor(Date.now() / 1000)
+			await new Promise((resolve, reject) => {
+				db.run('UPDATE users SET last_seen = ? WHERE id = ?',
+					[now, request.user.id],
+					function (err) {
+						if (err)
+							return reject(err)
+						resolve(this.changes)
+					}
+				)
+			})
+
 			return request.user
 		} catch (err) {
 			reply.send(err)

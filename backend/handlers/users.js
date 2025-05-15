@@ -168,8 +168,9 @@ const loginUser = async (request, reply) => {
 			const token = await reply.jwtSign({ id: user.id, username: user.username } ,{ expiresIn: '24h'});
 			request.log.info(`Generated JWT token for user ${user.username}`);
 
+			const now = Math.floor(Date.now() / 1000)
 			await new Promise((resolve, reject) => {
-				db.run('UPDATE users SET online_status = ? WHERE id = ?', ['online', user.id], (err) => {
+				db.run('UPDATE users SET online_status = ?, last_seen = ? WHERE id = ?', ['online', now, user.id], (err) => {
 					if (err)
 						return reject(err)
 					resolve()

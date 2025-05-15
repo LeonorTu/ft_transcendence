@@ -92,7 +92,7 @@ export const AvatarEditOverlay = styled.div`
   }
 `;
 
-export const StatusIndicator = styled.div<{ $online: boolean }>`
+/* export const StatusIndicator = styled.div<{ $online: boolean }>`
   position: absolute;
   bottom: 5px;
   right: 5px;
@@ -101,7 +101,25 @@ export const StatusIndicator = styled.div<{ $online: boolean }>`
   border-radius: 50%;
   background-color: ${({ $online }) => ($online ? '#4caf50' : '#999')};
   border: 3px solid #1e1e28;
+`; */
+
+export const StatusIndicator = styled.div<{ $status: 'online' | 'away' | 'offline' }>`
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  /* green for online, dark yellow for away, grey for offline */
+  background-color: ${({ $status }) =>
+    $status === 'online'
+      ? '#4caf50'
+      : $status === 'away'
+      ? '#FFA000'
+      : '#999'};
+  border: 3px solid #1e1e28;
 `;
+
 
 export const ProfileInfo = styled.div`
   flex: 1;

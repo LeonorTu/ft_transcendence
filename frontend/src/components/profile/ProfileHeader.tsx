@@ -36,11 +36,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   getFriendshipId,
 }) => {
   const { user: currentUser } = useAuth();
-  const isOnline = userProfile.online_status === 'online';
+  // const isOnline = userProfile.online_status === 'online';
   const apiUrl = API_URL;
   const navigate = useNavigate();
-
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [avatarSrc, setAvatarSrc] = React.useState(
+    `${apiUrl}/user/${userProfile.username}/avatar?t=${Date.now()}`
+  );
 
   const handleAvatarClick = () => {
     if (isCurrentUser && fileInputRef.current) {
@@ -70,13 +73,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }
       );
 
-      const avatarImg =
+/*       const avatarImg =
         document.querySelector<HTMLImageElement>('.profile-avatar');
       if (avatarImg) {
         avatarImg.src = `${apiUrl}/user/${
           userProfile.username
         }/avatar?t=${Date.now()}`;
-      }
+      } */
+      setAvatarSrc(`${apiUrl}/user/${userProfile.username}/avatar?t=${Date.now()}`);
     } catch (error) {
       console.error('Error uploading avatar:', error);
     }
@@ -92,13 +96,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     <Header>
       <AvatarContainer>
         <ProfileAvatar
-          src={`${apiUrl}/user/${userProfile.username}/avatar?t=${Date.now()}`}
+          className="profile-avatar"
+          // src={`${apiUrl}/user/${userProfile.username}/avatar?t=${Date.now()}`}
+          src={avatarSrc}
           alt={`${userProfile.username}'s avatar`}
           onClick={handleAvatarClick}
           style={{ cursor: isCurrentUser ? 'pointer' : 'default' }}
         />
         {isCurrentUser && <AvatarEditOverlay>Edit</AvatarEditOverlay>}
-        <StatusIndicator $online={isOnline} />
+        {/* <StatusIndicator $online={isOnline} /> */}
+        <StatusIndicator $status={userProfile.online_status} />
 
 
         <input
