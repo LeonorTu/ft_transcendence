@@ -6,7 +6,7 @@
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 09:54:11 by pleander          #+#    #+#             */
-/*   Updated: 2025/05/15 17:27:45 by mpellegr         ###   ########.fr       */
+/*   Updated: 2025/05/16 15:56:56 by mpellegr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,9 +231,16 @@ class Game {
 		}
 	}
 
-	updatePaddle(change, paddle) {
+/* 	updatePaddle(change, paddle) {
 
 		const sides = paddle.getSides();
+
+		console.log('change: ', change)
+		console.log('sides.yTop: ', sides.yTop)
+		console.log('sides.yBot : ', sides.yBot)
+		console.log('BOARD_HEIGHT: ', BOARD_HEIGHT)
+		console.log('sides.yTop - change: ', sides.yTop - change)
+		console.log('\n')
 
 		if (change < 0) {
 			if (sides.yTop - change >= 0) {
@@ -244,6 +251,26 @@ class Game {
 			if (sides.yBot + change <= BOARD_HEIGHT)
 				paddle.y_offset += change;
 		}
+	} */
+
+	updatePaddle(deltaY, paddle) {
+		const centerY0 = paddle.initial_pos[1];
+		// console.log('centerY0: ', centerY0)
+		const halfH = PADDLE_HEIGHT / 2;
+		// console.log('halfH: ', halfH)
+		const minOff = halfH - centerY0;
+		// console.log('minOff: ', minOff)
+		const maxOff = (BOARD_HEIGHT - halfH) - centerY0;
+		// console.log('maxOff: ', maxOff)
+
+		let next = paddle.y_offset + deltaY;
+		// console.log('next: ', next)
+		if (next < minOff)
+			next = minOff;
+		if (next > maxOff)
+			next = maxOff;
+		// console.log('\n')
+		paddle.y_offset = next;
 	}
 
 	moveBall() {
