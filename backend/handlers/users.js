@@ -252,12 +252,12 @@ const updateUser = async (request, reply) => {
 				resolve(user);
 			});
 		})
-		
+
 		if (!user) {
 			request.log.warn('User not found');
 			return reply.status(400).send({ error: 'User not found' });
 		}
-		
+
 		const match = await bcrypt.compare(currentPassword, user.password);
 		if (!match) {
 			request.log.warn('Password mismatch');
@@ -287,7 +287,7 @@ const updateUser = async (request, reply) => {
 						resolve(row);
 				});
 			});
-	
+
 			if (existingUser) {
 				request.log.warn('User with this username already exists');
 				return reply.status(400).send({ error: "User with this username already exists" });
@@ -339,7 +339,7 @@ const uploadAvatar = async (request, reply) => {
 			sharp().resize(256, 256, { fit: 'inside' }),
 			fs.createWriteStream(filePath)
 		) */
-		
+
 		await new Promise((resolve, reject) => {
 			db.run('UPDATE users SET avatar = ? WHERE username = ?',
 				[fileName, request.user.username],
@@ -444,6 +444,7 @@ const getUserFriends = async (request, reply) => {
 		})
 		if (!user)
 			return reply.status(404).send({ error: 'User not found' });
+
 		const friendsList = await new Promise((resolve, reject) => {
 			db.all('SELECT id, user_id, friend_id FROM friends WHERE user_id = ? LIMIT ? OFFSET ?', [user.id, limit, offset],
 				(err, rows) => {
@@ -453,7 +454,22 @@ const getUserFriends = async (request, reply) => {
 				}
 			)
 		})
-		return reply.send(friendsList)
+
+		const friendsPromises = friendsList.map(friend=>{
+			return new Promise((resolve, reject)=>{
+				db.get(
+					'SELECT id, username, avatar, online_status FROM users WHERE id  = ?',
+					[friend.friend_id],
+					(err, friendData) => {
+						if (err) return reject(err)
+						if (friendData) friendData.friendshipId = friend.id
+						resolve(friendData)
+					}
+				)
+			})
+		})
+		const friends = await Promise.all(friendsPromises)
+		return reply.send(friends)
 	} catch (err) {
 		request.log.error(`Error fetching friends: ${err.message}`);
 		return reply.status(500).send({ error: 'Internal server error' });

@@ -28,6 +28,13 @@ interface DecodedToken {
   iat: number;
 }
 
+interface DecodedToken {
+  id: string;
+  username: string;
+  exp: number;
+  iat: number;
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 

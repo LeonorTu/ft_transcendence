@@ -209,6 +209,12 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
     // Optional: Add sound effect for hover
     if (hovered) {
       // Play hover sound

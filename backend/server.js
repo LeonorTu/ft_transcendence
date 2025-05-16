@@ -13,12 +13,13 @@ require('./cron');
 const fastifyOAuth2 = require('@fastify/oauth2')
 
 fastify.register(require('@fastify/cors'), {
-	origin: 'http://localhost:5173',
+	// origin: 'http://localhost:5173',
+	origin: '*',
 	methods: ['GET', 'POST', 'PUT', 'DELETE'],
 	credentials: true
 })
 
-if (process.env.NODE_ENV !== 'test') { 
+if (process.env.NODE_ENV !== 'test') {
 	require('dotenv').config();
 	// Check credential works
 	try {
