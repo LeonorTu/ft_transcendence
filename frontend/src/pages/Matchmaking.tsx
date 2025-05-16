@@ -43,26 +43,36 @@ const Matchmaking = () => {
 	const navigate = useNavigate();
 	useEffect(() => {
 		if (!gameId || !user?.authToken) return;
-
+		
 		const canvas = canvasRef.current;
 		if (!canvas) {
 			console.error('Canvas is not ready');
 			return;
 		}
-
+		
 		const renderer = createGameRendererAdapter(gameId, user.authToken, canvas, 'multi');
-
+		
+		canvasRef.current.focus();
 
 		const keyDown = (e: KeyboardEvent) => {
-			if (!renderer) return;
-			if (e.key === 'ArrowUp') renderer.controls.up = 1;
-			if (e.key === 'ArrowDown') renderer.controls.down = 1;
+			// only intercept arrow keys when canvas is focused
+			const isArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+			if (!isArrow || document.activeElement !== canvasRef.current)
+				return;
+
+			e.preventDefault();  // block page scroll
+			if (e.key === 'ArrowUp')   rendererRef.current!.controls.up   = 1;
+			if (e.key === 'ArrowDown') rendererRef.current!.controls.down = 1;
 		};
 
 		const keyUp = (e: KeyboardEvent) => {
-			if (!renderer) return;
-			if (e.key === 'ArrowUp') renderer.controls.up = 0;
-			if (e.key === 'ArrowDown') renderer.controls.down = 0;
+			const isArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+			if (!isArrow || document.activeElement !== canvasRef.current)
+				return;
+
+			e.preventDefault();
+			if (e.key === 'ArrowUp')   rendererRef.current!.controls.up   = 0;
+			if (e.key === 'ArrowDown') rendererRef.current!.controls.down = 0;
 		};
 
 		document.addEventListener('keydown', keyDown);
@@ -159,6 +169,7 @@ const Matchmaking = () => {
 			ref={canvasRef}
 			width={DEFAULT_WIDTH}
 			height={DEFAULT_HEIGHT}
+			tabIndex={0}
 			/>
 			</>
 		)}

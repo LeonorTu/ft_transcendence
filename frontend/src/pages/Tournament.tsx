@@ -199,14 +199,28 @@ export default function Tournament() {
     rendererRef.current = renderer
     renderer.start()
 
-    const onDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp')   renderer.controls.up   = 1
-      if (e.key === 'ArrowDown') renderer.controls.down = 1
-    }
-    const onUp = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp')   renderer.controls.up   = 0
-      if (e.key === 'ArrowDown') renderer.controls.down = 0
-    }
+		canvasRef.current.focus();
+
+		const onDown = (e: KeyboardEvent) => {
+			// only intercept arrow keys when canvas is focused
+			const isArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+			if (!isArrow || document.activeElement !== canvasRef.current)
+				return;
+
+			e.preventDefault();  // block page scroll
+			if (e.key === 'ArrowUp')   rendererRef.current!.controls.up   = 1;
+			if (e.key === 'ArrowDown') rendererRef.current!.controls.down = 1;
+		};
+
+		const onUp = (e: KeyboardEvent) => {
+			const isArrow = e.key === 'ArrowUp' || e.key === 'ArrowDown';
+			if (!isArrow || document.activeElement !== canvasRef.current)
+				return;
+
+			e.preventDefault();
+			if (e.key === 'ArrowUp')   rendererRef.current!.controls.up   = 0;
+			if (e.key === 'ArrowDown') rendererRef.current!.controls.down = 0;
+		};
     document.addEventListener('keydown', onDown)
     document.addEventListener('keyup', onUp)
 
@@ -297,7 +311,7 @@ export default function Tournament() {
       <Container>
         <canvas id="game-canvas" style={{ display: 'none' }} width={1} height={1} />
         <h1>Game #{gameId}</h1>
-        <GameCanvas ref={canvasRef} width={DEFAULT_WIDTH} height={DEFAULT_HEIGHT} />
+        <GameCanvas ref={canvasRef} width={DEFAULT_WIDTH} height={DEFAULT_HEIGHT} tabIndex={0} />
       </Container>
     )
   }
