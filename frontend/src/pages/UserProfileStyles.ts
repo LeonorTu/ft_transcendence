@@ -267,3 +267,39 @@ export const StatValue = styled.div`
   font-weight: bold;
   color: #222;
 `;
+
+export const UsernameContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+export const UsernameEditOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8); /* Darker background for stronger contrast */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 1.5rem;
+
+
+  ${UsernameContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
+export const Email = styled.h5`
+  display: block;
+  margin: 0.8;      /* reset any default margin if you like */
+  font-size: 0.8rem;
+  color: #ccc;
+`;

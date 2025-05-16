@@ -26,7 +26,8 @@ const User = {
 		username: { type: 'string' },
 		email: { type: 'string' },
 		avatar: { type: 'string'},
-		online_status: {typ : 'string' },
+		online_status: {type : 'string' },
+		two_fa: { type: 'integer' }
 	}
 }
 
@@ -217,11 +218,15 @@ function usersRoutes(fastify, options, done) {
 					currentPassword: { type: 'string' },
 					newPassword: { type: 'string' },
 					newUsername: { type: 'string' },
+					twoFA: { type: 'integer'},
+					newEmail: { type: 'string' },
 				},
 				required: ['currentPassword'],
 				anyOf: [
 					{ required: ['newPassword'] },
 					{ required: ['newUsername'] },
+					{ required: ['twoFA'] },
+					{ required: ['newEmail'] },
 				],
 			},
 			response: {

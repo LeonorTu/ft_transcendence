@@ -145,17 +145,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       password,
     });
 
-    const skipTwoFactor = import.meta.env.VITE_SKIP_2FA === 'true';
-    console.log(skipTwoFactor);
+    // const skipTwoFactor = import.meta.env.VITE_SKIP_2FA === 'true';
+    // console.log(skipTwoFactor);
 
     if (response.data.token) {
-      if (skipTwoFactor) {
+      // if (skipTwoFactor) {
         toast.success('Logged in without 2FA successfully');
         return { initialAuth: false, token: response.data.token, username };
-      }
+      // }
     }
 
-    if (response.data.message) return { initialAuth: true, username };
+    if (response.data.message) {
+      toast.info('2FA required – check your email');
+      return { initialAuth: true, username };
+    }
 
     return null;
   } catch (error) {

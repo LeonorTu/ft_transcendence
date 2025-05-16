@@ -10,8 +10,12 @@ import {
   ButtonContainer,
   Button,
   AvatarEditOverlay,
+  UsernameContainer,
+  UsernameEditOverlay,
+  Email,
 } from '../../pages/UserProfileStyles';
 import { customFetch } from '../../utils';
+import { useNavigate } from 'react-router-dom';
 
 interface ProfileHeaderProps {
   userProfile: any;
@@ -33,6 +37,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const { user: currentUser } = useAuth();
   const isOnline = userProfile.online_status === 'online';
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+  const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,7 +110,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </AvatarContainer>
 
       <ProfileInfo>
-        <Username>{userProfile.username}</Username>
+        {isCurrentUser ? (
+          <UsernameContainer onClick={() => navigate('/settings')} style={{ cursor: 'pointer' }}>
+            <Username>{userProfile.username}</Username>
+            <UsernameEditOverlay>Edit</UsernameEditOverlay>
+            <Email>{userProfile.email}</Email>
+          </UsernameContainer>
+        ) : (
+          <Username>{userProfile.username}</Username>
+        )}
         {userProfile.bio && <p>{userProfile.bio}</p>}
       </ProfileInfo>
 

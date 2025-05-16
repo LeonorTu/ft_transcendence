@@ -91,7 +91,7 @@ const Verify2FA: React.FC = () => {
         authToken: actionData.token,
       });
       hasNavigated.current = true;
-      navigate('/game');
+      navigate('/dashboard');
     }
   }, [username, actionData, login, navigate]);
 
