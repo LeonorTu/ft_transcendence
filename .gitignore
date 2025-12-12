@@ -32,6 +32,9 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Test database directory
+test_data/
+
 .tap
 
 # Logs

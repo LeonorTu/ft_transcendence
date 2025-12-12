@@ -78,9 +78,9 @@ fastify.register(import('./routes/game'), { prefix: '/api' });
 fastify.register(import('./routes/tournaments'), { prefix: '/api' });
 fastify.register(import('./routes/matchmaking'), { prefix: '/api' });
 
-export default fastify;
-
 const PORT = 8888;
+
+export = fastify;
 
 const start = async (): Promise<void> => {
 	try {

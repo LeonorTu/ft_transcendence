@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Game, GameState, Player } from './game.js';
-import db from '../db.js';
+import { Game, GameState, Player } from './game';
+import db from '../db';
 import { WebSocket } from 'ws';
 
 export enum ErrorType {
