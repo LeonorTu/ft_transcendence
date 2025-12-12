@@ -13,7 +13,7 @@
 const t = require('tap');
 import * as path from 'path';
 import * as fs from 'fs';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 import { Database } from 'sqlite3';
 import { FastifyInstance } from 'fastify';
 

@@ -22,8 +22,8 @@ t.test('server.js fails to bind port -> triggers catch block', (t) => {
 	// Occupy port 8888 so the second server can't bind.
 	const dummyServer = net.createServer();
 	dummyServer.listen(8888, '127.0.0.1', () => {
-		// Spawn server.js in a child process.
-		const child: ChildProcess = spawn('node', ['server.js'], {
+		// Spawn server.ts in a child process using tsx
+		const child: ChildProcess = spawn('npx', ['tsx', 'server.ts'], {
 			env: {
 				...process.env,
 				// Override any DB path or other env if needed.

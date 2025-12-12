@@ -16,9 +16,17 @@ const proxyquire = require('proxyquire');
 // Create a fake sqlite3 module that always calls the callback with an error.
 const fakeSqlite3 = {
 	verbose: () => ({
-		Database: function(path: string, callback: (err: Error) => void) {
+		Database: function(path: string, callback?: (err: Error | null) => void) {
 			// Simulate an error opening the database.
-			callback(new Error("Simulated error"));
+			if (callback) {
+				callback(new Error("Simulated error"));
+			}
+			// Return a mock database object with necessary methods
+			return {
+				exec: () => {},
+				close: () => {},
+				run: () => {}
+			};
 		}
 	})
 };
