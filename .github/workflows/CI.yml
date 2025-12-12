@@ -20,11 +20,6 @@ jobs:
       
       - name: Build docker images
         run: docker compose build
-      
-      - name: Initialize test database
-        run: |
-          mkdir -p backend/test_data
-          sqlite3 backend/test_data/test.sqlite < SQLite/init.sql
 
       - name: Run tests in backend container
         run: docker compose run --rm backend npm test -- --allow-incomplete-coverage
