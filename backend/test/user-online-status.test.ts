@@ -1,15 +1,18 @@
 const t = require('tap');
-const db = require('../db');
-const fastify = require('../server');
+import { Database } from 'sqlite3';
+import { FastifyInstance } from 'fastify';
+
+const db: Database = require('../db');
+const fastify: FastifyInstance = require('../server');
 
 // Clear users table before running the tests
 t.before(async () => {
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		db.serialize(() => {
-			db.run('DELETE FROM users', err => {
+			db.run('DELETE FROM users', (err) => {
 				if (err) return reject(err);
 			});
-			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 				if (err) return reject(err);
 				resolve();
 			});
@@ -17,9 +20,9 @@ t.before(async () => {
 	});
 });
 
-t.test('online status tests', async t => {
+t.test('online status tests', async (t) => {
 	const userA = { username: 'userA', password: 'Qwerty23', email: 'aaa@aaa.aaa' };
-	
+
 	// register userA
 	const regA = await fastify.inject({
 		method: 'POST',
@@ -27,7 +30,7 @@ t.test('online status tests', async t => {
 		payload: userA,
 	});
 	// const userAId = JSON.parse(regA.payload).id;
-	const userAUsername = JSON.parse(regA.payload).username;
+	const userAUsername: string = JSON.parse(regA.payload).username;
 
 	// get default online status of userA
 	let statusUserA = await fastify.inject({
@@ -42,7 +45,7 @@ t.test('online status tests', async t => {
 		url: 'api/user/login',
 		payload: userA,
 	});
-	const tokenA = JSON.parse(loginA.payload).token;
+	const tokenA: string = JSON.parse(loginA.payload).token;
 
 	// get status of userA afetr login
 	statusUserA = await fastify.inject({
@@ -86,20 +89,20 @@ t.test('online status tests', async t => {
 
 t.teardown(async () => {
 	try {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			db.serialize(() => {
-				db.run('DELETE FROM users', err => {
+				db.run('DELETE FROM users', (err) => {
 					if (err) return reject(err);
 				});
-				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 					if (err) return reject(err);
 					resolve();
 				});
 			});
 		});
 
-		await new Promise((resolve, reject) => {
-			db.close(err => (err ? reject(err) : resolve()));
+		await new Promise<void>((resolve, reject) => {
+			db.close((err) => (err ? reject(err) : resolve()));
 		});
 
 		await fastify.close();

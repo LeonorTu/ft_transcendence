@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   user-db-errors.test.js                             :+:      :+:    :+:   */
+/*   user-db-errors.test.ts                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,30 +11,30 @@
 /* ************************************************************************** */
 
 const t = require('tap');
-const bcrypt = require('bcryptjs');
+import { FastifyInstance } from 'fastify';
 
 // Test 1: Create a mock DB object that always fails.
 const dbMock = {
-	get: (sql, params, cb) => {
+	get: (sql: string, params: any[], cb: (err: Error, result?: any) => void) => {
 		cb(new Error('Simulated DB error'), null);
 	},
-	run: (sql, params, cb) => {
+	run: (sql: string, params: any[], cb: (err: Error) => void) => {
 		cb(new Error('Simulated DB error'));
 	},
-	all: (sql, params, cb) => {
+	all: (sql: string, params: any[], cb: (err: Error, result?: any) => void) => {
 		cb(new Error('Simulated DB error'), null);
 	},
 };
 
 // Test 2: Load the server with our mock DB so that all routes use dbMock.
-const fastify = t.mockRequire('../server', {
+const fastify: FastifyInstance = t.mockRequire('../server', {
 	'../db': dbMock,
 });
 
 
 // Test 3: GET /users => 500 when DB.all() fails.
 
-t.test('GET /users => 500 when DB.all() fails', async t => {
+t.test('GET /users => 500 when DB.all() fails', async (t) => {
 	const res = await fastify.inject({
 		method: 'GET',
 		url: 'api/users',
@@ -47,7 +47,7 @@ t.test('GET /users => 500 when DB.all() fails', async t => {
 
 // Test 4: GET /user/:id => 500 when DB.get() fails.
 
-t.test('GET /user/:id => 500 when DB.get() fails', async t => {
+t.test('GET /user/:id => 500 when DB.get() fails', async (t) => {
 	const res = await fastify.inject({
 		method: 'GET',
 		url: 'api/user/999',
@@ -61,7 +61,7 @@ t.test('GET /user/:id => 500 when DB.get() fails', async t => {
 // Test 5: POST /user/register => 500 when DB fails.
 // This triggers the catch block in registerUser.
 
-t.test('POST /user/register => 500 when DB fails', async t => {
+t.test('POST /user/register => 500 when DB fails', async (t) => {
 	const res = await fastify.inject({
 		method: 'POST',
 		url: 'api/user/register',
@@ -75,7 +75,7 @@ t.test('POST /user/register => 500 when DB fails', async t => {
 
 // Test 6: POST /user/login => 500 when DB fails.
 
-t.test('POST /user/login => 500 when DB fails', async t => {
+t.test('POST /user/login => 500 when DB fails', async (t) => {
 	const res = await fastify.inject({
 		method: 'POST',
 		url: 'api/user/login',
@@ -89,7 +89,7 @@ t.test('POST /user/login => 500 when DB fails', async t => {
 
 // Test 7: PUT /user/:username/update => 500 when DB fails.
 
-t.test('PUT /user/:username/update => 500 when DB fails', async t => {
+t.test('PUT /user/:username/update => 500 when DB fails', async (t) => {
 	const res = await fastify.inject({
 		method: 'PUT',
 		url: 'api/user/testuser/update',
@@ -105,12 +105,12 @@ t.test('PUT /user/:username/update => 500 when DB fails', async t => {
 
 // Test 9: POST /user/login returns 500 when DB.get fails.
 
-t.test('POST /user/login returns 500 when DB.get fails', async t => {
+t.test('POST /user/login returns 500 when DB.get fails', async (t) => {
 	const dbFailLoginMock = {
-		get: (sql, params, cb) => cb(new Error('Simulated login db.get error')),
+		get: (sql: string, params: any[], cb: (err: Error) => void) => cb(new Error('Simulated login db.get error')),
 	};
 
-	const fastifyFailLogin = t.mockRequire('../server', {
+	const fastifyFailLogin: FastifyInstance = t.mockRequire('../server', {
 		'../db': dbFailLoginMock,
 	});
 

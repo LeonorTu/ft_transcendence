@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   swagger.test.js                                    :+:      :+:    :+:   */
+/*   swagger.test.ts                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,12 +11,14 @@
 /* ************************************************************************** */
 
 const t = require('tap');
-const fastify = require('../server');
+import { FastifyInstance } from 'fastify';
+
+const fastify: FastifyInstance = require('../server');
 
 
 // Test 1: GET /documentation - Returns Swagger docs.
 
-t.test('GET /documentation returns Swagger docs', async t => {
+t.test('GET /documentation returns Swagger docs', async (t) => {
 	const response = await fastify.inject({
 		method: 'GET',
 		url: '/api/documentation'
@@ -30,7 +32,7 @@ t.test('GET /documentation returns Swagger docs', async t => {
 
 // Test 2: GET /documentation/json - Calls transformSpecification.
 
-t.test('GET /documentation/json calls transformSpecification', async t => {
+t.test('GET /documentation/json calls transformSpecification', async (t) => {
 	const response = await fastify.inject({
 		method: 'GET',
 		url: '/api/documentation/json'

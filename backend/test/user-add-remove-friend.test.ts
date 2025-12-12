@@ -1,21 +1,24 @@
 const t = require('tap');
-const db = require('../db');
-const fastify = require('../server');
+import { Database } from 'sqlite3';
+import { FastifyInstance } from 'fastify';
+
+const db: Database = require('../db');
+const fastify: FastifyInstance = require('../server');
 
 // Clear users && friends table before running the tests
 t.before(async () => {
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		db.serialize(() => {
-			db.run('DELETE FROM friends', err => {
+			db.run('DELETE FROM friends', (err) => {
 				if (err) return reject(err);
 			});
-			db.run('DELETE FROM users', err => {
+			db.run('DELETE FROM users', (err) => {
 				if (err) return reject(err);
 			});
-			db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", err => {
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", (err) => {
 				if (err) return reject(err);
 			});
-			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 				if (err) return reject(err);
 				resolve();
 			});
@@ -23,7 +26,7 @@ t.before(async () => {
 	});
 });
 
-t.test('add/remove friends tests', async t => {
+t.test('add/remove friends tests', async (t) => {
 	const userA = { username: 'userA', password: 'Qwerty23', email: 'aaa@aaa.aaa'};
 	const userB = { username: 'userB', password: 'Qwerty23', email: 'bbb@bbb.bbb' };
 	const userC = { username: 'userC', password: 'Qwerty23', email: 'ccc@ccc.ccc' };
@@ -34,8 +37,8 @@ t.test('add/remove friends tests', async t => {
 		url: 'api/user/register',
 		payload: userA,
 	});
-	const userAId = JSON.parse(regA.payload).id;
-	const userAUsername = JSON.parse(regA.payload).username;
+	const userAId: number = JSON.parse(regA.payload).id;
+	const userAUsername: string = JSON.parse(regA.payload).username;
 
 	// register userB
 	const regB = await fastify.inject({
@@ -43,7 +46,7 @@ t.test('add/remove friends tests', async t => {
 		url: 'api/user/register',
 		payload: userB,
 	});
-	const userBId = JSON.parse(regB.payload).id;
+	const userBId: number = JSON.parse(regB.payload).id;
 
 	// register userC
 	const regC = await fastify.inject({
@@ -51,7 +54,7 @@ t.test('add/remove friends tests', async t => {
 		url: 'api/user/register',
 		payload: userC,
 	});
-	const userCId = JSON.parse(regC.payload).id;
+	const userCId: number = JSON.parse(regC.payload).id;
 
 	// login userA
 	const loginA = await fastify.inject({
@@ -59,7 +62,7 @@ t.test('add/remove friends tests', async t => {
 		url: 'api/user/login',
 		payload: userA,
 	});
-	const tokenA = JSON.parse(loginA.payload).token;
+	const tokenA: string = JSON.parse(loginA.payload).token;
 
 	// add userB as friend to userA
 	const friend1 = await fastify.inject({
@@ -84,7 +87,7 @@ t.test('add/remove friends tests', async t => {
 	})
 	let friends = JSON.parse(users.payload)
 	t.equal(friends.length, 2, 'userA should have 2 friends')
-	let friendIds = friends.map(f => f.id).sort()
+	let friendIds = friends.map((f: any) => f.id).sort()
 	t.same(friendIds, [userBId, userCId].sort(), 'Friend IDs should match B and C')
 	t.ok(friends[0].friendshipId, 'friendshipId should be included')
 	t.ok(friends[1].friendshipId, 'friendshipId should be included')
@@ -100,7 +103,7 @@ t.test('add/remove friends tests', async t => {
 
 	// removing userB from friend list of userA
 	let friendsBefore = JSON.parse(users.payload)
-	let friendshipId = friendsBefore[0].friendshipId
+	let friendshipId: number = friendsBefore[0].friendshipId
 	let removedFriend = await fastify.inject({
 		method: 'DELETE',
 		url: `api/remove_friend/${friendshipId}`,
@@ -112,7 +115,7 @@ t.test('add/remove friends tests', async t => {
 	})
 	let friendsAfter = JSON.parse(usersAfter.payload)
 	t.equal(removedFriend.statusCode, 200, 'friend removed successfully')
-	let remainingIds = friendsAfter.map(f => f.friendshipId)
+	let remainingIds = friendsAfter.map((f: any) => f.friendshipId)
 	t.notOk(remainingIds.includes(friendshipId), 'removed friend is not in friend list anymore')
 
 	// login userB
@@ -121,7 +124,7 @@ t.test('add/remove friends tests', async t => {
 		url: 'api/user/login',
 		payload: userB,
 	});
-	const tokenB = JSON.parse(loginB.payload).token;
+	const tokenB: string = JSON.parse(loginB.payload).token;
 
 	// trying to remove a friend from userA friend list with userB login token
 	friendshipId = JSON.parse(users.payload)[0].id
@@ -173,26 +176,26 @@ t.test('add/remove friends tests', async t => {
 
 t.teardown(async () => {
 	try {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			db.serialize(() => {
-				db.run('DELETE FROM friends', err => {
+				db.run('DELETE FROM friends', (err) => {
 					if (err) return reject(err);
 				});
-				db.run('DELETE FROM users', err => {
+				db.run('DELETE FROM users', (err) => {
 					if (err) return reject(err);
 				});
-				db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", err => {
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'friends'", (err) => {
 					if (err) return reject(err);
 				});
-				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 					if (err) return reject(err);
 					resolve();
 				});
 			});
 		});
 
-		await new Promise((resolve, reject) => {
-			db.close(err => (err ? reject(err) : resolve()));
+		await new Promise<void>((resolve, reject) => {
+			db.close((err) => (err ? reject(err) : resolve()));
 		});
 
 		await fastify.close();

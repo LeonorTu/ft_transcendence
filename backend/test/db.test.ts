@@ -1,7 +1,7 @@
 // ************************************************************************** //
 //                                                                            //
 //                                                        :::      ::::::::   //
-//   db.test.js                                         :+:      :+:    :+:   //
+//   db.test.ts                                         :+:      :+:    :+:   //
 //                                                    +:+ +:+         +:+     //
 //   By: jmakkone <jmakkone@student.hive.fi>        +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
@@ -16,7 +16,7 @@ const proxyquire = require('proxyquire');
 // Create a fake sqlite3 module that always calls the callback with an error.
 const fakeSqlite3 = {
 	verbose: () => ({
-		Database: function(path, callback) {
+		Database: function(path: string, callback: (err: Error) => void) {
 			// Simulate an error opening the database.
 			callback(new Error("Simulated error"));
 		}
@@ -24,16 +24,16 @@ const fakeSqlite3 = {
 };
 
 // Capture console.error output for assertion.
-let capturedError = '';
+let capturedError: string = '';
 const originalConsoleError = console.error;
-console.error = (msg) => {
+console.error = (msg: string) => {
 	capturedError += msg;
 };
 
 
 // Test 1: db.js error handling - Logs an error when the database fails to open.
 
-t.test('db.js error handling: logs error when database fails to open', t => {
+t.test('db.js error handling: logs error when database fails to open', (t) => {
 	// Load the db module with sqlite3 replaced by our fake.
 	proxyquire('../db', {
 		'sqlite3': fakeSqlite3

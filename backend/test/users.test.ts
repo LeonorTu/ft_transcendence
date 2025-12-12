@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   users.test.js                                      :+:      :+:    :+:   */
+/*   users.test.ts                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,26 +11,29 @@
 /* ************************************************************************** */
 
 const t = require('tap');
-const path = require('path');
-const fs = require('fs');
-const FormData = require('form-data');
-const db = require('../db');
-const fastify = require('../server');
+import * as path from 'path';
+import * as fs from 'fs';
+import * as FormData from 'form-data';
+import { Database } from 'sqlite3';
+import { FastifyInstance } from 'fastify';
+
+const db: Database = require('../db');
+const fastify: FastifyInstance = require('../server');
 
 // Store a user ID and token for later use
-let userUsername;
-let authToken;
+let userUsername: string;
+let authToken: string;
 
 
 // Clear users table before running the tests
 
 t.before(async () => {
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		db.serialize(() => {
-			db.run('DELETE FROM users', err => {
+			db.run('DELETE FROM users', (err) => {
 				if (err) return reject(err);
 			});
-			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+			db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 				if (err) return reject(err);
 				resolve();
 			});
@@ -41,7 +44,7 @@ t.before(async () => {
 
 // TEST 1: Registration (Positive)
 
-t.test('Test 1: POST /user/register (Positive) - creates a new user', async t => {
+t.test('Test 1: POST /user/register (Positive) - creates a new user', async (t) => {
 	const payload = { username: 'testuser', password: 'Qwerty12', email: 'testuser@aaa.aaa' };
 
 	const res = await fastify.inject({
@@ -60,7 +63,7 @@ t.test('Test 1: POST /user/register (Positive) - creates a new user', async t =>
 
 // TEST 2: Registration (Negative) - Duplicate username
 
-t.test('Test 2: POST /user/register (Duplicate) - returns 400 if username already exists', async t => {
+t.test('Test 2: POST /user/register (Duplicate) - returns 400 if username already exists', async (t) => {
 	const payload = { username: 'testuser', password: 'Qwerty12', email: 'testuser@testuser.aaa' };
 
 	const res = await fastify.inject({
@@ -77,7 +80,7 @@ t.test('Test 2: POST /user/register (Duplicate) - returns 400 if username alread
 
 // TEST 3: Login (Positive)
 
-t.test('Test 3: POST /user/login (Positive) - logs in existing user', async t => {
+t.test('Test 3: POST /user/login (Positive) - logs in existing user', async (t) => {
 	const payload = { username: 'testuser', password: 'Qwerty12' };
 
 	const res = await fastify.inject({
@@ -95,7 +98,7 @@ t.test('Test 3: POST /user/login (Positive) - logs in existing user', async t =>
 
 // TEST 4: Login (Negative) - Wrong password
 
-t.test('Test 4: POST /user/login (Wrong password) - returns 401', async t => {
+t.test('Test 4: POST /user/login (Wrong password) - returns 401', async (t) => {
 	const payload = { username: 'testuser', password: 'Wrongpassword12' };
 
 	const res = await fastify.inject({
@@ -112,7 +115,7 @@ t.test('Test 4: POST /user/login (Wrong password) - returns 401', async t => {
 
 // TEST 5: Login (Negative) - Non-existent user
 
-t.test('Test 5: POST /user/login (No such user) - returns 400', async t => {
+t.test('Test 5: POST /user/login (No such user) - returns 400', async (t) => {
 	const res = await fastify.inject({
 		method: 'POST',
 		url: '/api/user/login',
@@ -126,7 +129,7 @@ t.test('Test 5: POST /user/login (No such user) - returns 400', async t => {
 
 // TEST 6: updateUser => 400 if user not found
 
-t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted first', async t => {
+t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted first', async (t) => {
 	// 1 Register
 	const regRes = await fastify.inject({
 		method: 'POST',
@@ -135,7 +138,7 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 	});
 	t.equal(regRes.statusCode, 200, 'Temporary user registration succeeds');
 	const regBody = JSON.parse(regRes.payload);
-	const tempUserId = regBody.id;
+	const tempUserId: number = regBody.id;
 	// 2 Login
 	const loginRes = await fastify.inject({
 		method: 'POST',
@@ -143,11 +146,11 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 		payload: { username: 'tempuser', password: 'Qwerty12' },
 	});
 	t.equal(loginRes.statusCode, 200, 'Login of tempuser succeeds');
-	const token = JSON.parse(loginRes.payload).token;
+	const token: string = JSON.parse(loginRes.payload).token;
 
 	// Delete the user from DB
-	await new Promise((resolve, reject) => {
-		db.run('DELETE FROM users WHERE id = ?', [tempUserId], err => (err ? reject(err) : resolve()));
+	await new Promise<void>((resolve, reject) => {
+		db.run('DELETE FROM users WHERE id = ?', [tempUserId], (err) => (err ? reject(err) : resolve()));
 	});
 
 	// Attempt to update now-deleted user => 400
@@ -166,7 +169,7 @@ t.test('Test 6: PUT /user/:username/update => returns 400 if user is deleted fir
 
 // TEST 7: GET /user/:id (Positive)
 
-t.test('Test 7: GET /user/:id => returns the registered user', async t => {
+t.test('Test 7: GET /user/:id => returns the registered user', async (t) => {
 	t.ok(userUsername, 'User username must be set from test #1');
 	const res = await fastify.inject({
 		method: 'GET',
@@ -181,7 +184,7 @@ t.test('Test 7: GET /user/:id => returns the registered user', async t => {
 
 // TEST 8: GET /users => returns list with the new user
 
-t.test('Test 8: GET /users => 200 + array containing testuser', async t => {
+t.test('Test 8: GET /users => 200 + array containing testuser', async (t) => {
 	const res = await fastify.inject({
 		method: 'GET',
 		url: '/api/users',
@@ -189,14 +192,14 @@ t.test('Test 8: GET /users => 200 + array containing testuser', async t => {
 	t.equal(res.statusCode, 200, 'GET /users returns 200');
 	const list = JSON.parse(res.payload);
 	t.ok(Array.isArray(list), 'Response is an array');
-	const found = list.some(u => u.username === userUsername);
+	const found = list.some((u: any) => u.username === userUsername);
 	t.ok(found, 'Registered user is in the list');
 });
 
 
 // TEST 9: GET /user/:id => 404 if user not found
 
-t.test('Test 9: GET /user/:id (Non-existent) => returns 404', async t => {
+t.test('Test 9: GET /user/:id (Non-existent) => returns 404', async (t) => {
 	const res = await fastify.inject({
 		method: 'GET',
 		url: '/api/user/999999',
@@ -208,7 +211,7 @@ t.test('Test 9: GET /user/:id (Non-existent) => returns 404', async t => {
 
 // TEST 10: updateUser (Positive)
 
-t.test('Test 10: PUT /user/:username/update (Positive) => updates password', async t => {
+t.test('Test 10: PUT /user/:username/update (Positive) => updates password', async (t) => {
 	const newData = {
 		currentPassword: 'Qwerty12',
 		newPassword: 'Qwerty23',
@@ -228,7 +231,7 @@ t.test('Test 10: PUT /user/:username/update (Positive) => updates password', asy
 
 // TEST 11: updateUser => returns 401 if current password is wrong
 
-t.test('Test 11: PUT /user/:username/update => 401 if wrong currentPassword', async t => {
+t.test('Test 11: PUT /user/:username/update => 401 if wrong currentPassword', async (t) => {
 	const newData = {
 		currentPassword: 'Qwerty12',
 		newPassword: 'Qwerty12',
@@ -248,7 +251,7 @@ t.test('Test 11: PUT /user/:username/update => 401 if wrong currentPassword', as
 
 // TEST 12: updateUser => 400 if new username already exists
 
-t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async t => {
+t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async (t) => {
 	const userA = { username: 'userA', password: 'Qwerty12', email: 'userA@aaa.aaa' };
 	const userB = { username: 'userB', password: 'Qwerty12', email: 'userB@aaa.aaa' };
 
@@ -274,7 +277,7 @@ t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async
 		payload: userB,
 	});
 	t.equal(loginB.statusCode, 200, 'User B login ok');
-	const tokenB = JSON.parse(loginB.payload).token;
+	const tokenB: string = JSON.parse(loginB.payload).token;
 
 	// Attempt to rename userB => userA
 	const updateRes = await fastify.inject({
@@ -290,7 +293,7 @@ t.test('Test 12: PUT /user/:username/update => 400 duplicate newUsername', async
 
 // TEST 15: uploadAvatar => invalid MIME, large file, mismatch, success
 
-t.test('Test 15: uploadAvatar => checks for invalid mime, size limit, param mismatch, success', async t => {
+t.test('Test 15: uploadAvatar => checks for invalid mime, size limit, param mismatch, success', async (t) => {
 	// Re-login testuser w/ new password from test #10
 	const loginAgain = await fastify.inject({
 		method: 'POST',
@@ -298,7 +301,7 @@ t.test('Test 15: uploadAvatar => checks for invalid mime, size limit, param mism
 		payload: { username: 'testuser', password: 'Qwerty23' },
 	});
 	t.equal(loginAgain.statusCode, 200, 'Re-login success');
-	const testuserToken = JSON.parse(loginAgain.payload).token;
+	const testuserToken: string = JSON.parse(loginAgain.payload).token;
 
 	// Invalid MIME
 	{
@@ -384,7 +387,7 @@ t.test('Test 15: uploadAvatar => checks for invalid mime, size limit, param mism
 
 // TEST 16: getUserAvatar => 404 if no user, 200 if user found
 
-t.test('Test 16: getUserAvatar => 404 not found user, 200 existing user', async t => {
+t.test('Test 16: getUserAvatar => 404 not found user, 200 existing user', async (t) => {
 	// 404 if user not found
 	const notFoundRes = await fastify.inject({
 		method: 'GET',
@@ -405,7 +408,7 @@ t.test('Test 16: getUserAvatar => 404 not found user, 200 existing user', async 
 
 // TEST 17: removeAvatar => mismatch => 400, success => 200
 
-t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
+t.test('Test 17: removeAvatar => param mismatch vs success', async (t) => {
 	// Re-login to ensure a valid token
 	const loginAgain = await fastify.inject({
 		method: 'POST',
@@ -413,7 +416,7 @@ t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
 		payload: { username: 'testuser', password: 'Qwerty23' },
 	});
 	t.equal(loginAgain.statusCode, 200, 'Login again success');
-	const testuserToken = JSON.parse(loginAgain.payload).token;
+	const testuserToken: string = JSON.parse(loginAgain.payload).token;
 
 	// Mismatch
 	const mismatchRes = await fastify.inject({
@@ -438,7 +441,7 @@ t.test('Test 17: removeAvatar => param mismatch vs success', async t => {
 
 // TEST 18: logout user
 
-t.test('Test 18: logout user', async t => {
+t.test('Test 18: logout user', async (t) => {
 	// login to ensure a valid token
 	const loginA = await fastify.inject({
 		method: 'POST',
@@ -446,7 +449,7 @@ t.test('Test 18: logout user', async t => {
 		payload: { username: 'testuser', password: 'Qwerty23' },
 	});
 	t.equal(loginA.statusCode, 200, 'Login again success');
-	const testuserToken = JSON.parse(loginA.payload).token;
+	const testuserToken: string = JSON.parse(loginA.payload).token;
 
 	// logout with a wrong token
 	const wrongToken = await fastify.inject({
@@ -478,10 +481,10 @@ t.test('Test 18: logout user', async t => {
 
 // TEST 19: /verify_2fa_code
 
-t.test('/verify_2fa_code', async t => {
+t.test('/verify_2fa_code', async (t) => {
 	const code = '123456'
 	try {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			db.run('UPDATE users SET two_fa_code = ?, two_fa_code_expiration = ? WHERE username = ?',
 				[code, Date.now() + 5 * 60 * 1000, 'testuser'], (err) => {
 					if (err) return reject(err)
@@ -515,7 +518,7 @@ t.test('/verify_2fa_code', async t => {
 	t.equal(wrongUsername.statusCode, 400, 'Invalid username')
 
 	try {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			db.run('UPDATE users SET two_fa_code_expiration = ? WHERE username = ?',
 				[Date.now() - 1 * 60 * 1000, 'testuser'], (err) => {
 					if (err) return reject(err)
@@ -539,20 +542,20 @@ t.test('/verify_2fa_code', async t => {
 
 t.teardown(async () => {
 	try {
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			db.serialize(() => {
-				db.run('DELETE FROM users', err => {
+				db.run('DELETE FROM users', (err) => {
 					if (err) return reject(err);
 				});
-				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", err => {
+				db.run("DELETE FROM sqlite_sequence WHERE name = 'users'", (err) => {
 					if (err) return reject(err);
 					resolve();
 				});
 			});
 		});
 
-		await new Promise((resolve, reject) => {
-			db.close(err => (err ? reject(err) : resolve()));
+		await new Promise<void>((resolve, reject) => {
+			db.close((err) => (err ? reject(err) : resolve()));
 		});
 
 		await fastify.close();

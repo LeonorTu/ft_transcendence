@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.test.js                                     :+:      :+:    :+:   */
+/*   server.test.ts                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,15 +11,18 @@
 /* ************************************************************************** */
 
 const t = require('tap');
-const fastify = require('../server');
-const db = require('../db');
-const { spawn } = require('child_process');
+import { FastifyInstance } from 'fastify';
+import { Database } from 'sqlite3';
+import { spawn, ChildProcess } from 'child_process';
+
+const fastify: FastifyInstance = require('../server');
+const db: Database = require('../db');
 
 
 // Test 1: Server initialization via fastify.ready() - Should start without errors.
 
-t.test('Server initializes correctly via fastify.ready()', t => {
-	fastify.ready(err => {
+t.test('Server initializes correctly via fastify.ready()', (t) => {
+	fastify.ready((err: Error | null) => {
 		t.error(err, 'Server started without errors');
 		t.end();
 	});
@@ -28,8 +31,8 @@ t.test('Server initializes correctly via fastify.ready()', t => {
 
 // Test 2: Server start() function - Runs when executed as main.
 
-t.test('Server start() function runs when executed as main', t => {
-	const child = spawn('node', ['server.js'], {
+t.test('Server start() function runs when executed as main', (t) => {
+	const child: ChildProcess = spawn('node', ['server.js'], {
 		env: {
 			...process.env,
 			// Use an in-memory database for testing if not set.
@@ -37,9 +40,9 @@ t.test('Server start() function runs when executed as main', t => {
 		}
 	});
 
-	let output = '';
+	let output: string = '';
 
-	child.stdout.on('data', data => {
+	child.stdout?.on('data', (data: Buffer) => {
 		output += data.toString();
 		if (output.includes(`Server running on port 8888`)) {
 			t.match(
@@ -52,12 +55,12 @@ t.test('Server start() function runs when executed as main', t => {
 		}
 	});
 
-	child.on('exit', (code, signal) => {
+	child.on('exit', (code: number | null, signal: string | null) => {
 		t.pass(`Child process exited with code ${code} and signal ${signal}`);
 		t.end();
 	});
 
-	child.on('error', err => {
+	child.on('error', (err: Error) => {
 		t.fail('Failed to spawn server.js: ' + err.message);
 		t.end();
 	});
@@ -67,8 +70,8 @@ t.test('Server start() function runs when executed as main', t => {
 // Test 3: Teardown - Close database and Fastify instance to clean up resources.
 
 t.teardown(async () => {
-	await new Promise((resolve, reject) => {
-		db.close(err => (err ? reject(err) : resolve()));
+	await new Promise<void>((resolve, reject) => {
+		db.close((err) => (err ? reject(err) : resolve()));
 	});
 	await fastify.close();
 });

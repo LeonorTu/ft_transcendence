@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   user-db-insert-error.test.js                       :+:      :+:    :+:   */
+/*   user-db-insert-error.test.ts                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpellegr <mpellegr@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,11 +11,12 @@
 /* ************************************************************************** */
 
 const t = require('tap');
+import { FastifyInstance } from 'fastify';
 
 // Mock the db module but only fail the INSERT
 const dbMock = {
 	// Simulate "SELECT * FROM users WHERE username = ?" returning no user found.
-	get: (sql, params, cb) => {
+	get: (sql: string, params: any[], cb: (err: Error | null, result?: any) => void) => {
 		if (/SELECT \* FROM users WHERE username/i.test(sql)) {
 			cb(null, null);
 		} else {
@@ -24,7 +25,7 @@ const dbMock = {
 	},
 
 	// Force an error on INSERT.
-	run: (sql, params, cb) => {
+	run: (sql: string, params: any[], cb: (err: Error) => void) => {
 		if (/INSERT INTO users/i.test(sql)) {
 			cb(new Error('Simulated DB insert error'));
 		} else {
@@ -33,17 +34,17 @@ const dbMock = {
 	},
 
 	// Not used by this route, but must exist if other parts of the code call it.
-	all: (sql, params, cb) => cb(new Error('Unexpected DB call in all()'), null),
+	all: (sql: string, params: any[], cb: (err: Error, result?: any) => void) => cb(new Error('Unexpected DB call in all()'), null),
 };
 
-const fastify = t.mockRequire('../server', {
+const fastify: FastifyInstance = t.mockRequire('../server', {
 	'../db': dbMock,
 });
 
 
 // Test 1: POST /user/register - Fails due to DB INSERT error.
 
-t.test('POST /user/register -> fails on INSERT', async t => {
+t.test('POST /user/register -> fails on INSERT', async (t) => {
 	// Because "SELECT user" returns null, the code will try INSERT and fail.
 	const response = await fastify.inject({
 		method: 'POST',
@@ -64,10 +65,10 @@ t.test('POST /user/register -> fails on INSERT', async t => {
 
 // Test 2: GET /users - Returns 404 when no users exist (empty result).
 
-t.test('GET /users returns 404 when no users exist (empty result)', async t => {
+t.test('GET /users returns 404 when no users exist (empty result)', async (t) => {
 	// Create a mock DB that returns an empty array for the query in getUsers.
 	const dbEmptyMock = {
-		all: (sql, params, cb) => {
+		all: (sql: string, params: any[], cb: (err: Error | null, result?: any[]) => void) => {
 			if (/SELECT id, username, email FROM users/.test(sql)) {
 				// Return an empty array to simulate no users.
 				cb(null, []);
@@ -78,7 +79,7 @@ t.test('GET /users returns 404 when no users exist (empty result)', async t => {
 	};
 
 	// Load the server with our mock DB.
-	const fastifyEmpty = t.mockRequire('../server', {
+	const fastifyEmpty: FastifyInstance = t.mockRequire('../server', {
 		'../db': dbEmptyMock,
 	});
 
@@ -98,9 +99,9 @@ t.test('GET /users returns 404 when no users exist (empty result)', async t => {
 // Test 3: PUT /user/:username/update - Returns 500 when DB.get fails in updateUser.
 // This forces the catch block to be executed.
 
-t.test('PUT /user/:username/update returns 500 when DB.get fails in updateUser', async t => {
+t.test('PUT /user/:username/update returns 500 when DB.get fails in updateUser', async (t) => {
 	const dbFailUpdateMock = {
-		get: (sql, params, cb) => {
+		get: (sql: string, params: any[], cb: (err: Error | null, result?: any) => void) => {
 			if (/SELECT id, username, password FROM users WHERE id = \?/.test(sql)) {
 				cb(new Error('Simulated updateUser db.get error'));
 			} else {
@@ -110,11 +111,11 @@ t.test('PUT /user/:username/update returns 500 when DB.get fails in updateUser',
 	};
 
 	// Load the server with the failing DB mock and mock JWT verification.
-	const fastifyUpdateFail = t.mockRequire('../server', {
+	const fastifyUpdateFail: FastifyInstance = t.mockRequire('../server', {
 		'../db': dbFailUpdateMock,
-		'@fastify/jwt': function(fastify, opts, done) {
+		'@fastify/jwt': function(fastify: any, opts: any, done: () => void) {
 			// Mock the jwtVerify directly.
-			fastify.decorateRequest('jwtVerify', async function () {
+			fastify.decorateRequest('jwtVerify', async function (this: any) {
 				this.user = { id: 1, username: 'testuser' };
 			});
 			done();
@@ -122,7 +123,7 @@ t.test('PUT /user/:username/update returns 500 when DB.get fails in updateUser',
 	});
 
 	// Decorate once more at the instance level
-	fastifyUpdateFail.decorateRequest('jwtVerify', async function () {
+	fastifyUpdateFail.decorateRequest('jwtVerify', async function (this: any) {
 		this.user = { id: 1, username: 'testuser' };
 	}, []);
 
