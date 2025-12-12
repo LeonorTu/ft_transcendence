@@ -1,11 +1,13 @@
 {
   "name": "new_test",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "NODE_ENV=prod node server",
-    "dev": "NODE_ENV=dev nodemon server",
-    "test": "NODE_ENV=test tap --passes --jobs=1"
+    "build": "tsc",
+    "start": "NODE_ENV=prod node dist/server.js",
+    "dev": "NODE_ENV=dev tsx watch server.ts",
+    "test": "NODE_ENV=test tap --passes --jobs=1",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -33,19 +35,32 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.0.1",
+    "@types/nodemailer": "^7.0.4",
+    "@types/proxyquire": "^1.3.31",
+    "@types/tap": "^15.0.12",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "nodemon": "^3.1.9",
     "proxyquire": "^2.1.3",
-    "tap": "^21.1.0"
+    "tap": "^21.1.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "description": "",
   "watch": [
-    "server.js",
+    "server.ts",
     "routes/",
     "handlers/"
   ],
-  "ext": "js,json",
+  "ext": "ts,json",
   "ignore": [
-    "node_modules/"
+    "node_modules/",
+    "dist/"
   ],
-  "exec": "node server.js"
+  "exec": "tsx server.ts"
 }
