@@ -7,7 +7,8 @@
     "start": "NODE_ENV=prod node dist/server.js",
     "dev": "NODE_ENV=dev tsx watch server.ts",
     "test": "NODE_ENV=test tap --passes --jobs=1 --allow-incomplete-coverage",
-    "test:ci": "NODE_ENV=test tap --passes --jobs=1 --allow-incomplete-coverage test/db.test.ts test/game.test.ts test/google-integration.test.ts test/google.test.ts test/server-failcase.test.ts test/server.test.ts test/swagger.test.ts test/user-add-remove-friend.test.ts test/user-db-errors.test.ts test/user-db-insert-error.test.ts test/user-online-status.test.ts test/users.test.ts",
+    "test:init": "tsx init-test-db.ts",
+    "test:ci": "npm run test:init && NODE_ENV=test tap --passes --jobs=1 --allow-incomplete-coverage test/db.test.ts test/game.test.ts test/google-integration.test.ts test/google.test.ts test/server-failcase.test.ts test/server.test.ts test/swagger.test.ts test/user-add-remove-friend.test.ts test/user-db-errors.test.ts test/user-db-insert-error.test.ts test/user-online-status.test.ts test/users.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
