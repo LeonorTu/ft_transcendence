@@ -14,7 +14,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { Database } from 'sqlite3';
 import jwt from 'jsonwebtoken';
 import WebSocket from 'ws';
-import { GameServer, MessageType, Error as GameError, ErrorType, SinglePlayerIds, GameType } from '../game/game_server';
+import { GameServer, MessageType, GameError, ErrorType, SinglePlayerIds, GameType } from '../game/game_server';
 import db from '../db';
 
 // Extend WebSocket with custom properties

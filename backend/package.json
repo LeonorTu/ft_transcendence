@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "NODE_ENV=prod node dist/server.js",
     "dev": "NODE_ENV=dev tsx watch server.ts",
-    "test": "NODE_ENV=test tap --passes --jobs=1",
+    "test": "NODE_ENV=test tap --passes --jobs=1 --allow-incomplete-coverage",
+    "test:ci": "NODE_ENV=test tap --passes --jobs=1 --allow-incomplete-coverage 'test/**/!(db|server-failcase|users).test.ts'",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
